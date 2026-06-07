@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>StockFlow ERP - Modern Inventory Management</title>
+  <title>StockFlow ERP - Kitchen Inventory Management</title>
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-  <!-- Main App - No Login -->
+  <!-- Main App -->
   <div class="app-container">
     <!-- Mobile Bottom Navigation -->
     <nav class="mobile-bottom-nav">
@@ -23,13 +23,9 @@
         <i class="fas fa-boxes"></i>
         <span>Inventory</span>
       </button>
-      <button class="mobile-nav-item" data-nav="stockin">
-        <i class="fas fa-arrow-down"></i>
-        <span>Stock IN</span>
-      </button>
       <button class="mobile-nav-item" data-nav="stockout">
-        <i class="fas fa-arrow-up"></i>
-        <span>Stock OUT</span>
+        <i class="fas fa-utensils"></i>
+        <span>Kitchen</span>
       </button>
       <button class="mobile-nav-item" data-nav="ledger">
         <i class="fas fa-history"></i>
@@ -45,13 +41,13 @@
     <aside class="sidebar glass-card">
       <div class="sidebar-header">
         <h2>Stock<span>Flow</span></h2>
-        <p>ERP System</p>
+        <p>Kitchen ERP System</p>
       </div>
       
       <div class="user-info">
-        <div class="user-avatar">A</div>
+        <div class="user-avatar">K</div>
         <div class="user-details">
-          <h4>Administrator</h4>
+          <h4>Kitchen Manager</h4>
           <p>Full Access</p>
         </div>
       </div>
@@ -63,11 +59,8 @@
         <button class="nav-item" data-nav="inventory">
           <i class="fas fa-boxes"></i> Inventory
         </button>
-        <button class="nav-item" data-nav="stockin">
-          <i class="fas fa-arrow-down"></i> Stock IN
-        </button>
         <button class="nav-item" data-nav="stockout">
-          <i class="fas fa-arrow-up"></i> Stock OUT
+          <i class="fas fa-utensils"></i> Kitchen Use
         </button>
         <button class="nav-item" data-nav="ledger">
           <i class="fas fa-history"></i> Ledger
@@ -83,12 +76,9 @@
       <div class="top-bar">
         <div class="page-header">
           <h1 id="pageTitle">Dashboard</h1>
-          <p id="pageSubtitle">Real-time inventory tracking and management</p>
+          <p id="pageSubtitle">Real-time kitchen inventory tracking</p>
         </div>
         <div class="header-actions">
-          <button class="icon-btn" onclick="reloadCSV()" title="Reload from CSV file">
-            <i class="fas fa-sync-alt"></i>
-          </button>
           <button id="themeToggle" class="icon-btn">
             <i class="fas fa-moon"></i>
           </button>
@@ -100,11 +90,11 @@
     </main>
   </div>
 
-  <!-- Stock IN Modal -->
+  <!-- Stock IN Modal (PIN Protected) -->
   <div id="stockInModal" class="modal hidden">
     <div class="modal-content glass-card">
       <div class="modal-header">
-        <h3><i class="fas fa-arrow-down"></i> Stock IN</h3>
+        <h3><i class="fas fa-plus"></i> Add Stock</h3>
         <button class="modal-close" onclick="closeStockInModal()">&times;</button>
       </div>
       <div class="modal-body">
@@ -126,7 +116,7 @@
             <option value="G">G</option>
             <option value="L">L</option>
             <option value="BOX">BOX</option>
-            <option value="CTN">CTN</option>
+            <option value="CASE">CASE</option>
           </select>
         </div>
         <div class="form-group">
@@ -139,7 +129,7 @@
         </div>
         <div class="form-group">
           <label>Reference Note</label>
-          <input type="text" id="stockInNote" class="form-control" placeholder="Supplier info, invoice #, etc.">
+          <input type="text" id="stockInNote" class="form-control" placeholder="Supplier, invoice #">
         </div>
       </div>
       <div class="modal-footer">
@@ -149,11 +139,11 @@
     </div>
   </div>
 
-  <!-- Stock OUT Modal -->
+  <!-- Stock OUT Modal (Kitchen Use - No PIN) -->
   <div id="stockOutModal" class="modal hidden">
     <div class="modal-content glass-card">
       <div class="modal-header">
-        <h3><i class="fas fa-arrow-up"></i> Stock OUT</h3>
+        <h3><i class="fas fa-utensils"></i> Kitchen Use</h3>
         <button class="modal-close" onclick="closeStockOutModal()">&times;</button>
       </div>
       <div class="modal-body">
@@ -165,26 +155,27 @@
         </div>
         <div class="current-stock-info" id="currentStockInfo"></div>
         <div class="form-group">
-          <label>Quantity *</label>
+          <label>Quantity Used *</label>
           <input type="number" id="stockOutQty" class="form-control" step="any" min="0.01" placeholder="Enter quantity">
         </div>
         <div class="form-group">
-          <label>Reason *</label>
+          <label>Reason</label>
           <select id="stockOutReason" class="form-control">
-            <option value="Sold">Sold</option>
-            <option value="Damaged">Damaged</option>
-            <option value="Kitchen">Kitchen Use</option>
-            <option value="Transfer">Transfer</option>
+            <option value="Kitchen Preparation">Kitchen Preparation</option>
+            <option value="Cooking">Cooking</option>
+            <option value="Wastage">Wastage</option>
+            <option value="Sample">Sample/Tasting</option>
+            <option value="Transfer">Transfer to Other Kitchen</option>
           </select>
         </div>
         <div class="form-group">
           <label>Reference Note</label>
-          <input type="text" id="stockOutNote" class="form-control" placeholder="Order #, customer, etc.">
+          <input type="text" id="stockOutNote" class="form-control" placeholder="Dish name, order #">
         </div>
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" onclick="closeStockOutModal()">Cancel</button>
-        <button class="btn btn-danger" onclick="processStockOut()">Remove Stock</button>
+        <button class="btn btn-warning" onclick="processStockOut()">Use in Kitchen</button>
       </div>
     </div>
   </div>
