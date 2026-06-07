@@ -1,6 +1,7 @@
 // ============================================
-// STOCKFLOW ERP SYSTEM - PROPER CSV LOADING
-// Loads data.csv from the same GitHub folder
+// STOCKFLOW ERP SYSTEM - FIXED PRODUCTION LOGIC
+// CSV loads ONLY ONCE when localStorage is empty
+// NEVER overwrites kitchen usage data
 // ============================================
 
 // Data Storage
@@ -15,60 +16,39 @@ let searchTerm = "";
 const MASTER_PIN = "1234";
 
 // ============================================
-// CSV LOADING FUNCTION - WORKS WITH GITHUB
+// CRITICAL FIX: CSV ONLY LOADS IF NO DATA EXISTS
 // ============================================
 
 async function loadCSVFromFile() {
   try {
-    // Try multiple possible paths where CSV might be located
-    const paths = [
-      'data.csv',           // Same folder
-      './data.csv',         // Current directory
-      '../data.csv',        // Parent directory
-      '/data.csv'           // Root directory
-    ];
-    
+    const paths = ['data.csv', './data.csv'];
     let csvText = null;
     let loadedPath = null;
     
     for (const path of paths) {
       try {
-        console.log(`Trying to load CSV from: ${path}`);
-        const response = await fetch(path, { 
-          cache: 'no-store',  // Prevent caching
-          headers: {
-            'Cache-Control': 'no-cache'
-          }
-        });
-        
+        const response = await fetch(path, { cache: 'no-store' });
         if (response.ok) {
           csvText = await response.text();
           loadedPath = path;
-          console.log(`✅ CSV successfully loaded from: ${path}`);
+          console.log(`✅ CSV found at: ${path}`);
           break;
-        } else {
-          console.log(`❌ Failed to load from ${path}: ${response.status}`);
         }
-      } catch (e) {
-        console.log(`❌ Error loading from ${path}:`, e.message);
-        continue;
-      }
+      } catch (e) { continue; }
     }
     
     if (csvText && csvText.trim().length > 0) {
       parseCSVData(csvText);
-      showToast(`✅ CSV loaded from ${loadedPath}`, 'success');
+      showToast(`✅ Initial data loaded from CSV`, 'success');
       return true;
     } else {
       console.log("No CSV file found, using sample data");
       loadSampleData();
-      showToast('No data.csv found. Using sample data.', 'info');
       return false;
     }
   } catch (error) {
     console.error("CSV Error:", error);
     loadSampleData();
-    showToast('Error loading CSV. Using sample data.', 'error');
     return false;
   }
 }
@@ -78,88 +58,126 @@ function parseCSVData(csvText) {
     header: true,
     skipEmptyLines: true,
     complete: function(results) {
-      console.log(`Parsed ${results.data.length} rows from CSV`);
-      
       let newItems = [];
-      let csvItemNames = new Set();
-      let parsedCount = 0;
       
       for (const row of results.data) {
-        // Support multiple column name formats
         const name = row.Name || row.name || row.item_name || row.ItemName;
         const unit = (row.Unit || row.unit || "PCS").toUpperCase();
         const cost = parseFloat(row.Price || row.price || row.Cost || row.cost || 0);
-        const quantity = parseFloat(row.Stock || row.stock || row.Quantity || row.quantity || 0);
         const expiryDate = row.ExpiryDate || row.expiry_date || row.Expiry || "";
         const minStock = parseInt(row.MinStock || row.minStock || 5);
         
-        if (!name) {
-          console.log("Skipping row - no name:", row);
-          continue;
-        }
+        if (!name) continue;
         
-        csvItemNames.add(name.toLowerCase());
-        
-        // Check if item already exists (preserve stock if it exists)
-        const existingItem = items.find(i => i.name.toLowerCase() === name.toLowerCase());
-        
-        if (existingItem) {
-          // Update existing item but KEEP current stock quantity
-          existingItem.unit = unit;
-          existingItem.cost = cost;
-          existingItem.expiryDate = expiryDate;
-          existingItem.minStock = minStock;
-          // IMPORTANT: Do NOT change existingItem.quantity
-          newItems.push(existingItem);
-        } else {
-          // Add new item with stock from CSV
-          newItems.push({
-            id: "item_" + Date.now() + "_" + Math.random() + "_" + parsedCount,
-            name: name,
-            quantity: quantity,  // Use CSV stock for new items
-            unit: unit,
-            cost: cost,
-            expiryDate: expiryDate,
-            minStock: minStock
-          });
-        }
-        parsedCount++;
+        newItems.push({
+          id: "item_" + Date.now() + "_" + Math.random(),
+          name: name,
+          quantity: 0,  // NEW ITEMS START AT 0 - NO RESET!
+          unit: unit,
+          cost: cost,
+          expiryDate: expiryDate,
+          minStock: minStock
+        });
       }
       
-      // Keep items that are in CSV, remove ones not in CSV
-      const finalItems = [];
-      for (const item of items) {
-        if (csvItemNames.has(item.name.toLowerCase())) {
-          finalItems.push(item);
-        } else {
-          console.log(`Item not in CSV, keeping: ${item.name}`);
-          // Keep items not in CSV (don't delete them)
-          finalItems.push(item);
+      // ONLY SET ITEMS IF LOCALSTORAGE IS EMPTY
+      const savedItems = localStorage.getItem('stockflow_items');
+      if (!savedItems || JSON.parse(savedItems).length === 0) {
+        items = newItems;
+        saveData();
+        console.log(`Initial CSV load: ${items.length} items added with 0 stock`);
+      } else {
+        // MERGE: Add new items from CSV that don't exist in local storage
+        const existingNames = new Set(items.map(i => i.name.toLowerCase()));
+        let addedCount = 0;
+        
+        for (const csvItem of newItems) {
+          if (!existingNames.has(csvItem.name.toLowerCase())) {
+            items.push(csvItem);
+            addedCount++;
+          }
+        }
+        
+        if (addedCount > 0) {
+          saveData();
+          console.log(`CSV merge: added ${addedCount} new items`);
+          showToast(`Added ${addedCount} new items from CSV`, 'success');
         }
       }
       
-      // Add new items that weren't in existing items
-      for (const newItem of newItems) {
-        if (!finalItems.find(i => i.name.toLowerCase() === newItem.name.toLowerCase())) {
-          finalItems.push(newItem);
-        }
-      }
-      
-      items = finalItems;
-      
-      console.log(`CSV processed: ${items.length} total items`);
-      saveData();
       renderCurrentView();
-      showToast(`CSV loaded: ${parsedCount} items processed`, 'success');
-    },
-    error: function(error) {
-      console.error("CSV Parse Error:", error);
-      showToast('Error parsing CSV file', 'error');
     }
   });
 }
 
-// Sample data fallback (if no CSV exists)
+// MANUAL SYNC - ONLY ADDS NEW ITEMS, NEVER RESETS STOCK
+async function manualSyncWithCSV() {
+  verifyPIN("Sync with CSV", async () => {
+    try {
+      const paths = ['data.csv', './data.csv'];
+      let csvText = null;
+      
+      for (const path of paths) {
+        try {
+          const response = await fetch(path, { cache: 'no-store' });
+          if (response.ok) {
+            csvText = await response.text();
+            break;
+          }
+        } catch (e) { continue; }
+      }
+      
+      if (csvText) {
+        Papa.parse(csvText, {
+          header: true,
+          skipEmptyLines: true,
+          complete: function(results) {
+            let addedCount = 0;
+            let existingNames = new Set(items.map(i => i.name.toLowerCase()));
+            
+            for (const row of results.data) {
+              const name = row.Name || row.name || row.item_name || row.ItemName;
+              const unit = (row.Unit || row.unit || "PCS").toUpperCase();
+              const cost = parseFloat(row.Price || row.price || row.Cost || row.cost || 0);
+              const expiryDate = row.ExpiryDate || row.expiry_date || row.Expiry || "";
+              const minStock = parseInt(row.MinStock || row.minStock || 5);
+              
+              if (!name) continue;
+              
+              if (!existingNames.has(name.toLowerCase())) {
+                items.push({
+                  id: "item_" + Date.now() + "_" + Math.random(),
+                  name: name,
+                  quantity: 0,
+                  unit: unit,
+                  cost: cost,
+                  expiryDate: expiryDate,
+                  minStock: minStock
+                });
+                addedCount++;
+                existingNames.add(name.toLowerCase());
+              }
+            }
+            
+            if (addedCount > 0) {
+              saveData();
+              renderCurrentView();
+              showToast(`✅ Added ${addedCount} new items from CSV (existing stock preserved)`, 'success');
+            } else {
+              showToast('No new items found in CSV', 'info');
+            }
+          }
+        });
+      } else {
+        showToast('No data.csv file found', 'error');
+      }
+    } catch (error) {
+      showToast('Error syncing CSV', 'error');
+    }
+  });
+}
+
+// Sample data fallback (only if absolutely no data exists)
 function loadSampleData() {
   const savedItems = localStorage.getItem('stockflow_items');
   if (savedItems && JSON.parse(savedItems).length > 0) {
@@ -176,22 +194,8 @@ function loadSampleData() {
     { id: "5", name: "Pasta", quantity: 45, unit: "PCS", cost: 1.2, expiryDate: "2025-09-20", minStock: 15 }
   ];
   
-  transactions = [
-    { id: "t1", type: "STOCK_IN", itemId: "1", itemName: "Basmati Rice", quantity: 50, unit: "KG", cost: 2.5, timestamp: new Date().toISOString(), note: "Initial stock", reason: "Restock" }
-  ];
-  
+  transactions = [];
   saveData();
-}
-
-// Manual reload function
-async function reloadCSV() {
-  verifyPIN("Sync with CSV", async () => {
-    showToast('Loading data.csv...', 'info');
-    const success = await loadCSVFromFile();
-    if (!success) {
-      showToast('Could not load data.csv. Make sure the file exists in the same folder.', 'error');
-    }
-  });
 }
 
 // ============================================
@@ -352,7 +356,7 @@ function downloadCSV(content, filename) {
 
 function resetData() {
   verifyPIN("Reset All Data", () => {
-    if (confirm('⚠️ WARNING: This will delete ALL data.\n\nThis action cannot be undone. Are you sure?')) {
+    if (confirm('⚠️ WARNING: This will delete ALL data including kitchen usage history.\n\nThis action cannot be undone. Are you sure?')) {
       localStorage.clear();
       location.reload();
     }
@@ -399,15 +403,240 @@ function loadTheme() {
 }
 
 // ============================================
-// UI RENDERING FUNCTIONS (Keep your existing ones)
+// RENDER FUNCTIONS (Keep your existing working ones)
 // ============================================
 
-// ... (keep all your render functions from previous version)
-// renderDashboard, renderInventory, renderStockOut, renderLedger, renderSettings
-// attachSearchListener, etc.
+// ... (keep all your renderDashboard, renderInventory, renderStockOut, renderLedger, renderSettings functions here)
+// For brevity, I'm showing the key structure - you need to paste your working render functions
 
-// For brevity, I'm showing the key functions
-// You need to keep all the render functions from your previous working version
+function renderDashboard() {
+  // Your existing dashboard rendering code
+  const filteredItems = filterItems();
+  const totalItems = filteredItems.length;
+  const totalStock = filteredItems.reduce((sum, i) => sum + i.quantity, 0);
+  const totalValue = filteredItems.reduce((sum, i) => sum + (i.quantity * i.cost), 0);
+  const lowStockCount = filteredItems.filter(i => i.quantity < i.minStock).length;
+  const recentTransactions = transactions.slice(0, 10);
+  
+  // ... rest of your dashboard HTML
+  document.getElementById('viewContainer').innerHTML = html;
+  attachSearchListener();
+}
+
+function renderInventory() {
+  // Your existing inventory rendering code
+}
+
+function renderStockOut() {
+  // Your existing stock out rendering code
+}
+
+function renderLedger() {
+  // Your existing ledger rendering code
+}
+
+function renderSettings() {
+  const autoRefreshStatus = 'OFF';
+  const html = `
+    <div class="section-header">
+      <h2><i class="fas fa-cog"></i> System Settings</h2>
+    </div>
+    
+    <div class="table-container" style="margin-bottom: 1.5rem;">
+      <div style="padding: 1.5rem;">
+        <h3>📦 Data Source</h3>
+        <p style="font-size: 0.8rem; color: var(--gray); margin: 0.5rem 0;">
+          <strong>✅ CSV only loads ONCE (when localStorage is empty)</strong><br>
+          • Kitchen usage data is NEVER overwritten<br>
+          • Stock levels are preserved across page refreshes<br>
+          • New items can be added via "Sync with CSV" button
+        </p>
+      </div>
+    </div>
+    
+    <div class="table-container" style="margin-bottom: 1.5rem;">
+      <div style="padding: 1.5rem;">
+        <h3>🔒 PIN Protection</h3>
+        <p style="font-size: 0.8rem; color: var(--gray); margin: 0.5rem 0;">
+          Master PIN: <strong>${MASTER_PIN}</strong><br>
+          Protected operations: Add Stock, Export Data, Sync CSV, Reset Data
+        </p>
+      </div>
+    </div>
+    
+    <div class="table-container" style="margin-bottom: 1.5rem;">
+      <div style="padding: 1.5rem;">
+        <h3>CSV Management</h3>
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+          <button class="btn btn-secondary" onclick="manualSyncWithCSV()">
+            <i class="fas fa-plus"></i> Add New Items from CSV
+          </button>
+          <button class="btn btn-primary" onclick="exportInventoryToCSV()">
+            <i class="fas fa-download"></i> Export Inventory
+          </button>
+          <button class="btn btn-primary" onclick="exportTransactionsToCSV()">
+            <i class="fas fa-download"></i> Export Transactions
+          </button>
+        </div>
+        <p style="font-size: 0.7rem; color: var(--gray); margin-top: 0.5rem;">
+          Note: "Add New Items" only adds items not already in inventory. Never modifies existing stock.
+        </p>
+      </div>
+    </div>
+    
+    <div class="table-container" style="margin-bottom: 1.5rem;">
+      <div style="padding: 1.5rem;">
+        <h3>Theme Preferences</h3>
+        <div style="display: flex; gap: 1rem;">
+          <button class="btn ${!darkMode ? 'btn-primary' : 'btn-secondary'}" onclick="toggleTheme(false)">
+            <i class="fas fa-sun"></i> Light Mode
+          </button>
+          <button class="btn ${darkMode ? 'btn-primary' : 'btn-secondary'}" onclick="toggleTheme(true)">
+            <i class="fas fa-moon"></i> Dark Mode
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <div class="table-container">
+      <div style="padding: 1.5rem;">
+        <h3>Danger Zone</h3>
+        <button class="btn btn-danger" onclick="resetData()">
+          <i class="fas fa-trash"></i> Reset All Data
+        </button>
+        <p style="font-size: 0.7rem; color: var(--gray); margin-top: 0.5rem;">
+          This will delete ALL inventory and kitchen usage history.
+        </p>
+      </div>
+    </div>
+  `;
+  
+  document.getElementById('viewContainer').innerHTML = html;
+}
+
+function attachSearchListener() {
+  const searchInput = document.getElementById('searchInput');
+  if (searchInput) {
+    // Remove existing listener to avoid duplicates
+    const newSearch = searchInput.cloneNode(true);
+    searchInput.parentNode.replaceChild(newSearch, searchInput);
+    newSearch.addEventListener('input', (e) => {
+      searchTerm = e.target.value;
+      renderCurrentView();
+    });
+  }
+}
+
+// ============================================
+// MODAL FUNCTIONS
+// ============================================
+
+function openStockInModal(presetItemId = null) {
+  verifyPIN("Add Stock", () => {
+    const select = document.getElementById('stockInItem');
+    if (select) {
+      select.innerHTML = '<option value="">-- Select Product --</option>' + 
+        items.map(i => `<option value="${i.id}" ${presetItemId === i.id ? 'selected' : ''}>${escapeHtml(i.name)} (Current: ${i.quantity} ${i.unit})</option>`).join('');
+    }
+    
+    const qtyInput = document.getElementById('stockInQty');
+    if (qtyInput) qtyInput.value = '';
+    
+    const unitSelect = document.getElementById('stockInUnit');
+    if (unitSelect) unitSelect.value = '';
+    
+    const costInput = document.getElementById('stockInCost');
+    if (costInput) costInput.value = '';
+    
+    const expiryInput = document.getElementById('stockInExpiry');
+    if (expiryInput) expiryInput.value = '';
+    
+    const noteInput = document.getElementById('stockInNote');
+    if (noteInput) noteInput.value = '';
+    
+    const modal = document.getElementById('stockInModal');
+    if (modal) modal.classList.remove('hidden');
+  });
+}
+
+function closeStockInModal() {
+  const modal = document.getElementById('stockInModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function processStockIn() {
+  const itemId = document.getElementById('stockInItem')?.value;
+  const quantity = parseFloat(document.getElementById('stockInQty')?.value);
+  const unit = document.getElementById('stockInUnit')?.value;
+  const cost = parseFloat(document.getElementById('stockInCost')?.value);
+  const expiryDate = document.getElementById('stockInExpiry')?.value;
+  const note = document.getElementById('stockInNote')?.value;
+  
+  if (!itemId) { showToast('Please select an item', 'error'); return; }
+  if (!quantity || quantity <= 0) { showToast('Please enter valid quantity', 'error'); return; }
+  
+  addStock(itemId, quantity, unit, cost, expiryDate, note);
+  closeStockInModal();
+}
+
+function openStockOutModal(presetItemId = null) {
+  const select = document.getElementById('stockOutItem');
+  if (select) {
+    select.innerHTML = '<option value="">-- Select Item --</option>' + 
+      items.map(i => `<option value="${i.id}" ${presetItemId === i.id ? 'selected' : ''}>${escapeHtml(i.name)} (Available: ${i.quantity} ${i.unit})</option>`).join('');
+  }
+  
+  const qtyInput = document.getElementById('stockOutQty');
+  if (qtyInput) qtyInput.value = '';
+  
+  const reasonSelect = document.getElementById('stockOutReason');
+  if (reasonSelect) reasonSelect.value = 'Kitchen Preparation';
+  
+  const noteInput = document.getElementById('stockOutNote');
+  if (noteInput) noteInput.value = '';
+  
+  updateStockOutInfo();
+  
+  const modal = document.getElementById('stockOutModal');
+  if (modal) modal.classList.remove('hidden');
+}
+
+function closeStockOutModal() {
+  const modal = document.getElementById('stockOutModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function updateStockOutInfo() {
+  const itemId = document.getElementById('stockOutItem')?.value;
+  const infoDiv = document.getElementById('currentStockInfo');
+  
+  if (itemId && infoDiv) {
+    const item = items.find(i => i.id === itemId);
+    if (item) {
+      infoDiv.innerHTML = `Current Stock: ${item.quantity} ${item.unit} available`;
+      infoDiv.style.display = 'block';
+    }
+  } else if (infoDiv) {
+    infoDiv.style.display = 'none';
+  }
+}
+
+function processStockOut() {
+  const itemId = document.getElementById('stockOutItem')?.value;
+  const quantity = parseFloat(document.getElementById('stockOutQty')?.value);
+  const reason = document.getElementById('stockOutReason')?.value;
+  const note = document.getElementById('stockOutNote')?.value;
+  
+  if (!itemId) { showToast('Please select an item', 'error'); return; }
+  if (!quantity || quantity <= 0) { showToast('Please enter valid quantity', 'error'); return; }
+  
+  removeStock(itemId, quantity, reason, note);
+  closeStockOutModal();
+}
+
+// ============================================
+// UTILITY FUNCTIONS
+// ============================================
 
 function showToast(message, type) {
   const existingToast = document.querySelector('.toast');
@@ -465,8 +694,11 @@ function switchView(view) {
     settings: { title: 'Settings', subtitle: 'System preferences (PIN protected)' }
   };
   
-  document.getElementById('pageTitle').innerText = titles[view]?.title || 'Dashboard';
-  document.getElementById('pageSubtitle').innerText = titles[view]?.subtitle || '';
+  const pageTitle = document.getElementById('pageTitle');
+  const pageSubtitle = document.getElementById('pageSubtitle');
+  
+  if (pageTitle) pageTitle.innerText = titles[view]?.title || 'Dashboard';
+  if (pageSubtitle) pageSubtitle.innerText = titles[view]?.subtitle || '';
   
   document.querySelectorAll('.nav-item, .mobile-nav-item').forEach(btn => {
     btn.classList.remove('active');
@@ -477,7 +709,6 @@ function switchView(view) {
 }
 
 function renderCurrentView() {
-  // You need to implement these based on your existing working code
   if (currentView === 'dashboard') renderDashboard();
   else if (currentView === 'inventory') renderInventory();
   else if (currentView === 'stockout') renderStockOut();
@@ -486,89 +717,7 @@ function renderCurrentView() {
 }
 
 // ============================================
-// MODAL FUNCTIONS
-// ============================================
-
-function openStockInModal(presetItemId = null) {
-  verifyPIN("Add Stock", () => {
-    const select = document.getElementById('stockInItem');
-    select.innerHTML = '<option value="">-- Select Product --</option>' + 
-      items.map(i => `<option value="${i.id}" ${presetItemId === i.id ? 'selected' : ''}>${escapeHtml(i.name)} (Current: ${i.quantity} ${i.unit})</option>`).join('');
-    
-    document.getElementById('stockInQty').value = '';
-    document.getElementById('stockInUnit').value = '';
-    document.getElementById('stockInCost').value = '';
-    document.getElementById('stockInExpiry').value = '';
-    document.getElementById('stockInNote').value = '';
-    
-    document.getElementById('stockInModal').classList.remove('hidden');
-  });
-}
-
-function closeStockInModal() {
-  document.getElementById('stockInModal').classList.add('hidden');
-}
-
-function processStockIn() {
-  const itemId = document.getElementById('stockInItem').value;
-  const quantity = parseFloat(document.getElementById('stockInQty').value);
-  const unit = document.getElementById('stockInUnit').value;
-  const cost = parseFloat(document.getElementById('stockInCost').value);
-  const expiryDate = document.getElementById('stockInExpiry').value;
-  const note = document.getElementById('stockInNote').value;
-  
-  if (!itemId) { showToast('Please select an item', 'error'); return; }
-  if (!quantity || quantity <= 0) { showToast('Please enter valid quantity', 'error'); return; }
-  
-  addStock(itemId, quantity, unit, cost, expiryDate, note);
-  closeStockInModal();
-}
-
-function openStockOutModal(presetItemId = null) {
-  const select = document.getElementById('stockOutItem');
-  select.innerHTML = '<option value="">-- Select Item --</option>' + 
-    items.map(i => `<option value="${i.id}" ${presetItemId === i.id ? 'selected' : ''}>${escapeHtml(i.name)} (Available: ${i.quantity} ${i.unit})</option>`).join('');
-  
-  document.getElementById('stockOutQty').value = '';
-  document.getElementById('stockOutReason').value = 'Kitchen Preparation';
-  document.getElementById('stockOutNote').value = '';
-  updateStockOutInfo();
-  
-  document.getElementById('stockOutModal').classList.remove('hidden');
-}
-
-function closeStockOutModal() {
-  document.getElementById('stockOutModal').classList.add('hidden');
-}
-
-function updateStockOutInfo() {
-  const itemId = document.getElementById('stockOutItem').value;
-  if (itemId) {
-    const item = items.find(i => i.id === itemId);
-    if (item) {
-      document.getElementById('currentStockInfo').innerHTML = `Current Stock: ${item.quantity} ${item.unit} available`;
-      document.getElementById('currentStockInfo').style.display = 'block';
-    }
-  } else {
-    document.getElementById('currentStockInfo').style.display = 'none';
-  }
-}
-
-function processStockOut() {
-  const itemId = document.getElementById('stockOutItem').value;
-  const quantity = parseFloat(document.getElementById('stockOutQty').value);
-  const reason = document.getElementById('stockOutReason').value;
-  const note = document.getElementById('stockOutNote').value;
-  
-  if (!itemId) { showToast('Please select an item', 'error'); return; }
-  if (!quantity || quantity <= 0) { showToast('Please enter valid quantity', 'error'); return; }
-  
-  removeStock(itemId, quantity, reason, note);
-  closeStockOutModal();
-}
-
-// ============================================
-// INITIALIZATION - LOADS CSV ON START
+// INITIALIZATION - CRITICAL FIX HERE
 // ============================================
 
 async function init() {
@@ -577,8 +726,15 @@ async function init() {
   updateDateTime();
   setInterval(updateDateTime, 1000);
   
-  // Try to load CSV first
-  await loadCSVFromFile();
+  // CRITICAL FIX: Only load CSV if NO data exists in localStorage
+  if (items.length === 0) {
+    console.log("First time loading - importing from CSV");
+    await loadCSVFromFile();
+  } else {
+    console.log(`Using existing data: ${items.length} items, ${transactions.length} transactions`);
+    // Just render what we have
+    renderCurrentView();
+  }
   
   renderCurrentView();
   
@@ -601,7 +757,7 @@ window.updateStockOutInfo = updateStockOutInfo;
 window.switchView = switchView;
 window.toggleTheme = toggleTheme;
 window.resetData = resetData;
-window.reloadCSV = reloadCSV;
+window.manualSyncWithCSV = manualSyncWithCSV;
 window.exportInventoryToCSV = exportInventoryToCSV;
 window.exportTransactionsToCSV = exportTransactionsToCSV;
 
