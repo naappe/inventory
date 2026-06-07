@@ -1,12 +1,12 @@
 // ============================================
-// STOCKFLOW ERP SYSTEM - COMPLETE
-// Modern Inventory Management
+// STOCKFLOW ERP SYSTEM - NO PASSWORD VERSION
+// Direct Role Selection on Login
 // ============================================
 
 // Data Storage
 let users = [
-  { id: 1, name: "Admin User", email: "admin@stockflow.com", password: "admin123", role: "admin" },
-  { id: 2, name: "Staff User", email: "staff@stockflow.com", password: "staff123", role: "staff" }
+  { id: 1, name: "Admin User", email: "admin@stockflow.com", role: "admin" },
+  { id: 2, name: "Staff User", email: "staff@stockflow.com", role: "staff" }
 ];
 
 let items = [
@@ -95,7 +95,7 @@ async function autoLoadCSV() {
 }
 
 // ============================================
-// AUTHENTICATION
+// AUTHENTICATION - NO PASSWORD
 // ============================================
 
 function switchAuthTab(tab) {
@@ -113,9 +113,8 @@ function switchAuthTab(tab) {
 
 function handleLogin() {
   const email = document.getElementById('loginEmail').value;
-  const password = document.getElementById('loginPassword').value;
   
-  const user = users.find(u => u.email === email && u.password === password);
+  const user = users.find(u => u.email === email);
   
   if (user) {
     currentUser = user;
@@ -124,19 +123,18 @@ function handleLogin() {
     document.getElementById('app').classList.remove('hidden');
     updateUserDisplay();
     renderCurrentView();
-    showToast(`Welcome back, ${user.name}!`, 'success');
+    showToast(`Welcome ${user.name} (${user.role.toUpperCase()})`, 'success');
   } else {
-    showToast('Invalid credentials', 'error');
+    showToast('Invalid email. Try: admin@stockflow.com or staff@stockflow.com', 'error');
   }
 }
 
 function handleSignup() {
   const name = document.getElementById('signupName').value;
   const email = document.getElementById('signupEmail').value;
-  const password = document.getElementById('signupPassword').value;
   const role = document.getElementById('signupRole').value;
   
-  if (!name || !email || !password) {
+  if (!name || !email) {
     showToast('Please fill all fields', 'error');
     return;
   }
@@ -150,7 +148,6 @@ function handleSignup() {
     id: users.length + 1,
     name,
     email,
-    password,
     role
   };
   
@@ -357,4 +354,449 @@ function renderDashboard() {
           ${recentTransactions.map(t => `
             <tr>
               <td><span class="badge ${t.type === 'IN' ? 'badge-in' : 'badge-out'}">${t.type}</span></td>
-              <td>${escapeHtml(t.itemName)}</
+              <td>${escapeHtml(t.itemName)}</td
+              <td>${t.quantity} ${t.unit}</td
+              <td>${new Date(t.timestamp).toLocaleDateString()}</td
+              <td>${escapeHtml(t.note || t.reason || '-')}</td
+            </tr>
+          `).join('')}
+          ${recentTransactions.length === 0 ? '<tr><td colspan="5" class="text-center">No transactions yet</td></tr>' : ''}
+        </tbody>
+      </table>
+    </div>
+  `;
+  
+  document.getElementById('viewContainer').innerHTML = html;
+}
+
+function renderInventory() {
+  const html = `
+    <div class="section-header">
+      <h2><i class="fas fa-boxes"></i> All Inventory Items</h2>
+      ${isAdmin() ? '<button class="btn btn-primary" onclick="openStockInModal()"><i class="fas fa-plus"></i> Add Stock</button>' : ''}
+    </div>
+    <div class="table-container">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Item Name</th>
+            <th>Quantity</th>
+            <th>Unit</th>
+            <th>Cost</th>
+            <th>Expiry Date</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${items.map(item => {
+            const status = getStockStatus(item);
+            return `
+              <tr>
+                <td><strong>${escapeHtml(item.name)}</strong></td
+                <td>${item.quantity}</td
+                <td>${item.unit}</td
+                <td>$${item.cost}</td
+                <td>${item.expiryDate || 'N/A'}</td
+                <td><span class="stock-status ${status.class}">${status.text}</span></td
+                <td>
+                  ${isAdmin() ? `
+                    <button class="btn btn-primary" style="padding: 0.3rem 0.6rem;" onclick="openStockInModal('${item.id}')">IN</button>
+                    <button class="btn btn-danger" style="padding: 0.3rem 0.6rem;" onclick="openStockOutModal('${item.id}')">OUT</button>
+                  ` : '<span>View only</span>'}
+                </td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+  
+  document.getElementById('viewContainer').innerHTML = html;
+}
+
+function renderStockIn() {
+  if (!isAdmin()) {
+    document.getElementById('viewContainer').innerHTML = '<div class="staff-message" style="padding: 2rem; text-align: center;"><i class="fas fa-lock"></i> Only Admin can add stock</div>';
+    return;
+  }
+  
+  const html = `
+    <div class="section-header">
+      <h2><i class="fas fa-arrow-down"></i> Stock IN</h2>
+    </div>
+    <div class="cards-grid">
+      ${items.map(item => `
+        <div class="inventory-card" onclick="openStockInModal('${item.id}')">
+          <div class="card-header">
+            <span class="item-name">${escapeHtml(item.name)}</span>
+            <span class="item-price">Stock: ${item.quantity} ${item.unit}</span>
+          </div>
+          <div class="card-details">
+            <span>Cost: $${item.cost}</span>
+            <span>Expiry: ${item.expiryDate || 'N/A'}</span>
+          </div>
+          <button class="btn btn-primary" style="margin-top: 0.75rem; width: 100%;" onclick="event.stopPropagation();openStockInModal('${item.id}')">
+            <i class="fas fa-arrow-down"></i> Add Stock
+          </button>
+        </div>
+      `).join('')}
+    </div>
+  `;
+  
+  document.getElementById('viewContainer').innerHTML = html;
+}
+
+function renderStockOut() {
+  const html = `
+    <div class="section-header">
+      <h2><i class="fas fa-arrow-up"></i> Stock OUT</h2>
+    </div>
+    <div class="cards-grid">
+      ${items.map(item => {
+        const status = getStockStatus(item);
+        return `
+          <div class="inventory-card" onclick="openStockOutModal('${item.id}')">
+            <div class="card-header">
+              <span class="item-name">${escapeHtml(item.name)}</span>
+              <span class="item-price">Stock: ${item.quantity} ${item.unit}</span>
+            </div>
+            <div class="card-details">
+              <span>Min Stock: ${item.minStock}</span>
+              <span class="stock-status ${status.class}">${status.text}</span>
+            </div>
+            <button class="btn btn-danger" style="margin-top: 0.75rem; width: 100%;" onclick="event.stopPropagation();openStockOutModal('${item.id}')" ${item.quantity <= 0 ? 'disabled' : ''}>
+              <i class="fas fa-arrow-up"></i> Remove Stock
+            </button>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+  
+  document.getElementById('viewContainer').innerHTML = html;
+}
+
+function renderLedger() {
+  const html = `
+    <div class="section-header">
+      <h2><i class="fas fa-history"></i> Transaction Ledger</h2>
+    </div>
+    <div class="table-container">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Date & Time</th>
+            <th>Type</th>
+            <th>Item</th>
+            <th>Quantity</th>
+            <th>Unit</th>
+            <th>Value</th>
+            <th>Reference</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${transactions.map(t => `
+            <tr>
+              <td>${new Date(t.timestamp).toLocaleString()}</td
+              <td><span class="badge ${t.type === 'IN' ? 'badge-in' : 'badge-out'}">${t.type}</span></td
+              <td>${escapeHtml(t.itemName)}</td
+              <td>${t.quantity}</td
+              <td>${t.unit}</td
+              <td>$${(t.quantity * (t.cost || 0)).toFixed(2)}</td
+              <td>${escapeHtml(t.note || t.reason || '-')}</td
+            </tr>
+          `).join('')}
+          ${transactions.length === 0 ? '<tr><td colspan="7" class="text-center">No transactions yet</td></tr>' : ''}
+        </tbody>
+      </table>
+    </div>
+  `;
+  
+  document.getElementById('viewContainer').innerHTML = html;
+}
+
+function renderSettings() {
+  const html = `
+    <div class="section-header">
+      <h2><i class="fas fa-cog"></i> System Settings</h2>
+    </div>
+    
+    <div class="table-container" style="margin-bottom: 1.5rem;">
+      <div style="padding: 1.5rem;">
+        <h3>Role Management</h3>
+        <table class="data-table">
+          <thead><tr><th>User</th><th>Email</th><th>Role</th></tr></thead>
+          <tbody>
+            ${users.map(u => `
+              <tr>
+                <td>${escapeHtml(u.name)}</td
+                <td>${escapeHtml(u.email)}</td
+                <td><span class="badge ${u.role === 'admin' ? 'badge-in' : 'badge-out'}">${u.role}</span></td
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    
+    <div class="table-container" style="margin-bottom: 1.5rem;">
+      <div style="padding: 1.5rem;">
+        <h3>System Preferences</h3>
+        <div class="form-group">
+          <label>Theme Mode</label>
+          <div style="display: flex; gap: 1rem;">
+            <button class="btn ${!darkMode ? 'btn-primary' : 'btn-secondary'}" onclick="toggleTheme(false)">Light</button>
+            <button class="btn ${darkMode ? 'btn-primary' : 'btn-secondary'}" onclick="toggleTheme(true)">Dark</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    ${isAdmin() ? `
+    <div class="table-container">
+      <div style="padding: 1.5rem;">
+        <h3>Data Management</h3>
+        <button class="btn btn-danger" onclick="resetData()">Reset All Data</button>
+        <p style="font-size: 0.7rem; margin-top: 0.5rem;">This will reset all inventory and transactions to default.</p>
+      </div>
+    </div>
+    ` : ''}
+  `;
+  
+  document.getElementById('viewContainer').innerHTML = html;
+}
+
+// ============================================
+// MODAL FUNCTIONS
+// ============================================
+
+function openStockInModal(presetItemId = null) {
+  if (!isAdmin()) {
+    showToast('Only Admin can add stock', 'error');
+    return;
+  }
+  
+  const select = document.getElementById('stockInItem');
+  select.innerHTML = '<option value="">Select Item</option>' + 
+    items.map(i => `<option value="${i.id}" ${presetItemId === i.id ? 'selected' : ''}>${escapeHtml(i.name)}</option>`).join('');
+  
+  document.getElementById('stockInQty').value = '';
+  document.getElementById('stockInUnit').value = '';
+  document.getElementById('stockInCost').value = '';
+  document.getElementById('stockInExpiry').value = '';
+  document.getElementById('stockInNote').value = '';
+  
+  document.getElementById('stockInModal').classList.remove('hidden');
+}
+
+function closeStockInModal() {
+  document.getElementById('stockInModal').classList.add('hidden');
+}
+
+function processStockIn() {
+  const itemId = document.getElementById('stockInItem').value;
+  const quantity = parseFloat(document.getElementById('stockInQty').value);
+  const unit = document.getElementById('stockInUnit').value;
+  const cost = parseFloat(document.getElementById('stockInCost').value);
+  const expiryDate = document.getElementById('stockInExpiry').value;
+  const note = document.getElementById('stockInNote').value;
+  
+  if (!itemId || !quantity || quantity <= 0) {
+    showToast('Please select item and enter valid quantity', 'error');
+    return;
+  }
+  
+  updateStock(itemId, quantity, 'IN', cost, null, note, expiryDate);
+  closeStockInModal();
+}
+
+function openStockOutModal(presetItemId = null) {
+  const select = document.getElementById('stockOutItem');
+  select.innerHTML = '<option value="">Select Item</option>' + 
+    items.map(i => `<option value="${i.id}" ${presetItemId === i.id ? 'selected' : ''}>${escapeHtml(i.name)} (${i.quantity} ${i.unit} available)</option>`).join('');
+  
+  document.getElementById('stockOutQty').value = '';
+  document.getElementById('stockOutReason').value = 'Sold';
+  document.getElementById('stockOutNote').value = '';
+  updateStockOutInfo();
+  
+  document.getElementById('stockOutModal').classList.remove('hidden');
+}
+
+function closeStockOutModal() {
+  document.getElementById('stockOutModal').classList.add('hidden');
+}
+
+function updateStockOutInfo() {
+  const itemId = document.getElementById('stockOutItem').value;
+  if (itemId) {
+    const item = items.find(i => i.id === itemId);
+    if (item) {
+      document.getElementById('currentStockInfo').innerHTML = `Current Stock: ${item.quantity} ${item.unit}`;
+      document.getElementById('currentStockInfo').style.display = 'block';
+    }
+  } else {
+    document.getElementById('currentStockInfo').style.display = 'none';
+  }
+}
+
+function processStockOut() {
+  const itemId = document.getElementById('stockOutItem').value;
+  const quantity = parseFloat(document.getElementById('stockOutQty').value);
+  const reason = document.getElementById('stockOutReason').value;
+  const note = document.getElementById('stockOutNote').value;
+  
+  if (!itemId || !quantity || quantity <= 0) {
+    showToast('Please select item and enter valid quantity', 'error');
+    return;
+  }
+  
+  updateStock(itemId, quantity, 'OUT', null, reason, note);
+  closeStockOutModal();
+}
+
+// ============================================
+// UTILITY FUNCTIONS
+// ============================================
+
+function saveData() {
+  localStorage.setItem('stockflow_items', JSON.stringify(items));
+  localStorage.setItem('stockflow_transactions', JSON.stringify(transactions));
+  localStorage.setItem('stockflow_users', JSON.stringify(users));
+}
+
+function loadData() {
+  const savedItems = localStorage.getItem('stockflow_items');
+  const savedTransactions = localStorage.getItem('stockflow_transactions');
+  const savedUsers = localStorage.getItem('stockflow_users');
+  
+  if (savedItems) items = JSON.parse(savedItems);
+  if (savedTransactions) transactions = JSON.parse(savedTransactions);
+  if (savedUsers) users = JSON.parse(savedUsers);
+}
+
+function resetData() {
+  if (confirm('Are you sure you want to reset all data? This cannot be undone.')) {
+    localStorage.clear();
+    location.reload();
+  }
+}
+
+function toggleTheme(isDark) {
+  darkMode = isDark;
+  if (darkMode) {
+    document.body.classList.add('dark');
+  } else {
+    document.body.classList.remove('dark');
+  }
+  localStorage.setItem('darkMode', darkMode);
+}
+
+function loadTheme() {
+  const savedTheme = localStorage.getItem('darkMode');
+  if (savedTheme === 'true') {
+    darkMode = true;
+    document.body.classList.add('dark');
+  }
+}
+
+function showToast(message, type) {
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.style.cssText = `
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: ${type === 'success' ? '#10b981' : '#ef4444'};
+    color: white;
+    padding: 12px 20px;
+    border-radius: 12px;
+    z-index: 9999;
+    animation: slideIn 0.3s ease;
+    font-size: 0.85rem;
+  `;
+  toast.innerHTML = message;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
+}
+
+function updateDateTime() {
+  const now = new Date();
+  const dateTimeEl = document.getElementById('currentDateTime');
+  if (dateTimeEl) {
+    dateTimeEl.innerHTML = now.toLocaleDateString() + ' ' + now.toLocaleTimeString();
+  }
+}
+
+function switchView(view) {
+  currentView = view;
+  const titles = {
+    dashboard: { title: 'Dashboard', subtitle: 'Real-time inventory tracking and management' },
+    inventory: { title: 'Inventory', subtitle: 'Complete product catalog' },
+    stockin: { title: 'Stock IN', subtitle: 'Receive products into inventory' },
+    stockout: { title: 'Stock OUT', subtitle: 'Dispatch products from inventory' },
+    ledger: { title: 'Transaction Ledger', subtitle: 'View all stock movements' },
+    settings: { title: 'Settings', subtitle: 'System configuration' }
+  };
+  
+  document.getElementById('pageTitle').innerText = titles[view]?.title || 'Dashboard';
+  document.getElementById('pageSubtitle').innerText = titles[view]?.subtitle || '';
+  
+  // Update active states
+  document.querySelectorAll('.nav-item, .mobile-nav-item').forEach(btn => {
+    btn.classList.remove('active');
+    if (btn.dataset.nav === view) btn.classList.add('active');
+  });
+  
+  renderCurrentView();
+}
+
+function renderCurrentView() {
+  if (currentView === 'dashboard') renderDashboard();
+  else if (currentView === 'inventory') renderInventory();
+  else if (currentView === 'stockin') renderStockIn();
+  else if (currentView === 'stockout') renderStockOut();
+  else if (currentView === 'ledger') renderLedger();
+  else if (currentView === 'settings') renderSettings();
+}
+
+// ============================================
+// INITIALIZATION
+// ============================================
+
+function init() {
+  loadData();
+  loadTheme();
+  
+  const savedUser = localStorage.getItem('currentUser');
+  if (savedUser) {
+    currentUser = JSON.parse(savedUser);
+    document.getElementById('authModal').classList.add('hidden');
+    document.getElementById('app').classList.remove('hidden');
+    updateUserDisplay();
+  }
+  
+  updateDateTime();
+  setInterval(updateDateTime, 1000);
+  renderCurrentView();
+  
+  // Navigation listeners
+  document.querySelectorAll('.nav-item, .mobile-nav-item').forEach(btn => {
+    btn.addEventListener('click', () => switchView(btn.dataset.nav));
+  });
+  
+  // Theme toggle
+  document.getElementById('themeToggle')?.addEventListener('click', () => toggleTheme(!darkMode));
+  
+  // Auto load CSV
+  autoLoadCSV();
+}
+
+init();
