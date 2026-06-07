@@ -1,67 +1,68 @@
-// Modern search with button
-function attachModernSearch() {
-  const searchInput = document.getElementById('searchInput');
-  const searchButton = document.getElementById('searchButton');
-  const clearBtn = document.getElementById('clearSearchBtn');
-  
-  if (searchInput) {
-    // Remove existing listeners
-    const newSearchInput = searchInput.cloneNode(true);
-    searchInput.parentNode.replaceChild(newSearchInput, searchInput);
-    
-    // Search on Enter key
-    newSearchInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        performSearch(newSearchInput.value);
-      }
-    });
-    
-    // Real-time search as you type (optional - for instant results)
-    newSearchInput.addEventListener('input', (e) => {
-      performSearch(e.target.value);
-    });
-  }
-  
-  if (searchButton) {
-    const newSearchButton = searchButton.cloneNode(true);
-    searchButton.parentNode.replaceChild(newSearchButton, searchButton);
-    newSearchButton.addEventListener('click', () => {
-      const input = document.getElementById('searchInput');
-      if (input) performSearch(input.value);
-    });
-  }
+.search-section {
+  margin-bottom: 1.5rem;
 }
 
-function performSearch(query) {
-  searchTerm = query;
-  
-  // Update clear button visibility
-  const clearBtn = document.getElementById('clearSearchBtn');
-  if (clearBtn) {
-    if (searchTerm.length > 0) {
-      clearBtn.classList.add('visible');
-    } else {
-      clearBtn.classList.remove('visible');
-    }
-  }
-  
-  // Update search stats
-  const filtered = filterItems();
-  const statsSpan = document.getElementById('searchStats');
-  if (statsSpan) {
-    statsSpan.innerHTML = `${filtered.length} of ${items.length} items`;
-  }
-  
-  // Re-render current view
-  renderCurrentView();
+.search-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: var(--card-light);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.5rem 1rem;
+  transition: all 0.2s;
 }
 
-function clearSearch() {
-  searchTerm = '';
-  const searchInput = document.getElementById('searchInput');
-  if (searchInput) {
-    searchInput.value = '';
-    performSearch('');
-  }
+body.dark .search-wrapper {
+  background: var(--card-dark);
+}
+
+.search-wrapper:focus-within {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+}
+
+.search-wrapper i {
+  color: var(--gray);
+  margin-right: 0.75rem;
+}
+
+.search-input {
+  flex: 1;
+  border: none;
+  background: none;
+  padding: 0.5rem 0;
+  font-size: 0.9rem;
+  outline: none;
+  color: var(--text-light);
+}
+
+body.dark .search-input {
+  color: var(--text-dark);
+}
+
+.clear-search {
+  background: none;
+  border: none;
+  color: var(--gray);
+  cursor: pointer;
+  font-size: 1.1rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.clear-search:hover {
+  background: rgba(0,0,0,0.05);
+  color: var(--danger);
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem;
+  color: var(--gray);
+}
+
+.text-center {
+  text-align: center;
 }
