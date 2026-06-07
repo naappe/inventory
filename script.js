@@ -1,5 +1,5 @@
 // ============================================
-// STOCKFLOW ERP - FIXED SEARCH (No Page Re-render)
+// STOCKFLOW ERP - PERFECT SEARCH (No Focus Loss)
 // ============================================
 
 // Data Storage
@@ -67,8 +67,17 @@ function addStock(itemId, quantity, unit, cost, expiryDate, note) {
   
   transactions.unshift(transaction);
   saveData();
-  updateInventoryGridOnly(); // Only update grid, not full page
-  updateDashboardStats(); // Update stats only
+  
+  // Update only what changed - NO full re-render
+  if (currentView === 'inventory') {
+    updateInventoryGridOnly();
+  } else if (currentView === 'dashboard') {
+    updateDashboardStats();
+    updateRecentTransactionsOnly();
+  } else if (currentView === 'stockout') {
+    updateKitchenGridOnly();
+  }
+  
   showToast(`✅ Added +${quantity} ${unit} of ${item.name}`, 'success');
   return true;
 }
@@ -99,8 +108,17 @@ function removeStock(itemId, quantity, reason, note) {
   
   transactions.unshift(transaction);
   saveData();
-  updateInventoryGridOnly(); // Only update grid
-  updateDashboardStats(); // Update stats only
+  
+  // Update only what changed - NO full re-render
+  if (currentView === 'inventory') {
+    updateInventoryGridOnly();
+  } else if (currentView === 'dashboard') {
+    updateDashboardStats();
+    updateRecentTransactionsOnly();
+  } else if (currentView === 'stockout') {
+    updateKitchenGridOnly();
+  }
+  
   showToast(`🍳 Used ${quantity} ${item.unit} of ${item.name}`, 'success');
   return true;
 }
@@ -138,16 +156,19 @@ function loadData() {
 }
 
 // ============================================
-// SEARCH FUNCTIONS - NO PAGE RE-RENDER
+// SEARCH FUNCTIONS - NO PAGE RE-RENDER, NO FOCUS LOSS
 // ============================================
 
 function performSearch() {
   const searchInput = document.getElementById('searchInput');
   if (searchInput) {
     searchTerm = searchInput.value;
-    // ONLY update the inventory grid, NOT the whole page
-    updateInventoryGridOnly();
-    // Update search stats
+    // ONLY update the grid - NO re-render of entire page
+    if (currentView === 'inventory') {
+      updateInventoryGridOnly();
+    } else if (currentView === 'stockout') {
+      updateKitchenGridOnly();
+    }
     updateSearchStats();
   }
 }
@@ -157,7 +178,11 @@ function clearSearch() {
   const searchInput = document.getElementById('searchInput');
   if (searchInput) {
     searchInput.value = '';
-    updateInventoryGridOnly();
+    if (currentView === 'inventory') {
+      updateInventoryGridOnly();
+    } else if (currentView === 'stockout') {
+      updateKitchenGridOnly();
+    }
     updateSearchStats();
   }
 }
@@ -166,16 +191,24 @@ function updateSearchStats() {
   const statsSpan = document.getElementById('searchStats');
   if (statsSpan) {
     const filtered = filterItems();
-    statsSpan.innerHTML = `${filtered.length} of ${items.length} items`;
+    statsSpan.textContent = `${filtered.length} of ${items.length} items`;
   }
 }
 
-// ONLY updates the inventory grid - NO page re-render
+// ============================================
+// INVENTORY GRID UPDATE ONLY (No page re-render)
+// ============================================
+
 function updateInventoryGridOnly() {
   const grid = document.getElementById('inventoryGrid');
   if (!grid) return;
   
   const filtered = filterItems();
+  
+  if (filtered.length === 0) {
+    grid.innerHTML = '<div class="empty-state">No items found</div>';
+    return;
+  }
   
   grid.innerHTML = filtered.map(item => {
     const status = getStockStatus(item);
@@ -209,13 +242,42 @@ function updateInventoryGridOnly() {
       </div>
     `;
   }).join('');
+}
+
+function updateKitchenGridOnly() {
+  const grid = document.getElementById('kitchenGrid');
+  if (!grid) return;
+  
+  const filtered = filterItems();
   
   if (filtered.length === 0) {
     grid.innerHTML = '<div class="empty-state">No items found</div>';
+    return;
   }
+  
+  grid.innerHTML = filtered.map(item => {
+    const status = getStockStatus(item);
+    return `
+      <div class="inventory-card">
+        <div class="card-header">
+          <span class="item-name">${escapeHtml(item.name)}</span>
+          <span class="item-price">Stock: ${item.quantity} ${item.unit}</span>
+        </div>
+        <div class="card-details">
+          <span>Cost: $${item.cost}</span>
+          <span>Expiry: ${item.expiryDate || 'N/A'}</span>
+        </div>
+        <div><span class="stock-status ${status.class}">${status.icon} ${status.text}</span></div>
+        ${item.quantity > 0 ? `<button class="btn btn-warning" style="margin-top:0.75rem;width:100%;" onclick="openStockOutModal('${item.id}')">🍳 Use in Kitchen</button>` : `<button class="btn btn-secondary" style="margin-top:0.75rem;width:100%;" disabled>❌ Out of Stock</button>`}
+      </div>
+    `;
+  }).join('');
 }
 
-// Update only dashboard stats (no page re-render)
+// ============================================
+// DASHBOARD UPDATE FUNCTIONS (No page re-render)
+// ============================================
+
 function updateDashboardStats() {
   const statsGrid = document.getElementById('dashboardStatsGrid');
   if (!statsGrid) return;
@@ -249,8 +311,7 @@ function updateDashboardStats() {
   `;
 }
 
-// Update recent transactions only
-function updateRecentTransactions() {
+function updateRecentTransactionsOnly() {
   const tbody = document.getElementById('recentTransactionsBody');
   if (!tbody) return;
   
@@ -258,16 +319,42 @@ function updateRecentTransactions() {
     <tr>
       <td>${new Date(t.timestamp).toLocaleString()}</td>
       <td><span class="badge ${t.type === 'STOCK_IN' ? 'badge-in' : 'badge-out'}">${t.type === 'STOCK_IN' ? 'IN' : 'OUT'}</span></td>
-      <td>${escapeHtml(t.itemName)}</td
-      <td>${t.quantity}</td
-      <td>${t.unit}</td
-      <td>${escapeHtml(t.note || '-')}</td
+      <td>${escapeHtml(t.itemName)}</td>
+      <td>${t.quantity}</td>
+      <td>${t.unit}</td>
+      <td>${escapeHtml(t.note || '-')}</td>
     </tr>
   `).join('');
 }
 
+function updateDashboardRecentGrid() {
+  const grid = document.getElementById('dashboardRecentGrid');
+  if (!grid) return;
+  
+  grid.innerHTML = items.slice(0,6).map(item => {
+    const status = getStockStatus(item);
+    return `
+      <div class="inventory-card">
+        <div class="card-header">
+          <span class="item-name">${escapeHtml(item.name)}</span>
+          <span class="item-price">$${item.cost}</span>
+        </div>
+        <div class="card-details">
+          <span>Stock: <strong>${item.quantity}</strong> ${item.unit}</span>
+          <span>Expiry: ${item.expiryDate || 'N/A'}</span>
+        </div>
+        <div><span class="stock-status ${status.class}">${status.icon} ${status.text}</span></div>
+        <div class="card-actions" style="display:flex;gap:0.5rem;margin-top:0.75rem;">
+          <button class="btn btn-success" style="flex:1;" onclick="openStockInModal('${item.id}')">+ Add Stock</button>
+          ${item.quantity > 0 ? `<button class="btn btn-warning" style="flex:1;" onclick="openStockOutModal('${item.id}')">🍳 Kitchen Use</button>` : `<button class="btn btn-secondary" style="flex:1;" disabled>Out of Stock</button>`}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
 // ============================================
-// RENDER FUNCTIONS (Page loads only once)
+// RENDER FUNCTIONS (Called only when switching views)
 // ============================================
 
 function renderDashboard() {
@@ -339,10 +426,10 @@ function renderDashboard() {
             <tr>
               <td>${new Date(t.timestamp).toLocaleString()}</td>
               <td><span class="badge ${t.type === 'STOCK_IN' ? 'badge-in' : 'badge-out'}">${t.type === 'STOCK_IN' ? 'IN' : 'OUT'}</span></td>
-              <td>${escapeHtml(t.itemName)}</td
-              <td>${t.quantity}</td
-              <td>${t.unit}</td
-              <td>${escapeHtml(t.note || '-')}</td
+              <td>${escapeHtml(t.itemName)}</td>
+              <td>${t.quantity}</td>
+              <td>${t.unit}</td>
+              <td>${escapeHtml(t.note || '-')}</td>
             </tr>
           `).join('')}
         </tbody>
@@ -354,6 +441,7 @@ function renderDashboard() {
 
 function renderInventory() {
   const filtered = filterItems();
+  
   const html = `
     <div class="section-header">
       <h2>📦 All Inventory</h2>
@@ -363,14 +451,14 @@ function renderInventory() {
       </div>
     </div>
     
-    <!-- SEARCH BAR - Will attach listener after render -->
+    <!-- SEARCH BAR - Static, never recreated -->
     <div class="search-section">
       <div class="search-wrapper">
         <i class="fas fa-search"></i>
         <input type="text" id="searchInput" class="search-input" placeholder="Search items..." value="${searchTerm}" autocomplete="off">
         ${searchTerm ? '<button class="clear-search" onclick="clearSearch()">✕</button>' : ''}
       </div>
-      <div class="search-stats" id="searchStats" style="margin-top:0.5rem;font-size:0.7rem;color:var(--gray);">${filtered.length} of ${items.length} items</div>
+      <div class="search-stats" id="searchStats">${filtered.length} of ${items.length} items</div>
     </div>
     
     <div class="cards-grid" id="inventoryGrid">
@@ -411,20 +499,20 @@ function renderInventory() {
   `;
   document.getElementById('viewContainer').innerHTML = html;
   
-  // Attach search listener AFTER DOM is created (only once)
-  attachSearchListener();
+  // Attach search listener AFTER DOM is created
+  attachInventorySearchListener();
 }
 
-function attachSearchListener() {
+function attachInventorySearchListener() {
   const searchInput = document.getElementById('searchInput');
   if (searchInput) {
-    // Remove existing listener to avoid duplicates
-    const newSearchInput = searchInput.cloneNode(true);
-    searchInput.parentNode.replaceChild(newSearchInput, searchInput);
+    // Remove any existing listener by cloning
+    const newInput = searchInput.cloneNode(true);
+    searchInput.parentNode.replaceChild(newInput, searchInput);
     
-    newSearchInput.addEventListener('input', (e) => {
+    newInput.addEventListener('input', function(e) {
       searchTerm = e.target.value;
-      // ONLY update the grid, NOT the whole page
+      // ONLY update the grid - NO page re-render
       updateInventoryGridOnly();
       updateSearchStats();
     });
@@ -433,19 +521,22 @@ function attachSearchListener() {
 
 function renderStockOut() {
   const filtered = filterItems();
+  
   const html = `
     <div class="section-header">
       <h2>🍳 Kitchen Use</h2>
       <p style="font-size:0.8rem;color:var(--gray);">No PIN required</p>
     </div>
+    
     <div class="search-section">
       <div class="search-wrapper">
         <i class="fas fa-search"></i>
         <input type="text" id="searchInput" class="search-input" placeholder="Search items..." value="${searchTerm}" autocomplete="off">
         ${searchTerm ? '<button class="clear-search" onclick="clearSearch()">✕</button>' : ''}
       </div>
-      <div class="search-stats" id="searchStats" style="margin-top:0.5rem;font-size:0.7rem;color:var(--gray);">${filtered.length} of ${items.length} items</div>
+      <div class="search-stats" id="searchStats">${filtered.length} of ${items.length} items</div>
     </div>
+    
     <div class="cards-grid" id="kitchenGrid">
       ${filtered.map(item => {
         const status = getStockStatus(item);
@@ -468,49 +559,21 @@ function renderStockOut() {
     </div>
   `;
   document.getElementById('viewContainer').innerHTML = html;
+  
   attachKitchenSearchListener();
 }
 
 function attachKitchenSearchListener() {
   const searchInput = document.getElementById('searchInput');
   if (searchInput) {
-    const newSearchInput = searchInput.cloneNode(true);
-    searchInput.parentNode.replaceChild(newSearchInput, searchInput);
+    const newInput = searchInput.cloneNode(true);
+    searchInput.parentNode.replaceChild(newInput, searchInput);
     
-    newSearchInput.addEventListener('input', (e) => {
+    newInput.addEventListener('input', function(e) {
       searchTerm = e.target.value;
       updateKitchenGridOnly();
       updateSearchStats();
     });
-  }
-}
-
-function updateKitchenGridOnly() {
-  const grid = document.getElementById('kitchenGrid');
-  if (!grid) return;
-  
-  const filtered = filterItems();
-  
-  grid.innerHTML = filtered.map(item => {
-    const status = getStockStatus(item);
-    return `
-      <div class="inventory-card">
-        <div class="card-header">
-          <span class="item-name">${escapeHtml(item.name)}</span>
-          <span class="item-price">Stock: ${item.quantity} ${item.unit}</span>
-        </div>
-        <div class="card-details">
-          <span>Cost: $${item.cost}</span>
-          <span>Expiry: ${item.expiryDate || 'N/A'}</span>
-        </div>
-        <div><span class="stock-status ${status.class}">${status.icon} ${status.text}</span></div>
-        ${item.quantity > 0 ? `<button class="btn btn-warning" style="margin-top:0.75rem;width:100%;" onclick="openStockOutModal('${item.id}')">🍳 Use in Kitchen</button>` : `<button class="btn btn-secondary" style="margin-top:0.75rem;width:100%;" disabled>❌ Out of Stock</button>`}
-      </div>
-    `;
-  }).join('');
-  
-  if (filtered.length === 0) {
-    grid.innerHTML = '<div class="empty-state">No items found</div>';
   }
 }
 
@@ -533,11 +596,11 @@ function renderLedger() {
               <td><strong>${escapeHtml(t.itemName)}</strong></td>
               <td>${t.quantity}</td>
               <td>${t.unit}</td>
-              <td>$${(t.quantity * (t.cost || 0)).toFixed(2)}</td
-              <td>${escapeHtml(t.note || '-')}</td
+              <td>$${(t.quantity * (t.cost || 0)).toFixed(2)}</td>
+              <td>${escapeHtml(t.note || '-')}</td>
             </tr>
           `).join('')}
-          ${transactions.length === 0 ? '<tr><td colspan="7" class="text-center">No transactions</td</table>' : ''}
+          ${transactions.length === 0 ? '<tr><td colspan="7" class="text-center">No transactions</td></tr>' : ''}
         </tbody>
       </table>
     </div>
@@ -713,10 +776,12 @@ function escapeHtml(str) {
   return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
 }
 
+// CRITICAL FIX: updateDateTime ONLY updates the clock text, NOT the whole page!
 function updateDateTime() {
-  const now = new Date();
   const el = document.getElementById('currentDateTime');
-  if (el) el.innerHTML = now.toLocaleDateString() + ' ' + now.toLocaleTimeString();
+  if (el) {
+    el.textContent = new Date().toLocaleString();
+  }
 }
 
 function switchView(view) {
@@ -744,11 +809,11 @@ function renderCurrentView() {
 // INITIALIZATION
 // ============================================
 
-async function init() {
+function init() {
   loadData();
   loadTheme();
   updateDateTime();
-  setInterval(updateDateTime, 1000);
+  setInterval(updateDateTime, 1000); // This ONLY updates the clock, NOT the whole page!
   
   if (items.length === 0) {
     loadSampleData();
