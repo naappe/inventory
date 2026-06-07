@@ -1,6 +1,6 @@
 // ============================================
-// STOCKFLOW ERP SYSTEM - NO LOGIN VERSION
-// Full access for everyone
+// STOCKFLOW ERP SYSTEM - CLEAN INVENTORY LAYOUT
+// No complex rules, simple quantity management
 // ============================================
 
 // Data Storage
@@ -9,7 +9,9 @@ let items = [
   { id: "2", name: "Olive Oil", quantity: 45, unit: "L", cost: 8.99, expiryDate: "2025-06-15", minStock: 20 },
   { id: "3", name: "Coffee Beans", quantity: 12, unit: "KG", cost: 15.5, expiryDate: "2024-12-01", minStock: 15 },
   { id: "4", name: "Tomato Sauce", quantity: 8, unit: "BOX", cost: 12.0, expiryDate: "2024-10-10", minStock: 10 },
-  { id: "5", name: "Pasta", quantity: 200, unit: "PCS", cost: 1.2, expiryDate: "2025-09-20", minStock: 50 }
+  { id: "5", name: "Pasta", quantity: 200, unit: "PCS", cost: 1.2, expiryDate: "2025-09-20", minStock: 50 },
+  { id: "6", name: "Chicken Breast", quantity: 35, unit: "KG", cost: 8.5, expiryDate: "2025-05-30", minStock: 20 },
+  { id: "7", name: "Cheese", quantity: 18, unit: "KG", cost: 6.75, expiryDate: "2025-04-15", minStock: 10 }
 ];
 
 let transactions = [
@@ -45,14 +47,12 @@ async function autoLoadCSV() {
         header: true,
         skipEmptyLines: true,
         complete: function(results) {
-          let importedCount = 0;
           for (const row of results.data) {
             const name = row.Name || row.name || row.item_name;
             const unit = (row.Unit || row.unit || "PCS").toUpperCase();
             const cost = parseFloat(row.Price || row.price || row.Cost || row.cost || 0);
             const quantity = parseFloat(row.Stock || row.stock || row.Quantity || row.quantity || 0);
             const expiryDate = row.ExpiryDate || row.expiry_date || row.Expiry || "";
-            const minStock = parseInt(row.MinStock || row.minStock || 5);
             
             if (!name) continue;
             
@@ -61,25 +61,23 @@ async function autoLoadCSV() {
             if (existingItem) {
               existingItem.cost = cost || existingItem.cost;
               existingItem.unit = unit || existingItem.unit;
-              existingItem.minStock = minStock || existingItem.minStock;
+              existingItem.quantity = quantity || existingItem.quantity;
               if (expiryDate) existingItem.expiryDate = expiryDate;
             } else {
-              const newId = "item_" + Date.now() + "_" + Math.random();
               items.push({
-                id: newId,
+                id: "item_" + Date.now() + "_" + Math.random(),
                 name: name,
                 quantity: quantity,
                 unit: unit,
                 cost: cost,
                 expiryDate: expiryDate,
-                minStock: minStock || 5
+                minStock: 5
               });
             }
-            importedCount++;
           }
           saveData();
           renderCurrentView();
-          showToast(`Loaded ${importedCount} items from CSV`, 'success');
+          showToast(`Loaded ${items.length} items from CSV`, 'success');
         }
       });
     }
@@ -89,7 +87,7 @@ async function autoLoadCSV() {
 }
 
 // ============================================
-// INVENTORY FUNCTIONS
+// INVENTORY FUNCTIONS - SIMPLE
 // ============================================
 
 function updateStock(itemId, quantity, type, cost, reason, note, expiryDate) {
@@ -101,13 +99,13 @@ function updateStock(itemId, quantity, type, cost, reason, note, expiryDate) {
     return false;
   }
   
-  // Update stock
+  // Simple stock update
   if (type === 'IN') {
-    item.quantity += quantity;
+    item.quantity = item.quantity + quantity;
     if (cost) item.cost = cost;
     if (expiryDate) item.expiryDate = expiryDate;
   } else {
-    item.quantity -= quantity;
+    item.quantity = item.quantity - quantity;
   }
   
   // Record transaction
@@ -116,7 +114,7 @@ function updateStock(itemId, quantity, type, cost, reason, note, expiryDate) {
     type,
     itemId: item.id,
     itemName: item.name,
-    quantity,
+    quantity: quantity,
     unit: item.unit,
     cost: type === 'IN' ? cost : item.cost,
     timestamp: new Date().toISOString(),
@@ -127,59 +125,42 @@ function updateStock(itemId, quantity, type, cost, reason, note, expiryDate) {
   transactions.unshift(transaction);
   saveData();
   renderCurrentView();
-  showToast(`${type === 'IN' ? 'Stock IN' : 'Stock OUT'} successful!`, 'success');
+  showToast(`${type === 'IN' ? 'Stock IN' : 'Stock OUT'} successful! New quantity: ${item.quantity} ${item.unit}`, 'success');
   return true;
 }
 
 function getStockStatus(item) {
   if (item.quantity <= 0) return { class: 'status-expired', text: 'Out of Stock' };
-  if (item.quantity < item.minStock) return { class: 'status-low', text: 'Low Stock' };
-  if (item.expiryDate && new Date(item.expiryDate) < new Date()) return { class: 'status-expired', text: 'Expired' };
   return { class: 'status-ok', text: 'In Stock' };
 }
 
-function getExpiringItems() {
-  const today = new Date();
-  const thirtyDaysFromNow = new Date();
-  thirtyDaysFromNow.setDate(today.getDate() + 30);
-  
-  return items.filter(item => {
-    if (!item.expiryDate) return false;
-    const expiryDate = new Date(item.expiryDate);
-    return expiryDate <= thirtyDaysFromNow && expiryDate >= today && item.quantity > 0;
-  });
-}
-
 // ============================================
-// UI RENDERING
+// UI RENDERING - CLEAN INVENTORY
 // ============================================
 
 function renderDashboard() {
   const totalItems = items.length;
   const totalStock = items.reduce((sum, i) => sum + i.quantity, 0);
   const totalValue = items.reduce((sum, i) => sum + (i.quantity * i.cost), 0);
-  const lowStockCount = items.filter(i => i.quantity < i.minStock).length;
-  const expiringItems = getExpiringItems();
-  
   const recentTransactions = transactions.slice(0, 10);
   
   const html = `
     <div class="stats-grid">
-      <div class="stat-card" onclick="switchView('inventory')">
+      <div class="stat-card">
         <div class="stat-header">
           <span>Total Items</span>
           <div class="stat-icon"><i class="fas fa-box"></i></div>
         </div>
         <div class="stat-value">${totalItems}</div>
-        <div class="stat-label">Active SKUs</div>
+        <div class="stat-label">Products in System</div>
       </div>
-      <div class="stat-card" onclick="switchView('inventory')">
+      <div class="stat-card">
         <div class="stat-header">
           <span>Total Stock</span>
           <div class="stat-icon"><i class="fas fa-warehouse"></i></div>
         </div>
         <div class="stat-value">${totalStock}</div>
-        <div class="stat-label">Units in Inventory</div>
+        <div class="stat-label">Total Units</div>
       </div>
       <div class="stat-card">
         <div class="stat-header">
@@ -189,36 +170,7 @@ function renderDashboard() {
         <div class="stat-value">$${totalValue.toLocaleString()}</div>
         <div class="stat-label">Inventory Value</div>
       </div>
-      <div class="stat-card" onclick="switchView('inventory')">
-        <div class="stat-header">
-          <span>Low Stock Alert</span>
-          <div class="stat-icon"><i class="fas fa-exclamation-triangle"></i></div>
-        </div>
-        <div class="stat-value" style="color: ${lowStockCount > 0 ? '#f59e0b' : '#10b981'}">${lowStockCount}</div>
-        <div class="stat-label">Items below minimum</div>
-      </div>
     </div>
-    
-    ${expiringItems.length > 0 ? `
-    <div class="section-header">
-      <h2><i class="fas fa-clock"></i> Expiry Alerts</h2>
-    </div>
-    <div class="cards-grid" style="margin-bottom: 1.5rem;">
-      ${expiringItems.map(item => {
-        const daysLeft = Math.ceil((new Date(item.expiryDate) - new Date()) / (1000 * 60 * 60 * 24));
-        const alertClass = daysLeft <= 7 ? 'danger' : 'warning';
-        return `
-          <div class="alert-item ${alertClass}">
-            <div>
-              <strong>${escapeHtml(item.name)}</strong>
-              <div>Expires in ${daysLeft} days (${item.expiryDate})</div>
-            </div>
-            <div>${item.quantity} ${item.unit}</div>
-          </div>
-        `;
-      }).join('')}
-    </div>
-    ` : ''}
     
     <div class="section-header">
       <h2><i class="fas fa-boxes"></i> Recent Items</h2>
@@ -226,47 +178,47 @@ function renderDashboard() {
     </div>
     
     <div class="cards-grid">
-      ${items.slice(0, 6).map(item => {
-        const status = getStockStatus(item);
-        return `
-          <div class="inventory-card" onclick="openStockOutModal('${item.id}')">
-            <div class="card-header">
-              <span class="item-name">${escapeHtml(item.name)}</span>
-              <span class="item-price">$${item.cost}</span>
-            </div>
-            <div class="card-details">
-              <span>Stock: ${item.quantity} ${item.unit}</span>
-              <span>Expiry: ${item.expiryDate || 'N/A'}</span>
-            </div>
-            <div>
-              <span class="stock-status ${status.class}">${status.text}</span>
-            </div>
+      ${items.slice(0, 6).map(item => `
+        <div class="inventory-card">
+          <div class="card-header">
+            <span class="item-name">${escapeHtml(item.name)}</span>
+            <span class="item-price">$${item.cost}</span>
           </div>
-        `;
-      }).join('')}
+          <div class="card-details">
+            <span>Quantity: ${item.quantity} ${item.unit}</span>
+            <span>Expiry: ${item.expiryDate || 'N/A'}</span>
+          </div>
+          <div class="card-actions" style="display: flex; gap: 0.5rem; margin-top: 0.75rem;">
+            <button class="btn btn-success" style="flex:1; padding: 0.4rem;" onclick="openStockInModal('${item.id}')">+ IN</button>
+            <button class="btn btn-danger" style="flex:1; padding: 0.4rem;" onclick="openStockOutModal('${item.id}')">- OUT</button>
+          </div>
+        </div>
+      `).join('')}
     </div>
     
     <div class="section-header">
-      <h2><i class="fas fa-history"></i> Recent Activity</h2>
+      <h2><i class="fas fa-history"></i> Recent Transactions</h2>
       <button class="btn btn-primary" onclick="switchView('ledger')">View All</button>
     </div>
     
     <div class="table-container">
       <table class="data-table">
         <thead>
-          <tr><th>Type</th><th>Item</th><th>Quantity</th><th>Date</th><th>Reference</th></tr>
+          <tr><th>Date & Time</th><th>Type</th><th>Item</th><th>Quantity</th><th>Unit</th><th>Value</th><th>Reference</th></tr>
         </thead>
         <tbody>
           ${recentTransactions.map(t => `
             <tr>
-              <td><span class="badge ${t.type === 'IN' ? 'badge-in' : 'badge-out'}">${t.type}</span></td>
+              <td>${new Date(t.timestamp).toLocaleString()}</td
+              <td><span class="badge ${t.type === 'IN' ? 'badge-in' : 'badge-out'}">${t.type}</span></td
               <td>${escapeHtml(t.itemName)}</td
-              <td>${t.quantity} ${t.unit}</td
-              <td>${new Date(t.timestamp).toLocaleDateString()}</td
+              <td>${t.quantity}</td
+              <td>${t.unit}</td
+              <td>$${(t.quantity * (t.cost || 0)).toFixed(2)}</td
               <td>${escapeHtml(t.note || t.reason || '-')}</td
             </tr>
           `).join('')}
-          ${recentTransactions.length === 0 ? '<tr><td colspan="5" class="text-center">No transactions yet</td</tr>' : ''}
+          ${recentTransactions.length === 0 ? '<tr><td colspan="7" class="text-center">No transactions yet</td</tr>' : ''}
         </tbody>
       </table>
     </div>
@@ -281,39 +233,42 @@ function renderInventory() {
       <h2><i class="fas fa-boxes"></i> All Inventory Items</h2>
       <button class="btn btn-primary" onclick="openStockInModal()"><i class="fas fa-plus"></i> Add Stock</button>
     </div>
-    <div class="table-container">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Item Name</th>
-            <th>Quantity</th>
-            <th>Unit</th>
-            <th>Cost</th>
-            <th>Expiry Date</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${items.map(item => {
-            const status = getStockStatus(item);
-            return `
-              <tr>
-                <td><strong>${escapeHtml(item.name)}</strong></td
-                <td>${item.quantity}</td
-                <td>${item.unit}</td
-                <td>$${item.cost}</td
-                <td>${item.expiryDate || 'N/A'}</td
-                <td><span class="stock-status ${status.class}">${status.text}</span></td
-                <td>
-                  <button class="btn btn-primary" style="padding: 0.3rem 0.6rem;" onclick="openStockInModal('${item.id}')">IN</button>
-                  <button class="btn btn-danger" style="padding: 0.3rem 0.6rem;" onclick="openStockOutModal('${item.id}')">OUT</button>
-                </td>
-              </tr>
-            `;
-          }).join('')}
-        </tbody>
-      </table>
+    
+    <div class="cards-grid">
+      ${items.map(item => `
+        <div class="inventory-card">
+          <div class="card-header">
+            <div>
+              <span class="item-name">${escapeHtml(item.name)}</span>
+              <div style="font-size: 0.7rem; color: var(--gray); margin-top: 0.2rem;">Unit: ${item.unit}</div>
+            </div>
+            <div style="text-align: right;">
+              <span class="item-price">$${item.cost}</span>
+              <div style="font-size: 0.7rem; color: var(--gray);">per unit</div>
+            </div>
+          </div>
+          
+          <div style="background: var(--bg-light); padding: 0.75rem; border-radius: 12px; margin: 0.75rem 0;">
+            <div style="display: flex; justify-content: space-between; align-items: baseline;">
+              <span style="font-size: 0.7rem; color: var(--gray);">Current Quantity</span>
+              <span style="font-size: 1.5rem; font-weight: 700;">${item.quantity}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-top: 0.5rem;">
+              <span>Expiry: ${item.expiryDate || 'N/A'}</span>
+              <span>Total Value: $${(item.quantity * item.cost).toFixed(2)}</span>
+            </div>
+          </div>
+          
+          <div class="card-actions" style="display: flex; gap: 0.75rem; margin-top: 0.5rem;">
+            <button class="btn btn-success" style="flex:1;" onclick="openStockInModal('${item.id}')">
+              <i class="fas fa-arrow-down"></i> Stock IN
+            </button>
+            <button class="btn btn-danger" style="flex:1;" onclick="openStockOutModal('${item.id}')">
+              <i class="fas fa-arrow-up"></i> Stock OUT
+            </button>
+          </div>
+        </div>
+      `).join('')}
     </div>
   `;
   
@@ -323,21 +278,21 @@ function renderInventory() {
 function renderStockIn() {
   const html = `
     <div class="section-header">
-      <h2><i class="fas fa-arrow-down"></i> Stock IN</h2>
+      <h2><i class="fas fa-arrow-down"></i> Stock IN - Receive Products</h2>
     </div>
     <div class="cards-grid">
       ${items.map(item => `
-        <div class="inventory-card" onclick="openStockInModal('${item.id}')">
+        <div class="inventory-card">
           <div class="card-header">
             <span class="item-name">${escapeHtml(item.name)}</span>
-            <span class="item-price">Stock: ${item.quantity} ${item.unit}</span>
+            <span class="item-price">Current: ${item.quantity} ${item.unit}</span>
           </div>
           <div class="card-details">
             <span>Cost: $${item.cost}</span>
             <span>Expiry: ${item.expiryDate || 'N/A'}</span>
           </div>
-          <button class="btn btn-primary" style="margin-top: 0.75rem; width: 100%;" onclick="event.stopPropagation();openStockInModal('${item.id}')">
-            <i class="fas fa-arrow-down"></i> Add Stock
+          <button class="btn btn-primary" style="margin-top: 0.75rem; width: 100%;" onclick="openStockInModal('${item.id}')">
+            <i class="fas fa-arrow-down"></i> Add Stock to ${escapeHtml(item.name)}
           </button>
         </div>
       `).join('')}
@@ -350,27 +305,24 @@ function renderStockIn() {
 function renderStockOut() {
   const html = `
     <div class="section-header">
-      <h2><i class="fas fa-arrow-up"></i> Stock OUT</h2>
+      <h2><i class="fas fa-arrow-up"></i> Stock OUT - Remove Products</h2>
     </div>
     <div class="cards-grid">
-      ${items.map(item => {
-        const status = getStockStatus(item);
-        return `
-          <div class="inventory-card" onclick="openStockOutModal('${item.id}')">
-            <div class="card-header">
-              <span class="item-name">${escapeHtml(item.name)}</span>
-              <span class="item-price">Stock: ${item.quantity} ${item.unit}</span>
-            </div>
-            <div class="card-details">
-              <span>Min Stock: ${item.minStock}</span>
-              <span class="stock-status ${status.class}">${status.text}</span>
-            </div>
-            <button class="btn btn-danger" style="margin-top: 0.75rem; width: 100%;" onclick="event.stopPropagation();openStockOutModal('${item.id}')" ${item.quantity <= 0 ? 'disabled' : ''}>
-              <i class="fas fa-arrow-up"></i> Remove Stock
-            </button>
+      ${items.map(item => `
+        <div class="inventory-card">
+          <div class="card-header">
+            <span class="item-name">${escapeHtml(item.name)}</span>
+            <span class="item-price">Stock: ${item.quantity} ${item.unit}</span>
           </div>
-        `;
-      }).join('')}
+          <div class="card-details">
+            <span>Cost: $${item.cost}</span>
+            <span>Expiry: ${item.expiryDate || 'N/A'}</span>
+          </div>
+          <button class="btn btn-danger" style="margin-top: 0.75rem; width: 100%;" onclick="openStockOutModal('${item.id}')" ${item.quantity <= 0 ? 'disabled' : ''}>
+            <i class="fas fa-arrow-up"></i> Remove Stock from ${escapeHtml(item.name)}
+          </button>
+        </div>
+      `).join('')}
     </div>
   `;
   
@@ -381,18 +333,22 @@ function renderLedger() {
   const html = `
     <div class="section-header">
       <h2><i class="fas fa-history"></i> Transaction Ledger</h2>
+      <div>
+        <span style="font-size: 0.7rem; color: var(--gray);">Total: ${transactions.length} transactions</span>
+      </div>
     </div>
+    
     <div class="table-container">
       <table class="data-table">
         <thead>
           <tr>
             <th>Date & Time</th>
             <th>Type</th>
-            <th>Item</th>
+            <th>Item Name</th>
             <th>Quantity</th>
             <th>Unit</th>
             <th>Value</th>
-            <th>Reference</th>
+            <th>Reference / Note</th>
           </tr>
         </thead>
         <tbody>
@@ -400,14 +356,14 @@ function renderLedger() {
             <tr>
               <td>${new Date(t.timestamp).toLocaleString()}</td
               <td><span class="badge ${t.type === 'IN' ? 'badge-in' : 'badge-out'}">${t.type}</span></td
-              <td>${escapeHtml(t.itemName)}</td
+              <td><strong>${escapeHtml(t.itemName)}</strong></td
               <td>${t.quantity}</td
               <td>${t.unit}</td
               <td>$${(t.quantity * (t.cost || 0)).toFixed(2)}</td
               <td>${escapeHtml(t.note || t.reason || '-')}</td
             </tr>
           `).join('')}
-          ${transactions.length === 0 ? '<tr><td colspan="7" class="text-center">No transactions yet</td</tr>' : ''}
+          ${transactions.length === 0 ? '<tr><td colspan="7" class="text-center">No transactions recorded yet</td</tr>' : ''}
         </tbody>
       </table>
     </div>
@@ -424,12 +380,16 @@ function renderSettings() {
     
     <div class="table-container" style="margin-bottom: 1.5rem;">
       <div style="padding: 1.5rem;">
-        <h3>System Preferences</h3>
-        <div class="form-group">
-          <label>Theme Mode</label>
+        <h3>Theme Preferences</h3>
+        <div class="form-group" style="margin-top: 1rem;">
+          <label>Display Mode</label>
           <div style="display: flex; gap: 1rem;">
-            <button class="btn ${!darkMode ? 'btn-primary' : 'btn-secondary'}" onclick="toggleTheme(false)">Light</button>
-            <button class="btn ${darkMode ? 'btn-primary' : 'btn-secondary'}" onclick="toggleTheme(true)">Dark</button>
+            <button class="btn ${!darkMode ? 'btn-primary' : 'btn-secondary'}" onclick="toggleTheme(false)">
+              <i class="fas fa-sun"></i> Light Mode
+            </button>
+            <button class="btn ${darkMode ? 'btn-primary' : 'btn-secondary'}" onclick="toggleTheme(true)">
+              <i class="fas fa-moon"></i> Dark Mode
+            </button>
           </div>
         </div>
       </div>
@@ -438,8 +398,10 @@ function renderSettings() {
     <div class="table-container">
       <div style="padding: 1.5rem;">
         <h3>Data Management</h3>
-        <button class="btn btn-danger" onclick="resetData()">Reset All Data</button>
-        <p style="font-size: 0.7rem; margin-top: 0.5rem;">This will reset all inventory and transactions to default.</p>
+        <p style="font-size: 0.8rem; color: var(--gray); margin: 0.5rem 0;">Reset all inventory items and transaction history to default values.</p>
+        <button class="btn btn-danger" onclick="resetData()">
+          <i class="fas fa-trash"></i> Reset All Data
+        </button>
       </div>
     </div>
   `;
@@ -453,8 +415,8 @@ function renderSettings() {
 
 function openStockInModal(presetItemId = null) {
   const select = document.getElementById('stockInItem');
-  select.innerHTML = '<option value="">Select Item</option>' + 
-    items.map(i => `<option value="${i.id}" ${presetItemId === i.id ? 'selected' : ''}>${escapeHtml(i.name)}</option>`).join('');
+  select.innerHTML = '<option value="">-- Select Product --</option>' + 
+    items.map(i => `<option value="${i.id}" ${presetItemId === i.id ? 'selected' : ''}>${escapeHtml(i.name)} (Current: ${i.quantity} ${i.unit})</option>`).join('');
   
   document.getElementById('stockInQty').value = '';
   document.getElementById('stockInUnit').value = '';
@@ -477,10 +439,8 @@ function processStockIn() {
   const expiryDate = document.getElementById('stockInExpiry').value;
   const note = document.getElementById('stockInNote').value;
   
-  if (!itemId || !quantity || quantity <= 0) {
-    showToast('Please select item and enter valid quantity', 'error');
-    return;
-  }
+  if (!itemId) { showToast('Please select an item', 'error'); return; }
+  if (!quantity || quantity <= 0) { showToast('Please enter valid quantity', 'error'); return; }
   
   updateStock(itemId, quantity, 'IN', cost, null, note, expiryDate);
   closeStockInModal();
@@ -488,8 +448,8 @@ function processStockIn() {
 
 function openStockOutModal(presetItemId = null) {
   const select = document.getElementById('stockOutItem');
-  select.innerHTML = '<option value="">Select Item</option>' + 
-    items.map(i => `<option value="${i.id}" ${presetItemId === i.id ? 'selected' : ''}>${escapeHtml(i.name)} (${i.quantity} ${i.unit} available)</option>`).join('');
+  select.innerHTML = '<option value="">-- Select Product --</option>' + 
+    items.map(i => `<option value="${i.id}" ${presetItemId === i.id ? 'selected' : ''}>${escapeHtml(i.name)} (Available: ${i.quantity} ${i.unit})</option>`).join('');
   
   document.getElementById('stockOutQty').value = '';
   document.getElementById('stockOutReason').value = 'Sold';
@@ -508,7 +468,7 @@ function updateStockOutInfo() {
   if (itemId) {
     const item = items.find(i => i.id === itemId);
     if (item) {
-      document.getElementById('currentStockInfo').innerHTML = `Current Stock: ${item.quantity} ${item.unit}`;
+      document.getElementById('currentStockInfo').innerHTML = `Current Stock: ${item.quantity} ${item.unit} available`;
       document.getElementById('currentStockInfo').style.display = 'block';
     }
   } else {
@@ -522,10 +482,8 @@ function processStockOut() {
   const reason = document.getElementById('stockOutReason').value;
   const note = document.getElementById('stockOutNote').value;
   
-  if (!itemId || !quantity || quantity <= 0) {
-    showToast('Please select item and enter valid quantity', 'error');
-    return;
-  }
+  if (!itemId) { showToast('Please select an item', 'error'); return; }
+  if (!quantity || quantity <= 0) { showToast('Please enter valid quantity', 'error'); return; }
   
   updateStock(itemId, quantity, 'OUT', null, reason, note);
   closeStockOutModal();
@@ -549,7 +507,7 @@ function loadData() {
 }
 
 function resetData() {
-  if (confirm('Are you sure you want to reset all data? This cannot be undone.')) {
+  if (confirm('⚠️ WARNING: This will delete ALL data and restore default inventory.\n\nThis action cannot be undone. Are you sure?')) {
     localStorage.clear();
     location.reload();
   }
@@ -574,6 +532,9 @@ function loadTheme() {
 }
 
 function showToast(message, type) {
+  const existingToast = document.querySelector('.toast');
+  if (existingToast) existingToast.remove();
+  
   const toast = document.createElement('div');
   toast.className = 'toast';
   toast.style.cssText = `
@@ -587,6 +548,7 @@ function showToast(message, type) {
     z-index: 9999;
     animation: slideIn 0.3s ease;
     font-size: 0.85rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
   `;
   toast.innerHTML = message;
   document.body.appendChild(toast);
@@ -595,7 +557,12 @@ function showToast(message, type) {
 
 function escapeHtml(str) {
   if (!str) return '';
-  return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
+  return str.replace(/[&<>]/g, function(m) {
+    if (m === '&') return '&amp;';
+    if (m === '<') return '&lt;';
+    if (m === '>') return '&gt;';
+    return m;
+  });
 }
 
 function updateDateTime() {
@@ -610,17 +577,16 @@ function switchView(view) {
   currentView = view;
   const titles = {
     dashboard: { title: 'Dashboard', subtitle: 'Real-time inventory tracking and management' },
-    inventory: { title: 'Inventory', subtitle: 'Complete product catalog' },
-    stockin: { title: 'Stock IN', subtitle: 'Receive products into inventory' },
-    stockout: { title: 'Stock OUT', subtitle: 'Dispatch products from inventory' },
-    ledger: { title: 'Transaction Ledger', subtitle: 'View all stock movements' },
-    settings: { title: 'Settings', subtitle: 'System configuration' }
+    inventory: { title: 'Inventory', subtitle: 'Complete product catalog with stock levels' },
+    stockin: { title: 'Stock IN', subtitle: 'Receive products and add to inventory' },
+    stockout: { title: 'Stock OUT', subtitle: 'Remove products from inventory' },
+    ledger: { title: 'Transaction Ledger', subtitle: 'Complete history of all stock movements' },
+    settings: { title: 'Settings', subtitle: 'System preferences and data management' }
   };
   
   document.getElementById('pageTitle').innerText = titles[view]?.title || 'Dashboard';
   document.getElementById('pageSubtitle').innerText = titles[view]?.subtitle || '';
   
-  // Update active states
   document.querySelectorAll('.nav-item, .mobile-nav-item').forEach(btn => {
     btn.classList.remove('active');
     if (btn.dataset.nav === view) btn.classList.add('active');
@@ -645,21 +611,30 @@ function renderCurrentView() {
 function init() {
   loadData();
   loadTheme();
-  
   updateDateTime();
   setInterval(updateDateTime, 1000);
   renderCurrentView();
   
-  // Navigation listeners
   document.querySelectorAll('.nav-item, .mobile-nav-item').forEach(btn => {
     btn.addEventListener('click', () => switchView(btn.dataset.nav));
   });
   
-  // Theme toggle
-  document.getElementById('themeToggle')?.addEventListener('click', () => toggleTheme(!darkMode));
+  const themeBtn = document.getElementById('themeToggle');
+  if (themeBtn) themeBtn.addEventListener('click', () => toggleTheme(!darkMode));
   
-  // Auto load CSV
   autoLoadCSV();
 }
+
+// Make functions global for HTML onclick
+window.openStockInModal = openStockInModal;
+window.closeStockInModal = closeStockInModal;
+window.processStockIn = processStockIn;
+window.openStockOutModal = openStockOutModal;
+window.closeStockOutModal = closeStockOutModal;
+window.processStockOut = processStockOut;
+window.updateStockOutInfo = updateStockOutInfo;
+window.switchView = switchView;
+window.toggleTheme = toggleTheme;
+window.resetData = resetData;
 
 init();
