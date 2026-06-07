@@ -1,29 +1,16 @@
 // ============================================
-// STOCKFLOW ERP SYSTEM - WITH CSV RELOAD
-// Auto-loads CSV on page load + manual reload button
+// STOCKFLOW ERP SYSTEM - FULL CSV SYNC
+// Deletes items not in CSV, updates existing, adds new
 // ============================================
 
 // Data Storage
-let items = [
-  { id: "1", name: "Premium Rice", quantity: 150, unit: "KG", cost: 2.5, expiryDate: "2025-12-31", minStock: 50 },
-  { id: "2", name: "Olive Oil", quantity: 45, unit: "L", cost: 8.99, expiryDate: "2025-06-15", minStock: 20 },
-  { id: "3", name: "Coffee Beans", quantity: 12, unit: "KG", cost: 15.5, expiryDate: "2024-12-01", minStock: 15 },
-  { id: "4", name: "Tomato Sauce", quantity: 8, unit: "BOX", cost: 12.0, expiryDate: "2024-10-10", minStock: 10 },
-  { id: "5", name: "Pasta", quantity: 200, unit: "PCS", cost: 1.2, expiryDate: "2025-09-20", minStock: 50 },
-  { id: "6", name: "Chicken Breast", quantity: 35, unit: "KG", cost: 8.5, expiryDate: "2025-05-30", minStock: 20 },
-  { id: "7", name: "Cheese", quantity: 18, unit: "KG", cost: 6.75, expiryDate: "2025-04-15", minStock: 10 }
-];
-
-let transactions = [
-  { id: "t1", type: "IN", itemId: "1", itemName: "Premium Rice", quantity: 50, unit: "KG", cost: 2.5, timestamp: new Date().toISOString(), note: "Initial stock" },
-  { id: "t2", type: "OUT", itemId: "3", itemName: "Coffee Beans", quantity: 5, unit: "KG", reason: "Sold", timestamp: new Date(Date.now() - 86400000).toISOString(), note: "Customer order" }
-];
-
+let items = [];
+let transactions = [];
 let currentView = "dashboard";
 let darkMode = false;
 
 // ============================================
-// CSV FUNCTIONS - WITH RELOAD
+// CSV FUNCTIONS - FULL SYNC (DELETE REMOVED ITEMS)
 // ============================================
 
 async function loadCSVFromFile() {
@@ -33,7 +20,7 @@ async function loadCSVFromFile() {
     
     for (const path of paths) {
       try {
-        const response = await fetch(path, { cache: 'no-store' }); // no-store prevents caching
+        const response = await fetch(path, { cache: 'no-store' });
         if (response.ok) {
           csvText = await response.text();
           console.log(`CSV loaded from: ${path}`);
@@ -58,9 +45,9 @@ function parseCSVData(csvText) {
     header: true,
     skipEmptyLines: true,
     complete: function(results) {
-      let newItems = [];
-      let updatedCount = 0;
-      let newCount = 0;
+      // Get items from CSV
+      let csvItems = [];
+      let csvItemNames = new Set();
       
       for (const row of results.data) {
         const name = row.Name || row.name || row.item_name;
@@ -71,47 +58,73 @@ function parseCSVData(csvText) {
         
         if (!name) continue;
         
-        const existingItem = items.find(i => i.name.toLowerCase() === name.toLowerCase());
+        csvItemNames.add(name.toLowerCase());
+        
+        csvItems.push({
+          name: name,
+          unit: unit,
+          cost: cost,
+          quantity: quantity,
+          expiryDate: expiryDate
+        });
+      }
+      
+      // Track changes
+      let updatedCount = 0;
+      let newCount = 0;
+      let deletedCount = 0;
+      
+      // 1. UPDATE existing items and ADD new ones
+      for (const csvItem of csvItems) {
+        const existingItem = items.find(i => i.name.toLowerCase() === csvItem.name.toLowerCase());
         
         if (existingItem) {
-          // Update existing item
-          existingItem.cost = cost || existingItem.cost;
-          existingItem.unit = unit || existingItem.unit;
-          existingItem.quantity = quantity;
-          if (expiryDate) existingItem.expiryDate = expiryDate;
+          // Update existing item (preserve ID)
+          existingItem.unit = csvItem.unit;
+          existingItem.cost = csvItem.cost;
+          existingItem.quantity = csvItem.quantity;
+          existingItem.expiryDate = csvItem.expiryDate;
           updatedCount++;
-          newItems.push(existingItem);
         } else {
           // Add new item
-          const newId = "item_" + Date.now() + "_" + Math.random();
-          const newItem = {
-            id: newId,
-            name: name,
-            quantity: quantity,
-            unit: unit,
-            cost: cost,
-            expiryDate: expiryDate,
+          items.push({
+            id: "item_" + Date.now() + "_" + Math.random(),
+            name: csvItem.name,
+            quantity: csvItem.quantity,
+            unit: csvItem.unit,
+            cost: csvItem.cost,
+            expiryDate: csvItem.expiryDate,
             minStock: 5
-          };
-          items.push(newItem);
-          newItems.push(newItem);
+          });
           newCount++;
         }
       }
       
-      // Remove items not in CSV (optional - comment out to keep existing items)
-      // items = newItems;
+      // 2. DELETE items that are NOT in CSV
+      const itemsToKeep = [];
+      for (const item of items) {
+        if (csvItemNames.has(item.name.toLowerCase())) {
+          itemsToKeep.push(item);
+        } else {
+          deletedCount++;
+        }
+      }
+      items = itemsToKeep;
       
       saveData();
       renderCurrentView();
-      showToast(`CSV Updated: ${updatedCount} items updated, ${newCount} new items added`, 'success');
+      
+      // Show detailed summary
+      let message = `CSV Synced: ${updatedCount} updated, ${newCount} added`;
+      if (deletedCount > 0) message += `, ${deletedCount} deleted`;
+      showToast(message, 'success');
     }
   });
 }
 
-// Manual reload function - call this when you want to reload CSV
+// Manual reload function
 async function reloadCSV() {
-  showToast('Reloading CSV data...', 'info');
+  showToast('Syncing with data.csv...', 'info');
   const success = await loadCSVFromFile();
   if (!success) {
     showToast('No data.csv file found', 'error');
@@ -124,7 +137,7 @@ async function autoLoadCSV() {
 }
 
 // ============================================
-// INVENTORY FUNCTIONS - SIMPLE
+// INVENTORY FUNCTIONS
 // ============================================
 
 function updateStock(itemId, quantity, type, cost, reason, note, expiryDate) {
@@ -139,7 +152,7 @@ function updateStock(itemId, quantity, type, cost, reason, note, expiryDate) {
   // Simple stock update
   if (type === 'IN') {
     item.quantity = item.quantity + quantity;
-    if (cost) item.cost = cost;
+    if (cost && cost > 0) item.cost = cost;
     if (expiryDate) item.expiryDate = expiryDate;
   } else {
     item.quantity = item.quantity - quantity;
@@ -153,7 +166,7 @@ function updateStock(itemId, quantity, type, cost, reason, note, expiryDate) {
     itemName: item.name,
     quantity: quantity,
     unit: item.unit,
-    cost: type === 'IN' ? cost : item.cost,
+    cost: type === 'IN' ? (cost || item.cost) : item.cost,
     timestamp: new Date().toISOString(),
     note: note || '',
     reason: reason || null
@@ -269,8 +282,8 @@ function renderInventory() {
     <div class="section-header">
       <h2><i class="fas fa-boxes"></i> All Inventory Items</h2>
       <div style="display: flex; gap: 0.5rem;">
-        <button class="btn btn-secondary" onclick="reloadCSV()" title="Reload from data.csv">
-          <i class="fas fa-sync-alt"></i> Reload CSV
+        <button class="btn btn-secondary" onclick="reloadCSV()" title="Sync with CSV file">
+          <i class="fas fa-sync-alt"></i> Sync with CSV
         </button>
         <button class="btn btn-primary" onclick="openStockInModal()">
           <i class="fas fa-plus"></i> Add Stock
@@ -313,6 +326,7 @@ function renderInventory() {
           </div>
         </div>
       `).join('')}
+      ${items.length === 0 ? '<div class="empty-state" style="text-align: center; padding: 3rem;">No items found. Click "Sync with CSV" to load data.</div>' : ''}
     </div>
   `;
   
@@ -324,7 +338,7 @@ function renderStockIn() {
     <div class="section-header">
       <h2><i class="fas fa-arrow-down"></i> Stock IN - Receive Products</h2>
       <button class="btn btn-secondary" onclick="reloadCSV()">
-        <i class="fas fa-sync-alt"></i> Refresh Items
+        <i class="fas fa-sync-alt"></i> Sync with CSV
       </button>
     </div>
     <div class="cards-grid">
@@ -343,6 +357,7 @@ function renderStockIn() {
           </button>
         </div>
       `).join('')}
+      ${items.length === 0 ? '<div class="empty-state" style="text-align: center; padding: 3rem;">No items found. Click "Sync with CSV" to load data.</div>' : ''}
     </div>
   `;
   
@@ -354,7 +369,7 @@ function renderStockOut() {
     <div class="section-header">
       <h2><i class="fas fa-arrow-up"></i> Stock OUT - Remove Products</h2>
       <button class="btn btn-secondary" onclick="reloadCSV()">
-        <i class="fas fa-sync-alt"></i> Refresh Items
+        <i class="fas fa-sync-alt"></i> Sync with CSV
       </button>
     </div>
     <div class="cards-grid">
@@ -373,6 +388,7 @@ function renderStockOut() {
           </button>
         </div>
       `).join('')}
+      ${items.length === 0 ? '<div class="empty-state" style="text-align: center; padding: 3rem;">No items found. Click "Sync with CSV" to load data.</div>' : ''}
     </div>
   `;
   
@@ -386,7 +402,7 @@ function renderLedger() {
       <div style="display: flex; gap: 0.5rem;">
         <span style="font-size: 0.7rem; color: var(--gray);">Total: ${transactions.length} transactions</span>
         <button class="btn btn-secondary" onclick="reloadCSV()">
-          <i class="fas fa-sync-alt"></i> Refresh
+          <i class="fas fa-sync-alt"></i> Sync CSV
         </button>
       </div>
     </div>
@@ -416,7 +432,7 @@ function renderLedger() {
               <td>${escapeHtml(t.note || t.reason || '-')}</td
             </tr>
           `).join('')}
-          ${transactions.length === 0 ? '<tr><td colspan="7" class="text-center">No transactions recorded yet</td</tr>' : ''}
+          ${transactions.length === 0 ? '<tr><td colspan="7" class="text-center">No transactions recorded yet</td</td>' : ''}
         </tbody>
       </table>
     </div>
@@ -435,10 +451,14 @@ function renderSettings() {
       <div style="padding: 1.5rem;">
         <h3>CSV Data Management</h3>
         <p style="font-size: 0.8rem; color: var(--gray); margin: 0.5rem 0;">
-          Reload data from data.csv file in the same folder. Updates existing items and adds new ones.
+          Sync with data.csv file - This will:<br>
+          • Add new items from CSV<br>
+          • Update existing items (quantity, cost, expiry)<br>
+          • <strong style="color: #ef4444;">DELETE items that are NOT in CSV</strong><br>
+          • Preserve transaction history
         </p>
         <button class="btn btn-primary" onclick="reloadCSV()">
-          <i class="fas fa-sync-alt"></i> Reload CSV Now
+          <i class="fas fa-sync-alt"></i> Sync with CSV Now
         </button>
       </div>
     </div>
