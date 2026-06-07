@@ -1,6 +1,6 @@
 // ============================================
-// STOCKFLOW ERP SYSTEM - WITH PIN PROTECTED STOCK IN
-// Stock IN requires PIN | Stock OUT only when stock > 0
+// STOCKFLOW ERP SYSTEM - FULL PROTECTION
+// One Master PIN protects ALL sensitive operations
 // ============================================
 
 // Data Storage
@@ -11,11 +11,24 @@ let darkMode = false;
 let autoRefreshInterval = null;
 let searchTerm = "";
 
-// PIN Configuration (Change this to your desired PIN)
-const STOCK_IN_PIN = "1234";  // Default PIN - change to any 4-digit number
+// MASTER PIN - Protects ALL sensitive operations
+const MASTER_PIN = "1234";  // Change this to your desired PIN
 
 // ============================================
-// CSV FUNCTIONS
+// PIN PROTECTION FUNCTION
+// ============================================
+
+function verifyPIN(actionName, callback) {
+  const pin = prompt(`🔒 ${actionName} requires PIN verification:\n\nEnter Master PIN:`);
+  if (pin === MASTER_PIN) {
+    callback();
+  } else if (pin !== null) {
+    showToast("❌ Incorrect PIN! Access denied.", 'error');
+  }
+}
+
+// ============================================
+// CSV FUNCTIONS (PIN Protected)
 // ============================================
 
 async function loadCSVFromFile() {
@@ -123,52 +136,53 @@ function parseCSVData(csvText) {
   });
 }
 
-async function reloadCSV() {
-  showToast('Syncing with data.csv...', 'info');
-  const success = await loadCSVFromFile();
-  if (!success) {
-    showToast('No data.csv file found', 'error');
-  }
+// PIN protected reload
+function reloadCSV() {
+  verifyPIN("Sync with CSV", async () => {
+    showToast('Syncing with data.csv...', 'info');
+    const success = await loadCSVFromFile();
+    if (!success) {
+      showToast('No data.csv file found', 'error');
+    }
+  });
 }
 
+// PIN protected auto-refresh toggle
 function startAutoRefresh() {
-  if (autoRefreshInterval) clearInterval(autoRefreshInterval);
-  autoRefreshInterval = setInterval(() => {
-    console.log('Auto-refreshing CSV...');
-    loadCSVFromFile();
-  }, 10000);
+  verifyPIN("Enable Auto-Refresh", () => {
+    if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+    autoRefreshInterval = setInterval(() => {
+      console.log('Auto-refreshing CSV...');
+      loadCSVFromFile();
+    }, 10000);
+    showToast('Auto-Refresh enabled', 'success');
+    renderSettings();
+  });
 }
 
 function stopAutoRefresh() {
-  if (autoRefreshInterval) {
-    clearInterval(autoRefreshInterval);
-    autoRefreshInterval = null;
-  }
+  verifyPIN("Disable Auto-Refresh", () => {
+    if (autoRefreshInterval) {
+      clearInterval(autoRefreshInterval);
+      autoRefreshInterval = null;
+    }
+    showToast('Auto-Refresh disabled', 'success');
+    renderSettings();
+  });
 }
 
 // ============================================
 // PIN PROTECTED STOCK IN
 // ============================================
 
-function verifyPIN(callback) {
-  const pin = prompt("🔒 Enter PIN to add stock:");
-  if (pin === STOCK_IN_PIN) {
-    callback();
-  } else if (pin !== null) {
-    showToast("❌ Incorrect PIN! Access denied.", 'error');
-  }
-}
-
 function addStock(itemId, quantity, unit, cost, expiryDate, note) {
   const item = items.find(i => i.id === itemId);
   if (!item) return false;
   
-  // Add stock
   item.quantity = item.quantity + quantity;
   if (cost && cost > 0) item.cost = cost;
   if (expiryDate) item.expiryDate = expiryDate;
   
-  // Record transaction
   const transaction = {
     id: Date.now().toString(),
     type: "STOCK_IN",
@@ -190,7 +204,7 @@ function addStock(itemId, quantity, unit, cost, expiryDate, note) {
 }
 
 // ============================================
-// STOCK OUT (Kitchen Use) - No PIN required
+// STOCK OUT (Kitchen Use) - NO PIN (Open to all)
 // ============================================
 
 function removeStock(itemId, quantity, reason, note) {
@@ -224,6 +238,86 @@ function removeStock(itemId, quantity, reason, note) {
   return true;
 }
 
+// ============================================
+// PIN PROTECTED EXPORT FUNCTIONS
+// ============================================
+
+function exportInventoryToCSV() {
+  verifyPIN("Export Inventory Data", () => {
+    if (items.length === 0) {
+      showToast('No items to export', 'error');
+      return;
+    }
+    
+    const headers = ['Name', 'Quantity', 'Unit', 'Cost', 'Total Value', 'Expiry Date', 'Min Stock'];
+    const rows = items.map(item => [
+      item.name,
+      item.quantity,
+      item.unit,
+      item.cost,
+      (item.quantity * item.cost).toFixed(2),
+      item.expiryDate || 'N/A',
+      item.minStock
+    ]);
+    
+    const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
+    downloadCSV(csvContent, `inventory_${new Date().toISOString().split('T')[0]}.csv`);
+    showToast('Inventory exported successfully', 'success');
+  });
+}
+
+function exportTransactionsToCSV() {
+  verifyPIN("Export Transaction Data", () => {
+    if (transactions.length === 0) {
+      showToast('No transactions to export', 'error');
+      return;
+    }
+    
+    const headers = ['Date', 'Type', 'Item', 'Quantity', 'Unit', 'Value', 'Reason', 'Reference'];
+    const rows = transactions.map(t => [
+      new Date(t.timestamp).toLocaleString(),
+      t.type === 'STOCK_IN' ? 'STOCK IN' : 'KITCHEN OUT',
+      t.itemName,
+      t.quantity,
+      t.unit,
+      (t.quantity * (t.cost || 0)).toFixed(2),
+      t.reason || (t.type === 'STOCK_IN' ? 'Restock' : 'Kitchen Use'),
+      t.note || '-'
+    ]);
+    
+    const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
+    downloadCSV(csvContent, `transactions_${new Date().toISOString().split('T')[0]}.csv`);
+    showToast('Transactions exported successfully', 'success');
+  });
+}
+
+function downloadCSV(content, filename) {
+  const blob = new Blob([content], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ============================================
+// PIN PROTECTED RESET FUNCTION
+// ============================================
+
+function resetData() {
+  verifyPIN("Reset All Data", () => {
+    if (confirm('⚠️ WARNING: This will delete ALL data and restore from CSV.\n\nThis action cannot be undone. Are you sure?')) {
+      localStorage.clear();
+      location.reload();
+    }
+  });
+}
+
+// ============================================
+// STOCK STATUS FUNCTIONS
+// ============================================
+
 function getStockStatus(item) {
   if (item.quantity <= 0) return { class: 'status-expired', text: 'Out of Stock', icon: '❌' };
   if (item.quantity < item.minStock) return { class: 'status-low', text: 'Low Stock', icon: '⚠️' };
@@ -235,65 +329,6 @@ function filterItems() {
   return items.filter(item => 
     item.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
-}
-
-// ============================================
-// EXPORT FUNCTIONS
-// ============================================
-
-function exportInventoryToCSV() {
-  if (items.length === 0) {
-    showToast('No items to export', 'error');
-    return;
-  }
-  
-  const headers = ['Name', 'Quantity', 'Unit', 'Cost', 'Total Value', 'Expiry Date', 'Min Stock'];
-  const rows = items.map(item => [
-    item.name,
-    item.quantity,
-    item.unit,
-    item.cost,
-    (item.quantity * item.cost).toFixed(2),
-    item.expiryDate || 'N/A',
-    item.minStock
-  ]);
-  
-  const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
-  downloadCSV(csvContent, `inventory_${new Date().toISOString().split('T')[0]}.csv`);
-  showToast('Inventory exported successfully', 'success');
-}
-
-function exportTransactionsToCSV() {
-  if (transactions.length === 0) {
-    showToast('No transactions to export', 'error');
-    return;
-  }
-  
-  const headers = ['Date', 'Type', 'Item', 'Quantity', 'Unit', 'Value', 'Reason', 'Reference'];
-  const rows = transactions.map(t => [
-    new Date(t.timestamp).toLocaleString(),
-    t.type === 'STOCK_IN' ? 'STOCK IN' : 'KITCHEN OUT',
-    t.itemName,
-    t.quantity,
-    t.unit,
-    (t.quantity * (t.cost || 0)).toFixed(2),
-    t.reason || (t.type === 'STOCK_IN' ? 'Restock' : 'Kitchen Use'),
-    t.note || '-'
-  ]);
-  
-  const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
-  downloadCSV(csvContent, `transactions_${new Date().toISOString().split('T')[0]}.csv`);
-  showToast('Transactions exported successfully', 'success');
-}
-
-function downloadCSV(content, filename) {
-  const blob = new Blob([content], { type: 'text/csv' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
 }
 
 // ============================================
@@ -431,13 +466,13 @@ function renderInventory() {
       <h2><i class="fas fa-boxes"></i> Complete Inventory</h2>
       <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
         <button class="btn btn-success" onclick="openStockInModal()">
-          <i class="fas fa-plus"></i> Add Stock (PIN Protected)
+          <i class="fas fa-plus"></i> Add Stock (PIN)
         </button>
         <button class="btn btn-secondary" onclick="exportInventoryToCSV()">
-          <i class="fas fa-download"></i> Export CSV
+          <i class="fas fa-download"></i> Export CSV (PIN)
         </button>
         <button class="btn btn-secondary" onclick="reloadCSV()">
-          <i class="fas fa-sync-alt"></i> Sync CSV
+          <i class="fas fa-sync-alt"></i> Sync CSV (PIN)
         </button>
       </div>
     </div>
@@ -514,9 +549,7 @@ function renderStockOut() {
   const html = `
     <div class="section-header">
       <h2><i class="fas fa-utensils"></i> Kitchen Use - Remove Stock</h2>
-      <button class="btn btn-secondary" onclick="reloadCSV()">
-        <i class="fas fa-sync-alt"></i> Sync CSV
-      </button>
+      <p style="font-size: 0.8rem; color: var(--gray);">No PIN required - Open for kitchen staff</p>
     </div>
     
     <div class="search-section" style="margin-bottom: 1.5rem;">
@@ -565,10 +598,7 @@ function renderLedger() {
       <h2><i class="fas fa-history"></i> Transaction Ledger</h2>
       <div style="display: flex; gap: 0.5rem;">
         <button class="btn btn-secondary" onclick="exportTransactionsToCSV()">
-          <i class="fas fa-download"></i> Export CSV
-        </button>
-        <button class="btn btn-secondary" onclick="reloadCSV()">
-          <i class="fasfa-sync-alt"></i> Sync CSV
+          <i class="fas fa-download"></i> Export CSV (PIN)
         </button>
         <span style="font-size: 0.7rem; color: var(--gray); padding: 0.5rem;">Total: ${transactions.length} records</span>
       </div>
@@ -599,7 +629,7 @@ function renderLedger() {
               <td>${escapeHtml(t.note || t.reason || '-')}</td
             </tr>
           `).join('')}
-          ${transactions.length === 0 ? '<td><td colspan="7" class="text-center">No transactions recorded yet</td</tr>' : ''}
+          ${transactions.length === 0 ? '<tr><td colspan="7" class="text-center">No transactions recorded yet</td</tr>' : ''}
         </tbody>
       </table>
     </div>
@@ -618,18 +648,26 @@ function renderSettings() {
     
     <div class="table-container" style="margin-bottom: 1.5rem;">
       <div style="padding: 1.5rem;">
-        <h3>🔒 PIN Protection</h3>
+        <h3>🔒 PIN Protected Operations</h3>
         <p style="font-size: 0.8rem; color: var(--gray); margin: 0.5rem 0;">
-          Stock IN operations require PIN verification.<br>
-          Current PIN: <strong>${'*'.repeat(STOCK_IN_PIN.length)}</strong> (${STOCK_IN_PIN})
+          The following operations require Master PIN:<br>
+          • Add Stock<br>
+          • Sync CSV Data<br>
+          • Export Inventory/Transactions<br>
+          • Reset All Data<br>
+          • Auto-Refresh Settings
         </p>
-        <p style="font-size: 0.7rem; color: #f59e0b;">To change PIN, edit STOCK_IN_PIN value in script.js</p>
+        <p style="font-size: 0.8rem; color: #10b981; margin: 0.5rem 0;">
+          ✅ Kitchen Use (Stock OUT) does NOT require PIN - Open for staff
+        </p>
+        <p style="font-size: 0.7rem; color: #f59e0b;">Current Master PIN: <strong>${'*'.repeat(MASTER_PIN.length)}</strong> (${MASTER_PIN})</p>
+        <p style="font-size: 0.7rem; color: #6b7280;">To change PIN, edit MASTER_PIN value in script.js</p>
       </div>
     </div>
     
     <div class="table-container" style="margin-bottom: 1.5rem;">
       <div style="padding: 1.5rem;">
-        <h3>CSV Auto-Refresh</h3>
+        <h3>CSV Auto-Refresh (PIN Protected)</h3>
         <p style="font-size: 0.8rem; color: var(--gray); margin: 0.5rem 0;">
           Automatically checks for CSV changes every 10 seconds.
           Current status: <strong>${autoRefreshStatus}</strong>
@@ -650,7 +688,7 @@ function renderSettings() {
     
     <div class="table-container" style="margin-bottom: 1.5rem;">
       <div style="padding: 1.5rem;">
-        <h3>Export Data</h3>
+        <h3>Export Data (PIN Protected)</h3>
         <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
           <button class="btn btn-primary" onclick="exportInventoryToCSV()">
             <i class="fas fa-download"></i> Export Inventory
@@ -681,7 +719,7 @@ function renderSettings() {
     
     <div class="table-container">
       <div style="padding: 1.5rem;">
-        <h3>Data Management</h3>
+        <h3>Data Management (PIN Protected)</h3>
         <p style="font-size: 0.8rem; color: var(--gray); margin: 0.5rem 0;">Reset all inventory and transaction records.</p>
         <button class="btn btn-danger" onclick="resetData()">
           <i class="fas fa-trash"></i> Reset All Data
@@ -708,7 +746,7 @@ function attachSearchListener() {
 // ============================================
 
 function openStockInModal(presetItemId = null) {
-  verifyPIN(() => {
+  verifyPIN("Add Stock", () => {
     const select = document.getElementById('stockInItem');
     select.innerHTML = '<option value="">-- Select Product --</option>' + 
       items.map(i => `<option value="${i.id}" ${presetItemId === i.id ? 'selected' : ''}>${escapeHtml(i.name)} (Current: ${i.quantity} ${i.unit})</option>`).join('');
@@ -802,13 +840,6 @@ function loadData() {
   if (savedTransactions) transactions = JSON.parse(savedTransactions);
 }
 
-function resetData() {
-  if (confirm('⚠️ WARNING: This will delete ALL data and restore from CSV.\n\nThis action cannot be undone. Are you sure?')) {
-    localStorage.clear();
-    location.reload();
-  }
-}
-
 function toggleTheme(isDark) {
   darkMode = isDark;
   if (darkMode) {
@@ -878,10 +909,9 @@ function switchView(view) {
   const titles = {
     dashboard: { title: 'Dashboard', subtitle: 'Real-time inventory tracking and management' },
     inventory: { title: 'Inventory', subtitle: 'Complete product catalog with stock levels' },
-    stockin: { title: 'Add Stock', subtitle: 'PIN protected stock addition' },
-    stockout: { title: 'Kitchen Use', subtitle: 'Record ingredients used in kitchen' },
+    stockout: { title: 'Kitchen Use', subtitle: 'Record ingredients used in kitchen (No PIN)' },
     ledger: { title: 'Transaction Ledger', subtitle: 'Complete history of all stock movements' },
-    settings: { title: 'Settings', subtitle: 'System preferences and data management' }
+    settings: { title: 'Settings', subtitle: 'System preferences (PIN protected)' }
   };
   
   document.getElementById('pageTitle').innerText = titles[view]?.title || 'Dashboard';
@@ -906,6 +936,10 @@ function renderCurrentView() {
 // ============================================
 // INITIALIZATION
 // ============================================
+
+async function autoLoadCSV() {
+  await loadCSVFromFile();
+}
 
 function init() {
   loadData();
