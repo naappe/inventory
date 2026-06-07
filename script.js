@@ -1,6 +1,6 @@
 // ============================================
-// STOCKFLOW ERP SYSTEM - FULL PROTECTION
-// One Master PIN protects ALL sensitive operations
+// STOCKFLOW ERP SYSTEM - PRESERVES STOCK QUANTITIES
+// CSV only adds new items/updates prices - NEVER resets stock
 // ============================================
 
 // Data Storage
@@ -28,7 +28,7 @@ function verifyPIN(actionName, callback) {
 }
 
 // ============================================
-// CSV FUNCTIONS (PIN Protected)
+// CSV FUNCTIONS - PRESERVES STOCK QUANTITIES
 // ============================================
 
 async function loadCSVFromFile() {
@@ -70,7 +70,6 @@ function parseCSVData(csvText) {
         const name = row.Name || row.name || row.item_name;
         const unit = (row.Unit || row.unit || "PCS").toUpperCase();
         const cost = parseFloat(row.Price || row.price || row.Cost || row.cost || 0);
-        const quantity = parseFloat(row.Stock || row.stock || row.Quantity || row.quantity || 0);
         const expiryDate = row.ExpiryDate || row.expiry_date || row.Expiry || "";
         const minStock = parseInt(row.MinStock || row.minStock || 5);
         
@@ -82,7 +81,6 @@ function parseCSVData(csvText) {
           name: name,
           unit: unit,
           cost: cost,
-          quantity: quantity,
           expiryDate: expiryDate,
           minStock: minStock
         });
@@ -90,23 +88,25 @@ function parseCSVData(csvText) {
       
       let updatedCount = 0;
       let newCount = 0;
-      let deletedCount = 0;
       
+      // ONLY UPDATE or ADD items - NEVER DELETE and NEVER RESET STOCK
       for (const csvItem of csvItems) {
         const existingItem = items.find(i => i.name.toLowerCase() === csvItem.name.toLowerCase());
         
         if (existingItem) {
+          // UPDATE existing item - PRESERVE current stock quantity
           existingItem.unit = csvItem.unit;
           existingItem.cost = csvItem.cost;
-          existingItem.quantity = csvItem.quantity;
           existingItem.expiryDate = csvItem.expiryDate;
           existingItem.minStock = csvItem.minStock;
+          // IMPORTANT: DO NOT change existingItem.quantity
           updatedCount++;
         } else {
+          // ADD new item with default stock 0
           items.push({
             id: "item_" + Date.now() + "_" + Math.random(),
             name: csvItem.name,
-            quantity: csvItem.quantity,
+            quantity: 0,  // New items start at 0 stock
             unit: csvItem.unit,
             cost: csvItem.cost,
             expiryDate: csvItem.expiryDate,
@@ -116,21 +116,14 @@ function parseCSVData(csvText) {
         }
       }
       
-      const itemsToKeep = [];
-      for (const item of items) {
-        if (csvItemNames.has(item.name.toLowerCase())) {
-          itemsToKeep.push(item);
-        } else {
-          deletedCount++;
-        }
-      }
-      items = itemsToKeep;
+      // NOTE: Items NOT in CSV are KEPT (not deleted)
+      // This preserves items that might have been added manually
       
       saveData();
       renderCurrentView();
       
-      let message = `CSV Synced: ${updatedCount} updated, ${newCount} added`;
-      if (deletedCount > 0) message += `, ${deletedCount} deleted`;
+      let message = `CSV Synced: ${updatedCount} items updated`;
+      if (newCount > 0) message += `, ${newCount} new items added (stock 0)`;
       showToast(message, 'success');
     }
   });
@@ -139,7 +132,7 @@ function parseCSVData(csvText) {
 // PIN protected reload
 function reloadCSV() {
   verifyPIN("Sync with CSV", async () => {
-    showToast('Syncing with data.csv...', 'info');
+    showToast('Syncing with data.csv (stock quantities preserved)...', 'info');
     const success = await loadCSVFromFile();
     if (!success) {
       showToast('No data.csv file found', 'error');
@@ -204,7 +197,7 @@ function addStock(itemId, quantity, unit, cost, expiryDate, note) {
 }
 
 // ============================================
-// STOCK OUT (Kitchen Use) - NO PIN (Open to all)
+// STOCK OUT (Kitchen Use) - NO PIN
 // ============================================
 
 function removeStock(itemId, quantity, reason, note) {
@@ -249,7 +242,7 @@ function exportInventoryToCSV() {
       return;
     }
     
-    const headers = ['Name', 'Quantity', 'Unit', 'Cost', 'Total Value', 'Expiry Date', 'Min Stock'];
+    const headers = ['Name', 'Current Stock', 'Unit', 'Cost', 'Total Value', 'Expiry Date', 'Min Stock'];
     const rows = items.map(item => [
       item.name,
       item.quantity,
@@ -332,7 +325,7 @@ function filterItems() {
 }
 
 // ============================================
-// UI RENDERING
+// UI RENDERING (Same as before)
 // ============================================
 
 function renderDashboard() {
@@ -662,6 +655,19 @@ function renderSettings() {
         </p>
         <p style="font-size: 0.7rem; color: #f59e0b;">Current Master PIN: <strong>${'*'.repeat(MASTER_PIN.length)}</strong> (${MASTER_PIN})</p>
         <p style="font-size: 0.7rem; color: #6b7280;">To change PIN, edit MASTER_PIN value in script.js</p>
+      </div>
+    </div>
+    
+    <div class="table-container" style="margin-bottom: 1.5rem;">
+      <div style="padding: 1.5rem;">
+        <h3>CSV Sync Behavior</h3>
+        <p style="font-size: 0.8rem; color: #10b981; margin: 0.5rem 0;">
+          ✅ Stock quantities are NEVER reset by CSV sync<br>
+          ✅ CSV only updates: Unit, Cost, Expiry Date, Min Stock<br>
+          ✅ Current stock levels from kitchen usage are preserved<br>
+          ✅ New items are added with 0 stock<br>
+          ✅ Items removed from CSV remain in system
+        </p>
       </div>
     </div>
     
