@@ -1,14 +1,9 @@
 // ============================================
-// STOCKFLOW ERP SYSTEM - NO PASSWORD VERSION
-// Direct Role Selection on Login
+// STOCKFLOW ERP SYSTEM - NO LOGIN VERSION
+// Full access for everyone
 // ============================================
 
 // Data Storage
-let users = [
-  { id: 1, name: "Admin User", email: "admin@stockflow.com", role: "admin" },
-  { id: 2, name: "Staff User", email: "staff@stockflow.com", role: "staff" }
-];
-
 let items = [
   { id: "1", name: "Premium Rice", quantity: 150, unit: "KG", cost: 2.5, expiryDate: "2025-12-31", minStock: 50 },
   { id: "2", name: "Olive Oil", quantity: 45, unit: "L", cost: 8.99, expiryDate: "2025-06-15", minStock: 20 },
@@ -22,7 +17,6 @@ let transactions = [
   { id: "t2", type: "OUT", itemId: "3", itemName: "Coffee Beans", quantity: 5, unit: "KG", reason: "Sold", timestamp: new Date(Date.now() - 86400000).toISOString(), note: "Customer order" }
 ];
 
-let currentUser = null;
 let currentView = "dashboard";
 let darkMode = false;
 
@@ -95,96 +89,8 @@ async function autoLoadCSV() {
 }
 
 // ============================================
-// AUTHENTICATION - NO PASSWORD
-// ============================================
-
-function switchAuthTab(tab) {
-  document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
-  
-  if (tab === 'login') {
-    document.querySelector('.auth-tab:first-child').classList.add('active');
-    document.getElementById('loginForm').classList.add('active');
-  } else {
-    document.querySelector('.auth-tab:last-child').classList.add('active');
-    document.getElementById('signupForm').classList.add('active');
-  }
-}
-
-function handleLogin() {
-  const email = document.getElementById('loginEmail').value;
-  
-  const user = users.find(u => u.email === email);
-  
-  if (user) {
-    currentUser = user;
-    localStorage.setItem('currentUser', JSON.stringify(user));
-    document.getElementById('authModal').classList.add('hidden');
-    document.getElementById('app').classList.remove('hidden');
-    updateUserDisplay();
-    renderCurrentView();
-    showToast(`Welcome ${user.name} (${user.role.toUpperCase()})`, 'success');
-  } else {
-    showToast('Invalid email. Try: admin@stockflow.com or staff@stockflow.com', 'error');
-  }
-}
-
-function handleSignup() {
-  const name = document.getElementById('signupName').value;
-  const email = document.getElementById('signupEmail').value;
-  const role = document.getElementById('signupRole').value;
-  
-  if (!name || !email) {
-    showToast('Please fill all fields', 'error');
-    return;
-  }
-  
-  if (users.find(u => u.email === email)) {
-    showToast('Email already exists', 'error');
-    return;
-  }
-  
-  const newUser = {
-    id: users.length + 1,
-    name,
-    email,
-    role
-  };
-  
-  users.push(newUser);
-  saveData();
-  showToast('Account created! Please login.', 'success');
-  switchAuthTab('login');
-}
-
-function logout() {
-  currentUser = null;
-  localStorage.removeItem('currentUser');
-  document.getElementById('authModal').classList.remove('hidden');
-  document.getElementById('app').classList.add('hidden');
-  showToast('Logged out successfully', 'success');
-}
-
-function updateUserDisplay() {
-  if (currentUser) {
-    document.getElementById('userName').innerText = currentUser.name;
-    document.getElementById('userRole').innerText = currentUser.role === 'admin' ? 'Administrator' : 'Staff Member';
-    document.getElementById('userAvatar').innerText = currentUser.name.charAt(0);
-  }
-}
-
-function isAdmin() {
-  return currentUser?.role === 'admin';
-}
-
-// ============================================
 // INVENTORY FUNCTIONS
 // ============================================
-
-function getItemStock(itemId) {
-  const item = items.find(i => i.id === itemId);
-  return item ? item.quantity : 0;
-}
 
 function updateStock(itemId, quantity, type, cost, reason, note, expiryDate) {
   const item = items.find(i => i.id === itemId);
@@ -360,7 +266,7 @@ function renderDashboard() {
               <td>${escapeHtml(t.note || t.reason || '-')}</td
             </tr>
           `).join('')}
-          ${recentTransactions.length === 0 ? '<tr><td colspan="5" class="text-center">No transactions yet</td></tr>' : ''}
+          ${recentTransactions.length === 0 ? '<tr><td colspan="5" class="text-center">No transactions yet</td</tr>' : ''}
         </tbody>
       </table>
     </div>
@@ -373,7 +279,7 @@ function renderInventory() {
   const html = `
     <div class="section-header">
       <h2><i class="fas fa-boxes"></i> All Inventory Items</h2>
-      ${isAdmin() ? '<button class="btn btn-primary" onclick="openStockInModal()"><i class="fas fa-plus"></i> Add Stock</button>' : ''}
+      <button class="btn btn-primary" onclick="openStockInModal()"><i class="fas fa-plus"></i> Add Stock</button>
     </div>
     <div class="table-container">
       <table class="data-table">
@@ -400,10 +306,8 @@ function renderInventory() {
                 <td>${item.expiryDate || 'N/A'}</td
                 <td><span class="stock-status ${status.class}">${status.text}</span></td
                 <td>
-                  ${isAdmin() ? `
-                    <button class="btn btn-primary" style="padding: 0.3rem 0.6rem;" onclick="openStockInModal('${item.id}')">IN</button>
-                    <button class="btn btn-danger" style="padding: 0.3rem 0.6rem;" onclick="openStockOutModal('${item.id}')">OUT</button>
-                  ` : '<span>View only</span>'}
+                  <button class="btn btn-primary" style="padding: 0.3rem 0.6rem;" onclick="openStockInModal('${item.id}')">IN</button>
+                  <button class="btn btn-danger" style="padding: 0.3rem 0.6rem;" onclick="openStockOutModal('${item.id}')">OUT</button>
                 </td>
               </tr>
             `;
@@ -417,11 +321,6 @@ function renderInventory() {
 }
 
 function renderStockIn() {
-  if (!isAdmin()) {
-    document.getElementById('viewContainer').innerHTML = '<div class="staff-message" style="padding: 2rem; text-align: center;"><i class="fas fa-lock"></i> Only Admin can add stock</div>';
-    return;
-  }
-  
   const html = `
     <div class="section-header">
       <h2><i class="fas fa-arrow-down"></i> Stock IN</h2>
@@ -508,7 +407,7 @@ function renderLedger() {
               <td>${escapeHtml(t.note || t.reason || '-')}</td
             </tr>
           `).join('')}
-          ${transactions.length === 0 ? '<tr><td colspan="7" class="text-center">No transactions yet</td></tr>' : ''}
+          ${transactions.length === 0 ? '<tr><td colspan="7" class="text-center">No transactions yet</td</tr>' : ''}
         </tbody>
       </table>
     </div>
@@ -525,24 +424,6 @@ function renderSettings() {
     
     <div class="table-container" style="margin-bottom: 1.5rem;">
       <div style="padding: 1.5rem;">
-        <h3>Role Management</h3>
-        <table class="data-table">
-          <thead><tr><th>User</th><th>Email</th><th>Role</th></tr></thead>
-          <tbody>
-            ${users.map(u => `
-              <tr>
-                <td>${escapeHtml(u.name)}</td
-                <td>${escapeHtml(u.email)}</td
-                <td><span class="badge ${u.role === 'admin' ? 'badge-in' : 'badge-out'}">${u.role}</span></td
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      </div>
-    </div>
-    
-    <div class="table-container" style="margin-bottom: 1.5rem;">
-      <div style="padding: 1.5rem;">
         <h3>System Preferences</h3>
         <div class="form-group">
           <label>Theme Mode</label>
@@ -554,7 +435,6 @@ function renderSettings() {
       </div>
     </div>
     
-    ${isAdmin() ? `
     <div class="table-container">
       <div style="padding: 1.5rem;">
         <h3>Data Management</h3>
@@ -562,7 +442,6 @@ function renderSettings() {
         <p style="font-size: 0.7rem; margin-top: 0.5rem;">This will reset all inventory and transactions to default.</p>
       </div>
     </div>
-    ` : ''}
   `;
   
   document.getElementById('viewContainer').innerHTML = html;
@@ -573,11 +452,6 @@ function renderSettings() {
 // ============================================
 
 function openStockInModal(presetItemId = null) {
-  if (!isAdmin()) {
-    showToast('Only Admin can add stock', 'error');
-    return;
-  }
-  
   const select = document.getElementById('stockInItem');
   select.innerHTML = '<option value="">Select Item</option>' + 
     items.map(i => `<option value="${i.id}" ${presetItemId === i.id ? 'selected' : ''}>${escapeHtml(i.name)}</option>`).join('');
@@ -664,17 +538,14 @@ function processStockOut() {
 function saveData() {
   localStorage.setItem('stockflow_items', JSON.stringify(items));
   localStorage.setItem('stockflow_transactions', JSON.stringify(transactions));
-  localStorage.setItem('stockflow_users', JSON.stringify(users));
 }
 
 function loadData() {
   const savedItems = localStorage.getItem('stockflow_items');
   const savedTransactions = localStorage.getItem('stockflow_transactions');
-  const savedUsers = localStorage.getItem('stockflow_users');
   
   if (savedItems) items = JSON.parse(savedItems);
   if (savedTransactions) transactions = JSON.parse(savedTransactions);
-  if (savedUsers) users = JSON.parse(savedUsers);
 }
 
 function resetData() {
@@ -774,14 +645,6 @@ function renderCurrentView() {
 function init() {
   loadData();
   loadTheme();
-  
-  const savedUser = localStorage.getItem('currentUser');
-  if (savedUser) {
-    currentUser = JSON.parse(savedUser);
-    document.getElementById('authModal').classList.add('hidden');
-    document.getElementById('app').classList.remove('hidden');
-    updateUserDisplay();
-  }
   
   updateDateTime();
   setInterval(updateDateTime, 1000);
