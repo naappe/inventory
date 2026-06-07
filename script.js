@@ -1,6 +1,6 @@
 // ============================================
-// STOCKFLOW ERP SYSTEM - FULL FEATURES
-// Search | Export | Low Stock Alerts | Auto-Refresh
+// STOCKFLOW ERP SYSTEM - KITCHEN USE ONLY
+// Stock OUT only (consumption), CSV manages stock levels
 // ============================================
 
 // Data Storage
@@ -135,7 +135,7 @@ function startAutoRefresh() {
   autoRefreshInterval = setInterval(() => {
     console.log('Auto-refreshing CSV...');
     loadCSVFromFile();
-  }, 10000); // 10 seconds
+  }, 10000);
 }
 
 function stopAutoRefresh() {
@@ -146,43 +146,39 @@ function stopAutoRefresh() {
 }
 
 // ============================================
-// INVENTORY FUNCTIONS
+// STOCK OUT ONLY (Kitchen Use)
 // ============================================
 
-function updateStock(itemId, quantity, type, cost, reason, note, expiryDate) {
+function removeStock(itemId, quantity, reason, note) {
   const item = items.find(i => i.id === itemId);
   if (!item) return false;
   
-  if (type === 'OUT' && quantity > item.quantity) {
+  if (quantity > item.quantity) {
     showToast(`Insufficient stock! Only ${item.quantity} ${item.unit} available`, 'error');
     return false;
   }
   
-  if (type === 'IN') {
-    item.quantity = item.quantity + quantity;
-    if (cost && cost > 0) item.cost = cost;
-    if (expiryDate) item.expiryDate = expiryDate;
-  } else {
-    item.quantity = item.quantity - quantity;
-  }
+  // Remove stock
+  item.quantity = item.quantity - quantity;
   
+  // Record transaction
   const transaction = {
     id: Date.now().toString(),
-    type,
+    type: "KITCHEN_OUT",
     itemId: item.id,
     itemName: item.name,
     quantity: quantity,
     unit: item.unit,
-    cost: type === 'IN' ? (cost || item.cost) : item.cost,
+    cost: item.cost,
     timestamp: new Date().toISOString(),
     note: note || '',
-    reason: reason || null
+    reason: reason || 'Kitchen Use'
   };
   
   transactions.unshift(transaction);
   saveData();
   renderCurrentView();
-  showToast(`${type === 'IN' ? 'Stock IN' : 'Stock OUT'} successful! New quantity: ${item.quantity} ${item.unit}`, 'success');
+  showToast(`Kitchen used: ${quantity} ${item.unit} of ${item.name}. Remaining: ${item.quantity} ${item.unit}`, 'success');
   return true;
 }
 
@@ -192,7 +188,6 @@ function getStockStatus(item) {
   return { class: 'status-ok', text: 'In Stock', icon: '✅' };
 }
 
-// Filter items by search term
 function filterItems() {
   if (!searchTerm) return items;
   return items.filter(item => 
@@ -232,20 +227,21 @@ function exportTransactionsToCSV() {
     return;
   }
   
-  const headers = ['Date', 'Type', 'Item', 'Quantity', 'Unit', 'Value', 'Reference'];
+  const headers = ['Date', 'Type', 'Item', 'Quantity', 'Unit', 'Value', 'Reason', 'Reference'];
   const rows = transactions.map(t => [
     new Date(t.timestamp).toLocaleString(),
-    t.type,
+    t.type || 'KITCHEN_OUT',
     t.itemName,
     t.quantity,
     t.unit,
     (t.quantity * (t.cost || 0)).toFixed(2),
-    t.note || t.reason || '-'
+    t.reason || 'Kitchen Use',
+    t.note || '-'
   ]);
   
   const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
-  downloadCSV(csvContent, `transactions_${new Date().toISOString().split('T')[0]}.csv`);
-  showToast('Transactions exported successfully', 'success');
+  downloadCSV(csvContent, `kitchen_usage_${new Date().toISOString().split('T')[0]}.csv`);
+  showToast('Kitchen usage exported successfully', 'success');
 }
 
 function downloadCSV(content, filename) {
@@ -259,7 +255,7 @@ function downloadCSV(content, filename) {
 }
 
 // ============================================
-// UI RENDERING WITH SEARCH
+// UI RENDERING
 // ============================================
 
 function renderDashboard() {
@@ -278,7 +274,7 @@ function renderDashboard() {
           <div class="stat-icon"><i class="fas fa-box"></i></div>
         </div>
         <div class="stat-value">${totalItems}</div>
-        <div class="stat-label">Products in System</div>
+        <div class="stat-label">Products in Stock</div>
       </div>
       <div class="stat-card">
         <div class="stat-header">
@@ -286,7 +282,7 @@ function renderDashboard() {
           <div class="stat-icon"><i class="fas fa-warehouse"></i></div>
         </div>
         <div class="stat-value">${totalStock}</div>
-        <div class="stat-label">Total Units</div>
+        <div class="stat-label">Total Units Available</div>
       </div>
       <div class="stat-card">
         <div class="stat-header">
@@ -311,7 +307,7 @@ function renderDashboard() {
     </div>
     
     <div class="section-header">
-      <h2><i class="fas fa-boxes"></i> Recent Items</h2>
+      <h2><i class="fas fa-utensils"></i> Kitchen Stock</h2>
       <button class="btn btn-primary" onclick="switchView('inventory')">View All</button>
     </div>
     
@@ -325,17 +321,16 @@ function renderDashboard() {
               <span class="item-price">$${item.cost}</span>
             </div>
             <div class="card-details">
-              <span>Quantity: <strong style="font-size: 1.1rem;">${item.quantity}</strong> ${item.unit}</span>
+              <span>Available: <strong style="font-size: 1.1rem;">${item.quantity}</strong> ${item.unit}</span>
               <span>Expiry: ${item.expiryDate || 'N/A'}</span>
             </div>
             <div style="margin: 0.5rem 0;">
               <span class="stock-status ${status.class}">${status.icon} ${status.text}</span>
               ${item.quantity < item.minStock ? `<span style="margin-left: 0.5rem; font-size: 0.7rem; color: #f59e0b;">(Min: ${item.minStock})</span>` : ''}
             </div>
-            <div class="card-actions" style="display: flex; gap: 0.5rem; margin-top: 0.75rem;">
-              <button class="btn btn-success" style="flex:1; padding: 0.4rem;" onclick="openStockInModal('${item.id}')">+ IN</button>
-              <button class="btn btn-danger" style="flex:1; padding: 0.4rem;" onclick="openStockOutModal('${item.id}')">- OUT</button>
-            </div>
+            <button class="btn btn-warning" style="width: 100%; margin-top: 0.75rem; background: #f59e0b; color: white;" onclick="openStockOutModal('${item.id}')" ${item.quantity <= 0 ? 'disabled' : ''}>
+              <i class="fas fa-utensils"></i> Use in Kitchen
+            </button>
           </div>
         `;
       }).join('')}
@@ -343,28 +338,27 @@ function renderDashboard() {
     </div>
     
     <div class="section-header">
-      <h2><i class="fas fa-history"></i> Recent Transactions</h2>
+      <h2><i class="fas fa-history"></i> Recent Kitchen Usage</h2>
       <button class="btn btn-primary" onclick="switchView('ledger')">View All</button>
     </div>
     
     <div class="table-container">
       <table class="data-table">
         <thead>
-          <tr><th>Date & Time</th><th>Type</th><th>Item</th><th>Quantity</th><th>Unit</th><th>Value</th><th>Reference</th></tr>
+          <tr><th>Date & Time</th><th>Item</th><th>Quantity Used</th><th>Unit</th><th>Reason</th><th>Reference</th></tr>
         </thead>
         <tbody>
           ${recentTransactions.map(t => `
             <tr>
               <td>${new Date(t.timestamp).toLocaleString()}</td
-              <td><span class="badge ${t.type === 'IN' ? 'badge-in' : 'badge-out'}">${t.type}</span></td
               <td>${escapeHtml(t.itemName)}</td
               <td>${t.quantity}</td
               <td>${t.unit}</td
-              <td>$${(t.quantity * (t.cost || 0)).toFixed(2)}</td
-              <td>${escapeHtml(t.note || t.reason || '-')}</td
+              <td>${escapeHtml(t.reason || 'Kitchen Use')}</td
+              <td>${escapeHtml(t.note || '-')}</td
             </tr>
           `).join('')}
-          ${recentTransactions.length === 0 ? '<tr><td colspan="7" class="text-center">No transactions yet</td</tr>' : ''}
+          ${recentTransactions.length === 0 ? '<tr><td colspan="6" class="text-center">No kitchen usage recorded yet</td</tr>' : ''}
         </tbody>
       </table>
     </div>
@@ -380,7 +374,7 @@ function renderInventory() {
   
   const html = `
     <div class="section-header">
-      <h2><i class="fas fa-boxes"></i> All Inventory Items</h2>
+      <h2><i class="fas fa-boxes"></i> Kitchen Inventory</h2>
       <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
         <button class="btn btn-secondary" onclick="exportInventoryToCSV()" title="Export Inventory">
           <i class="fas fa-download"></i> Export CSV
@@ -388,15 +382,12 @@ function renderInventory() {
         <button class="btn btn-secondary" onclick="reloadCSV()" title="Sync with CSV file">
           <i class="fas fa-sync-alt"></i> Sync CSV
         </button>
-        <button class="btn btn-primary" onclick="openStockInModal()">
-          <i class="fas fa-plus"></i> Add Stock
-        </button>
       </div>
     </div>
     
     ${lowStockCount > 0 ? `
     <div class="alert-banner" style="background: rgba(245, 158, 11, 0.1); border-left: 3px solid #f59e0b; padding: 0.75rem 1rem; border-radius: 8px; margin-bottom: 1rem;">
-      <i class="fas fa-exclamation-triangle"></i> <strong>${lowStockCount} items</strong> are below minimum stock level. Consider restocking soon.
+      <i class="fas fa-exclamation-triangle"></i> <strong>${lowStockCount} items</strong> are below minimum stock level. Please update CSV with new stock.
     </div>
     ` : ''}
     
@@ -412,7 +403,7 @@ function renderInventory() {
             <div class="card-header">
               <div>
                 <span class="item-name">${escapeHtml(item.name)}</span>
-                <div style="font-size: 0.7rem; color: var(--gray); margin-top: 0.2rem;">Unit: ${item.unit} | Min: ${item.minStock}</div>
+                <div style="font-size: 0.7rem; color: var(--gray); margin-top: 0.2rem;">Unit: ${item.unit} | Min Stock: ${item.minStock}</div>
               </div>
               <div style="text-align: right;">
                 <span class="item-price">$${item.cost}</span>
@@ -422,7 +413,7 @@ function renderInventory() {
             
             <div style="background: var(--bg-light); padding: 0.75rem; border-radius: 12px; margin: 0.75rem 0;">
               <div style="display: flex; justify-content: space-between; align-items: baseline;">
-                <span style="font-size: 0.7rem; color: var(--gray);">Current Quantity</span>
+                <span style="font-size: 0.7rem; color: var(--gray);">Current Stock</span>
                 <span style="font-size: 1.5rem; font-weight: 700; ${item.quantity < item.minStock ? 'color: #f59e0b;' : ''}">${item.quantity}</span>
               </div>
               <div style="display: flex; justify-content: space-between; margin-top: 0.5rem;">
@@ -435,57 +426,13 @@ function renderInventory() {
               <span class="stock-status ${status.class}">${status.icon} ${status.text}</span>
             </div>
             
-            <div class="card-actions" style="display: flex; gap: 0.75rem; margin-top: 0.5rem;">
-              <button class="btn btn-success" style="flex:1;" onclick="openStockInModal('${item.id}')">
-                <i class="fas fa-arrow-down"></i> Stock IN
-              </button>
-              <button class="btn btn-danger" style="flex:1;" onclick="openStockOutModal('${item.id}')">
-                <i class="fas fa-arrow-up"></i> Stock OUT
-              </button>
-            </div>
+            <button class="btn btn-warning" style="width: 100%; background: #f59e0b; color: white;" onclick="openStockOutModal('${item.id}')" ${item.quantity <= 0 ? 'disabled' : ''}>
+              <i class="fas fa-utensils"></i> Use in Kitchen
+            </button>
           </div>
         `;
       }).join('')}
       ${filteredItems.length === 0 ? '<div class="empty-state" style="text-align: center; padding: 3rem;">No items found matching your search</div>' : ''}
-    </div>
-  `;
-  
-  document.getElementById('viewContainer').innerHTML = html;
-  attachSearchListener();
-}
-
-function renderStockIn() {
-  const filteredItems = filterItems();
-  
-  const html = `
-    <div class="section-header">
-      <h2><i class="fas fa-arrow-down"></i> Stock IN - Receive Products</h2>
-      <button class="btn btn-secondary" onclick="reloadCSV()">
-        <i class="fas fa-sync-alt"></i> Sync CSV
-      </button>
-    </div>
-    
-    <div class="search-section" style="margin-bottom: 1.5rem;">
-      <input type="text" id="searchInput" class="search-input" placeholder="🔍 Search items..." value="${searchTerm}" style="width: 100%; max-width: 400px;">
-    </div>
-    
-    <div class="cards-grid">
-      ${filteredItems.map(item => `
-        <div class="inventory-card">
-          <div class="card-header">
-            <span class="item-name">${escapeHtml(item.name)}</span>
-            <span class="item-price">Current: ${item.quantity} ${item.unit}</span>
-          </div>
-          <div class="card-details">
-            <span>Cost: $${item.cost}</span>
-            <span>Expiry: ${item.expiryDate || 'N/A'}</span>
-          </div>
-          <button class="btn btn-primary" style="margin-top: 0.75rem; width: 100%;" onclick="openStockInModal('${item.id}')">
-            <i class="fas fa-arrow-down"></i> Add Stock to ${escapeHtml(item.name)}
-          </button>
-        </div>
-      `).join('')}
-      ${filteredItems.length === 0 ? '<div class="empty-state" style="text-align: center; padding: 3rem;">No items found</div>' : ''}
     </div>
   `;
   
@@ -498,7 +445,7 @@ function renderStockOut() {
   
   const html = `
     <div class="section-header">
-      <h2><i class="fas fa-arrow-up"></i> Stock OUT - Remove Products</h2>
+      <h2><i class="fas fa-utensils"></i> Kitchen Use - Remove Stock</h2>
       <button class="btn btn-secondary" onclick="reloadCSV()">
         <i class="fas fa-sync-alt"></i> Sync CSV
       </button>
@@ -515,7 +462,7 @@ function renderStockOut() {
           <div class="inventory-card">
             <div class="card-header">
               <span class="item-name">${escapeHtml(item.name)}</span>
-              <span class="item-price">Stock: ${item.quantity} ${item.unit}</span>
+              <span class="item-price">Available: ${item.quantity} ${item.unit}</span>
             </div>
             <div class="card-details">
               <span>Cost: $${item.cost}</span>
@@ -524,8 +471,8 @@ function renderStockOut() {
             <div style="margin-bottom: 0.5rem;">
               <span class="stock-status ${status.class}">${status.icon} ${status.text}</span>
             </div>
-            <button class="btn btn-danger" style="margin-top: 0.75rem; width: 100%;" onclick="openStockOutModal('${item.id}')" ${item.quantity <= 0 ? 'disabled' : ''}>
-              <i class="fas fa-arrow-up"></i> Remove Stock from ${escapeHtml(item.name)}
+            <button class="btn btn-warning" style="margin-top: 0.75rem; width: 100%; background: #f59e0b; color: white;" onclick="openStockOutModal('${item.id}')" ${item.quantity <= 0 ? 'disabled' : ''}>
+              <i class="fas fa-utensils"></i> Use in Kitchen
             </button>
           </div>
         `;
@@ -541,15 +488,15 @@ function renderStockOut() {
 function renderLedger() {
   const html = `
     <div class="section-header">
-      <h2><i class="fas fa-history"></i> Transaction Ledger</h2>
+      <h2><i class="fas fa-history"></i> Kitchen Usage Ledger</h2>
       <div style="display: flex; gap: 0.5rem;">
-        <button class="btn btn-secondary" onclick="exportTransactionsToCSV()" title="Export Transactions">
+        <button class="btn btn-secondary" onclick="exportTransactionsToCSV()" title="Export Kitchen Usage">
           <i class="fas fa-download"></i> Export CSV
         </button>
         <button class="btn btn-secondary" onclick="reloadCSV()">
           <i class="fas fa-sync-alt"></i> Sync CSV
         </button>
-        <span style="font-size: 0.7rem; color: var(--gray); padding: 0.5rem;">Total: ${transactions.length} transactions</span>
+        <span style="font-size: 0.7rem; color: var(--gray); padding: 0.5rem;">Total: ${transactions.length} records</span>
       </div>
     </div>
     
@@ -558,27 +505,27 @@ function renderLedger() {
         <thead>
           <tr>
             <th>Date & Time</th>
-            <th>Type</th>
             <th>Item Name</th>
-            <th>Quantity</th>
+            <th>Quantity Used</th>
             <th>Unit</th>
             <th>Value</th>
-            <th>Reference / Note</th>
+            <th>Reason</th>
+            <th>Reference</th>
           </tr>
         </thead>
         <tbody>
           ${transactions.map(t => `
             <tr>
               <td>${new Date(t.timestamp).toLocaleString()}</td
-              <td><span class="badge ${t.type === 'IN' ? 'badge-in' : 'badge-out'}">${t.type}</span></td
               <td><strong>${escapeHtml(t.itemName)}</strong></td
               <td>${t.quantity}</td
               <td>${t.unit}</td
               <td>$${(t.quantity * (t.cost || 0)).toFixed(2)}</td
-              <td>${escapeHtml(t.note || t.reason || '-')}</td
+              <td>${escapeHtml(t.reason || 'Kitchen Use')}</td
+              <td>${escapeHtml(t.note || '-')}</td
             </tr>
           `).join('')}
-          ${transactions.length === 0 ? '<td><td colspan="7" class="text-center">No transactions recorded yet</td></tr>' : ''}
+          ${transactions.length === 0 ? '<tr><td colspan="7" class="text-center">No kitchen usage recorded yet</td</tr>' : ''}
         </tbody>
       </table>
     </div>
@@ -624,7 +571,7 @@ function renderSettings() {
             <i class="fas fa-download"></i> Export Inventory
           </button>
           <button class="btn btn-primary" onclick="exportTransactionsToCSV()">
-            <i class="fas fa-download"></i> Export Transactions
+            <i class="fas fa-download"></i> Export Kitchen Usage
           </button>
         </div>
       </div>
@@ -650,7 +597,7 @@ function renderSettings() {
     <div class="table-container">
       <div style="padding: 1.5rem;">
         <h3>Data Management</h3>
-        <p style="font-size: 0.8rem; color: var(--gray); margin: 0.5rem 0;">Reset all inventory items and transaction history to default values.</p>
+        <p style="font-size: 0.8rem; color: var(--gray); margin: 0.5rem 0;">Reset all inventory and kitchen usage records.</p>
         <button class="btn btn-danger" onclick="resetData()">
           <i class="fas fa-trash"></i> Reset All Data
         </button>
@@ -672,49 +619,16 @@ function attachSearchListener() {
 }
 
 // ============================================
-// MODAL FUNCTIONS
+// MODAL FUNCTIONS (Only Kitchen Use)
 // ============================================
-
-function openStockInModal(presetItemId = null) {
-  const select = document.getElementById('stockInItem');
-  select.innerHTML = '<option value="">-- Select Product --</option>' + 
-    items.map(i => `<option value="${i.id}" ${presetItemId === i.id ? 'selected' : ''}>${escapeHtml(i.name)} (Current: ${i.quantity} ${i.unit})</option>`).join('');
-  
-  document.getElementById('stockInQty').value = '';
-  document.getElementById('stockInUnit').value = '';
-  document.getElementById('stockInCost').value = '';
-  document.getElementById('stockInExpiry').value = '';
-  document.getElementById('stockInNote').value = '';
-  
-  document.getElementById('stockInModal').classList.remove('hidden');
-}
-
-function closeStockInModal() {
-  document.getElementById('stockInModal').classList.add('hidden');
-}
-
-function processStockIn() {
-  const itemId = document.getElementById('stockInItem').value;
-  const quantity = parseFloat(document.getElementById('stockInQty').value);
-  const unit = document.getElementById('stockInUnit').value;
-  const cost = parseFloat(document.getElementById('stockInCost').value);
-  const expiryDate = document.getElementById('stockInExpiry').value;
-  const note = document.getElementById('stockInNote').value;
-  
-  if (!itemId) { showToast('Please select an item', 'error'); return; }
-  if (!quantity || quantity <= 0) { showToast('Please enter valid quantity', 'error'); return; }
-  
-  updateStock(itemId, quantity, 'IN', cost, null, note, expiryDate);
-  closeStockInModal();
-}
 
 function openStockOutModal(presetItemId = null) {
   const select = document.getElementById('stockOutItem');
-  select.innerHTML = '<option value="">-- Select Product --</option>' + 
+  select.innerHTML = '<option value="">-- Select Item --</option>' + 
     items.map(i => `<option value="${i.id}" ${presetItemId === i.id ? 'selected' : ''}>${escapeHtml(i.name)} (Available: ${i.quantity} ${i.unit})</option>`).join('');
   
   document.getElementById('stockOutQty').value = '';
-  document.getElementById('stockOutReason').value = 'Sold';
+  document.getElementById('stockOutReason').value = 'Kitchen Use';
   document.getElementById('stockOutNote').value = '';
   updateStockOutInfo();
   
@@ -747,7 +661,7 @@ function processStockOut() {
   if (!itemId) { showToast('Please select an item', 'error'); return; }
   if (!quantity || quantity <= 0) { showToast('Please enter valid quantity', 'error'); return; }
   
-  updateStock(itemId, quantity, 'OUT', null, reason, note);
+  removeStock(itemId, quantity, reason, note);
   closeStockOutModal();
 }
 
@@ -769,7 +683,7 @@ function loadData() {
 }
 
 function resetData() {
-  if (confirm('⚠️ WARNING: This will delete ALL data and restore default inventory.\n\nThis action cannot be undone. Are you sure?')) {
+  if (confirm('⚠️ WARNING: This will delete ALL data and restore from CSV.\n\nThis action cannot be undone. Are you sure?')) {
     localStorage.clear();
     location.reload();
   }
@@ -842,11 +756,10 @@ function updateDateTime() {
 function switchView(view) {
   currentView = view;
   const titles = {
-    dashboard: { title: 'Dashboard', subtitle: 'Real-time inventory tracking and management' },
-    inventory: { title: 'Inventory', subtitle: 'Complete product catalog with stock levels' },
-    stockin: { title: 'Stock IN', subtitle: 'Receive products and add to inventory' },
-    stockout: { title: 'Stock OUT', subtitle: 'Remove products from inventory' },
-    ledger: { title: 'Transaction Ledger', subtitle: 'Complete history of all stock movements' },
+    dashboard: { title: 'Kitchen Dashboard', subtitle: 'Track kitchen inventory and usage' },
+    inventory: { title: 'Kitchen Inventory', subtitle: 'Current stock levels from CSV' },
+    stockout: { title: 'Kitchen Use', subtitle: 'Record ingredients used in kitchen' },
+    ledger: { title: 'Usage Ledger', subtitle: 'Complete history of kitchen usage' },
     settings: { title: 'Settings', subtitle: 'System preferences and data management' }
   };
   
@@ -864,7 +777,6 @@ function switchView(view) {
 function renderCurrentView() {
   if (currentView === 'dashboard') renderDashboard();
   else if (currentView === 'inventory') renderInventory();
-  else if (currentView === 'stockin') renderStockIn();
   else if (currentView === 'stockout') renderStockOut();
   else if (currentView === 'ledger') renderLedger();
   else if (currentView === 'settings') renderSettings();
@@ -889,14 +801,9 @@ function init() {
   if (themeBtn) themeBtn.addEventListener('click', () => toggleTheme(!darkMode));
   
   autoLoadCSV();
-  
-  // Auto-refresh is OFF by default, user can enable in Settings
 }
 
 // Make functions global
-window.openStockInModal = openStockInModal;
-window.closeStockInModal = closeStockInModal;
-window.processStockIn = processStockIn;
 window.openStockOutModal = openStockOutModal;
 window.closeStockOutModal = closeStockOutModal;
 window.processStockOut = processStockOut;
