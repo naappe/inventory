@@ -1,6 +1,6 @@
 // ============================================
-// STOCKFLOW ERP SYSTEM - CLEAN INVENTORY LAYOUT
-// No complex rules, simple quantity management
+// STOCKFLOW ERP SYSTEM - WITH CSV RELOAD
+// Auto-loads CSV on page load + manual reload button
 // ============================================
 
 // Data Storage
@@ -23,17 +23,17 @@ let currentView = "dashboard";
 let darkMode = false;
 
 // ============================================
-// AUTO LOAD CSV FROM GITHUB
+// CSV FUNCTIONS - WITH RELOAD
 // ============================================
 
-async function autoLoadCSV() {
+async function loadCSVFromFile() {
   try {
     const paths = ['data.csv', './data.csv'];
     let csvText = null;
     
     for (const path of paths) {
       try {
-        const response = await fetch(path, { cache: 'no-store' });
+        const response = await fetch(path, { cache: 'no-store' }); // no-store prevents caching
         if (response.ok) {
           csvText = await response.text();
           console.log(`CSV loaded from: ${path}`);
@@ -43,47 +43,84 @@ async function autoLoadCSV() {
     }
     
     if (csvText && csvText.trim().length > 0) {
-      Papa.parse(csvText, {
-        header: true,
-        skipEmptyLines: true,
-        complete: function(results) {
-          for (const row of results.data) {
-            const name = row.Name || row.name || row.item_name;
-            const unit = (row.Unit || row.unit || "PCS").toUpperCase();
-            const cost = parseFloat(row.Price || row.price || row.Cost || row.cost || 0);
-            const quantity = parseFloat(row.Stock || row.stock || row.Quantity || row.quantity || 0);
-            const expiryDate = row.ExpiryDate || row.expiry_date || row.Expiry || "";
-            
-            if (!name) continue;
-            
-            const existingItem = items.find(i => i.name.toLowerCase() === name.toLowerCase());
-            
-            if (existingItem) {
-              existingItem.cost = cost || existingItem.cost;
-              existingItem.unit = unit || existingItem.unit;
-              existingItem.quantity = quantity || existingItem.quantity;
-              if (expiryDate) existingItem.expiryDate = expiryDate;
-            } else {
-              items.push({
-                id: "item_" + Date.now() + "_" + Math.random(),
-                name: name,
-                quantity: quantity,
-                unit: unit,
-                cost: cost,
-                expiryDate: expiryDate,
-                minStock: 5
-              });
-            }
-          }
-          saveData();
-          renderCurrentView();
-          showToast(`Loaded ${items.length} items from CSV`, 'success');
-        }
-      });
+      parseCSVData(csvText);
+      return true;
     }
+    return false;
   } catch (error) {
     console.error("CSV Error:", error);
+    return false;
   }
+}
+
+function parseCSVData(csvText) {
+  Papa.parse(csvText, {
+    header: true,
+    skipEmptyLines: true,
+    complete: function(results) {
+      let newItems = [];
+      let updatedCount = 0;
+      let newCount = 0;
+      
+      for (const row of results.data) {
+        const name = row.Name || row.name || row.item_name;
+        const unit = (row.Unit || row.unit || "PCS").toUpperCase();
+        const cost = parseFloat(row.Price || row.price || row.Cost || row.cost || 0);
+        const quantity = parseFloat(row.Stock || row.stock || row.Quantity || row.quantity || 0);
+        const expiryDate = row.ExpiryDate || row.expiry_date || row.Expiry || "";
+        
+        if (!name) continue;
+        
+        const existingItem = items.find(i => i.name.toLowerCase() === name.toLowerCase());
+        
+        if (existingItem) {
+          // Update existing item
+          existingItem.cost = cost || existingItem.cost;
+          existingItem.unit = unit || existingItem.unit;
+          existingItem.quantity = quantity;
+          if (expiryDate) existingItem.expiryDate = expiryDate;
+          updatedCount++;
+          newItems.push(existingItem);
+        } else {
+          // Add new item
+          const newId = "item_" + Date.now() + "_" + Math.random();
+          const newItem = {
+            id: newId,
+            name: name,
+            quantity: quantity,
+            unit: unit,
+            cost: cost,
+            expiryDate: expiryDate,
+            minStock: 5
+          };
+          items.push(newItem);
+          newItems.push(newItem);
+          newCount++;
+        }
+      }
+      
+      // Remove items not in CSV (optional - comment out to keep existing items)
+      // items = newItems;
+      
+      saveData();
+      renderCurrentView();
+      showToast(`CSV Updated: ${updatedCount} items updated, ${newCount} new items added`, 'success');
+    }
+  });
+}
+
+// Manual reload function - call this when you want to reload CSV
+async function reloadCSV() {
+  showToast('Reloading CSV data...', 'info');
+  const success = await loadCSVFromFile();
+  if (!success) {
+    showToast('No data.csv file found', 'error');
+  }
+}
+
+// Auto-load on page load
+async function autoLoadCSV() {
+  await loadCSVFromFile();
 }
 
 // ============================================
@@ -135,7 +172,7 @@ function getStockStatus(item) {
 }
 
 // ============================================
-// UI RENDERING - CLEAN INVENTORY
+// UI RENDERING
 // ============================================
 
 function renderDashboard() {
@@ -231,7 +268,14 @@ function renderInventory() {
   const html = `
     <div class="section-header">
       <h2><i class="fas fa-boxes"></i> All Inventory Items</h2>
-      <button class="btn btn-primary" onclick="openStockInModal()"><i class="fas fa-plus"></i> Add Stock</button>
+      <div style="display: flex; gap: 0.5rem;">
+        <button class="btn btn-secondary" onclick="reloadCSV()" title="Reload from data.csv">
+          <i class="fas fa-sync-alt"></i> Reload CSV
+        </button>
+        <button class="btn btn-primary" onclick="openStockInModal()">
+          <i class="fas fa-plus"></i> Add Stock
+        </button>
+      </div>
     </div>
     
     <div class="cards-grid">
@@ -279,6 +323,9 @@ function renderStockIn() {
   const html = `
     <div class="section-header">
       <h2><i class="fas fa-arrow-down"></i> Stock IN - Receive Products</h2>
+      <button class="btn btn-secondary" onclick="reloadCSV()">
+        <i class="fas fa-sync-alt"></i> Refresh Items
+      </button>
     </div>
     <div class="cards-grid">
       ${items.map(item => `
@@ -306,6 +353,9 @@ function renderStockOut() {
   const html = `
     <div class="section-header">
       <h2><i class="fas fa-arrow-up"></i> Stock OUT - Remove Products</h2>
+      <button class="btn btn-secondary" onclick="reloadCSV()">
+        <i class="fas fa-sync-alt"></i> Refresh Items
+      </button>
     </div>
     <div class="cards-grid">
       ${items.map(item => `
@@ -333,8 +383,11 @@ function renderLedger() {
   const html = `
     <div class="section-header">
       <h2><i class="fas fa-history"></i> Transaction Ledger</h2>
-      <div>
+      <div style="display: flex; gap: 0.5rem;">
         <span style="font-size: 0.7rem; color: var(--gray);">Total: ${transactions.length} transactions</span>
+        <button class="btn btn-secondary" onclick="reloadCSV()">
+          <i class="fas fa-sync-alt"></i> Refresh
+        </button>
       </div>
     </div>
     
@@ -376,6 +429,18 @@ function renderSettings() {
   const html = `
     <div class="section-header">
       <h2><i class="fas fa-cog"></i> System Settings</h2>
+    </div>
+    
+    <div class="table-container" style="margin-bottom: 1.5rem;">
+      <div style="padding: 1.5rem;">
+        <h3>CSV Data Management</h3>
+        <p style="font-size: 0.8rem; color: var(--gray); margin: 0.5rem 0;">
+          Reload data from data.csv file in the same folder. Updates existing items and adds new ones.
+        </p>
+        <button class="btn btn-primary" onclick="reloadCSV()">
+          <i class="fas fa-sync-alt"></i> Reload CSV Now
+        </button>
+      </div>
     </div>
     
     <div class="table-container" style="margin-bottom: 1.5rem;">
@@ -537,11 +602,15 @@ function showToast(message, type) {
   
   const toast = document.createElement('div');
   toast.className = 'toast';
+  let bgColor = '#10b981';
+  if (type === 'error') bgColor = '#ef4444';
+  if (type === 'info') bgColor = '#3b82f6';
+  
   toast.style.cssText = `
     position: fixed;
     bottom: 20px;
     right: 20px;
-    background: ${type === 'success' ? '#10b981' : '#ef4444'};
+    background: ${bgColor};
     color: white;
     padding: 12px 20px;
     border-radius: 12px;
@@ -622,6 +691,7 @@ function init() {
   const themeBtn = document.getElementById('themeToggle');
   if (themeBtn) themeBtn.addEventListener('click', () => toggleTheme(!darkMode));
   
+  // Auto-load CSV on page load
   autoLoadCSV();
 }
 
@@ -636,5 +706,6 @@ window.updateStockOutInfo = updateStockOutInfo;
 window.switchView = switchView;
 window.toggleTheme = toggleTheme;
 window.resetData = resetData;
+window.reloadCSV = reloadCSV;
 
 init();
