@@ -1,6 +1,6 @@
 // ============================================
 // STOCKFLOW ERP SYSTEM - WITH PIN PROTECTED STOCK IN
-// Stock IN requires PIN | Stock OUT (Kitchen) open to all
+// Stock IN requires PIN | Stock OUT only when stock > 0
 // ============================================
 
 // Data Storage
@@ -374,9 +374,15 @@ function renderDashboard() {
               <button class="btn btn-success" style="flex:1;" onclick="openStockInModal('${item.id}')">
                 <i class="fas fa-plus"></i> + Add Stock
               </button>
-              <button class="btn btn-warning" style="flex:1; background: #f59e0b; color: white;" onclick="openStockOutModal('${item.id}')" ${item.quantity <= 0 ? 'disabled' : ''}>
-                <i class="fas fa-utensils"></i> Kitchen Use
-              </button>
+              ${item.quantity > 0 ? `
+                <button class="btn btn-warning" style="flex:1; background: #f59e0b; color: white;" onclick="openStockOutModal('${item.id}')">
+                  <i class="fas fa-utensils"></i> Kitchen Use
+                </button>
+              ` : `
+                <button class="btn btn-secondary" style="flex:1; background: #6b7280; color: white;" disabled>
+                  <i class="fas fa-ban"></i> Out of Stock
+                </button>
+              `}
             </div>
           </div>
         `;
@@ -481,9 +487,15 @@ function renderInventory() {
               <button class="btn btn-success" style="flex:1;" onclick="openStockInModal('${item.id}')">
                 <i class="fas fa-plus"></i> Add Stock
               </button>
-              <button class="btn btn-warning" style="flex:1; background: #f59e0b; color: white;" onclick="openStockOutModal('${item.id}')" ${item.quantity <= 0 ? 'disabled' : ''}>
-                <i class="fas fa-utensils"></i> Kitchen Use
-              </button>
+              ${item.quantity > 0 ? `
+                <button class="btn btn-warning" style="flex:1; background: #f59e0b; color: white;" onclick="openStockOutModal('${item.id}')">
+                  <i class="fas fa-utensils"></i> Kitchen Use
+                </button>
+              ` : `
+                <button class="btn btn-secondary" style="flex:1; background: #6b7280; color: white;" disabled>
+                  <i class="fas fa-ban"></i> Out of Stock
+                </button>
+              `}
             </div>
           </div>
         `;
@@ -494,11 +506,6 @@ function renderInventory() {
   
   document.getElementById('viewContainer').innerHTML = html;
   attachSearchListener();
-}
-
-function renderStockIn() {
-  // This page is replaced by the modal - but we keep it for consistency
-  renderInventory();
 }
 
 function renderStockOut() {
@@ -532,9 +539,15 @@ function renderStockOut() {
             <div style="margin-bottom: 0.5rem;">
               <span class="stock-status ${status.class}">${status.icon} ${status.text}</span>
             </div>
-            <button class="btn btn-warning" style="margin-top: 0.75rem; width: 100%; background: #f59e0b; color: white;" onclick="openStockOutModal('${item.id}')" ${item.quantity <= 0 ? 'disabled' : ''}>
-              <i class="fas fa-utensils"></i> Use in Kitchen
-            </button>
+            ${item.quantity > 0 ? `
+              <button class="btn btn-warning" style="margin-top: 0.75rem; width: 100%; background: #f59e0b; color: white;" onclick="openStockOutModal('${item.id}')">
+                <i class="fas fa-utensils"></i> Use in Kitchen
+              </button>
+            ` : `
+              <button class="btn btn-secondary" style="margin-top: 0.75rem; width: 100%; background: #6b7280; color: white;" disabled>
+                <i class="fas fa-ban"></i> Out of Stock - Cannot Use
+              </button>
+            `}
           </div>
         `;
       }).join('')}
@@ -555,7 +568,7 @@ function renderLedger() {
           <i class="fas fa-download"></i> Export CSV
         </button>
         <button class="btn btn-secondary" onclick="reloadCSV()">
-          <i class="fas fa-sync-alt"></i> Sync CSV
+          <i class="fasfa-sync-alt"></i> Sync CSV
         </button>
         <span style="font-size: 0.7rem; color: var(--gray); padding: 0.5rem;">Total: ${transactions.length} records</span>
       </div>
@@ -586,7 +599,7 @@ function renderLedger() {
               <td>${escapeHtml(t.note || t.reason || '-')}</td
             </tr>
           `).join('')}
-          ${transactions.length === 0 ? '<tr><td colspan="7" class="text-center">No transactions recorded yet</td</tr>' : ''}
+          ${transactions.length === 0 ? '<td><td colspan="7" class="text-center">No transactions recorded yet</td</tr>' : ''}
         </tbody>
       </table>
     </div>
@@ -885,7 +898,6 @@ function switchView(view) {
 function renderCurrentView() {
   if (currentView === 'dashboard') renderDashboard();
   else if (currentView === 'inventory') renderInventory();
-  else if (currentView === 'stockin') renderStockIn();
   else if (currentView === 'stockout') renderStockOut();
   else if (currentView === 'ledger') renderLedger();
   else if (currentView === 'settings') renderSettings();
