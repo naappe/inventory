@@ -1,6 +1,6 @@
 // ============================================
-// STOCKFLOW ERP SYSTEM - FULL CSV SYNC
-// Deletes items not in CSV, updates existing, adds new
+// STOCKFLOW ERP SYSTEM - FULL FEATURES
+// Search | Export | Low Stock Alerts | Auto-Refresh
 // ============================================
 
 // Data Storage
@@ -8,9 +8,11 @@ let items = [];
 let transactions = [];
 let currentView = "dashboard";
 let darkMode = false;
+let autoRefreshInterval = null;
+let searchTerm = "";
 
 // ============================================
-// CSV FUNCTIONS - FULL SYNC (DELETE REMOVED ITEMS)
+// CSV FUNCTIONS - FULL SYNC
 // ============================================
 
 async function loadCSVFromFile() {
@@ -45,7 +47,6 @@ function parseCSVData(csvText) {
     header: true,
     skipEmptyLines: true,
     complete: function(results) {
-      // Get items from CSV
       let csvItems = [];
       let csvItemNames = new Set();
       
@@ -55,6 +56,7 @@ function parseCSVData(csvText) {
         const cost = parseFloat(row.Price || row.price || row.Cost || row.cost || 0);
         const quantity = parseFloat(row.Stock || row.stock || row.Quantity || row.quantity || 0);
         const expiryDate = row.ExpiryDate || row.expiry_date || row.Expiry || "";
+        const minStock = parseInt(row.MinStock || row.minStock || 5);
         
         if (!name) continue;
         
@@ -65,28 +67,27 @@ function parseCSVData(csvText) {
           unit: unit,
           cost: cost,
           quantity: quantity,
-          expiryDate: expiryDate
+          expiryDate: expiryDate,
+          minStock: minStock
         });
       }
       
-      // Track changes
       let updatedCount = 0;
       let newCount = 0;
       let deletedCount = 0;
       
-      // 1. UPDATE existing items and ADD new ones
+      // Update existing and add new
       for (const csvItem of csvItems) {
         const existingItem = items.find(i => i.name.toLowerCase() === csvItem.name.toLowerCase());
         
         if (existingItem) {
-          // Update existing item (preserve ID)
           existingItem.unit = csvItem.unit;
           existingItem.cost = csvItem.cost;
           existingItem.quantity = csvItem.quantity;
           existingItem.expiryDate = csvItem.expiryDate;
+          existingItem.minStock = csvItem.minStock;
           updatedCount++;
         } else {
-          // Add new item
           items.push({
             id: "item_" + Date.now() + "_" + Math.random(),
             name: csvItem.name,
@@ -94,13 +95,13 @@ function parseCSVData(csvText) {
             unit: csvItem.unit,
             cost: csvItem.cost,
             expiryDate: csvItem.expiryDate,
-            minStock: 5
+            minStock: csvItem.minStock || 5
           });
           newCount++;
         }
       }
       
-      // 2. DELETE items that are NOT in CSV
+      // Delete items not in CSV
       const itemsToKeep = [];
       for (const item of items) {
         if (csvItemNames.has(item.name.toLowerCase())) {
@@ -114,7 +115,6 @@ function parseCSVData(csvText) {
       saveData();
       renderCurrentView();
       
-      // Show detailed summary
       let message = `CSV Synced: ${updatedCount} updated, ${newCount} added`;
       if (deletedCount > 0) message += `, ${deletedCount} deleted`;
       showToast(message, 'success');
@@ -122,7 +122,6 @@ function parseCSVData(csvText) {
   });
 }
 
-// Manual reload function
 async function reloadCSV() {
   showToast('Syncing with data.csv...', 'info');
   const success = await loadCSVFromFile();
@@ -131,9 +130,19 @@ async function reloadCSV() {
   }
 }
 
-// Auto-load on page load
-async function autoLoadCSV() {
-  await loadCSVFromFile();
+function startAutoRefresh() {
+  if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+  autoRefreshInterval = setInterval(() => {
+    console.log('Auto-refreshing CSV...');
+    loadCSVFromFile();
+  }, 10000); // 10 seconds
+}
+
+function stopAutoRefresh() {
+  if (autoRefreshInterval) {
+    clearInterval(autoRefreshInterval);
+    autoRefreshInterval = null;
+  }
 }
 
 // ============================================
@@ -149,7 +158,6 @@ function updateStock(itemId, quantity, type, cost, reason, note, expiryDate) {
     return false;
   }
   
-  // Simple stock update
   if (type === 'IN') {
     item.quantity = item.quantity + quantity;
     if (cost && cost > 0) item.cost = cost;
@@ -158,7 +166,6 @@ function updateStock(itemId, quantity, type, cost, reason, note, expiryDate) {
     item.quantity = item.quantity - quantity;
   }
   
-  // Record transaction
   const transaction = {
     id: Date.now().toString(),
     type,
@@ -180,18 +187,87 @@ function updateStock(itemId, quantity, type, cost, reason, note, expiryDate) {
 }
 
 function getStockStatus(item) {
-  if (item.quantity <= 0) return { class: 'status-expired', text: 'Out of Stock' };
-  return { class: 'status-ok', text: 'In Stock' };
+  if (item.quantity <= 0) return { class: 'status-expired', text: 'Out of Stock', icon: '❌' };
+  if (item.quantity < item.minStock) return { class: 'status-low', text: 'Low Stock', icon: '⚠️' };
+  return { class: 'status-ok', text: 'In Stock', icon: '✅' };
+}
+
+// Filter items by search term
+function filterItems() {
+  if (!searchTerm) return items;
+  return items.filter(item => 
+    item.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 }
 
 // ============================================
-// UI RENDERING
+// EXPORT FUNCTIONS
+// ============================================
+
+function exportInventoryToCSV() {
+  if (items.length === 0) {
+    showToast('No items to export', 'error');
+    return;
+  }
+  
+  const headers = ['Name', 'Quantity', 'Unit', 'Cost', 'Total Value', 'Expiry Date', 'Min Stock'];
+  const rows = items.map(item => [
+    item.name,
+    item.quantity,
+    item.unit,
+    item.cost,
+    (item.quantity * item.cost).toFixed(2),
+    item.expiryDate || 'N/A',
+    item.minStock
+  ]);
+  
+  const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
+  downloadCSV(csvContent, `inventory_${new Date().toISOString().split('T')[0]}.csv`);
+  showToast('Inventory exported successfully', 'success');
+}
+
+function exportTransactionsToCSV() {
+  if (transactions.length === 0) {
+    showToast('No transactions to export', 'error');
+    return;
+  }
+  
+  const headers = ['Date', 'Type', 'Item', 'Quantity', 'Unit', 'Value', 'Reference'];
+  const rows = transactions.map(t => [
+    new Date(t.timestamp).toLocaleString(),
+    t.type,
+    t.itemName,
+    t.quantity,
+    t.unit,
+    (t.quantity * (t.cost || 0)).toFixed(2),
+    t.note || t.reason || '-'
+  ]);
+  
+  const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
+  downloadCSV(csvContent, `transactions_${new Date().toISOString().split('T')[0]}.csv`);
+  showToast('Transactions exported successfully', 'success');
+}
+
+function downloadCSV(content, filename) {
+  const blob = new Blob([content], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ============================================
+// UI RENDERING WITH SEARCH
 // ============================================
 
 function renderDashboard() {
-  const totalItems = items.length;
-  const totalStock = items.reduce((sum, i) => sum + i.quantity, 0);
-  const totalValue = items.reduce((sum, i) => sum + (i.quantity * i.cost), 0);
+  const filteredItems = filterItems();
+  const totalItems = filteredItems.length;
+  const totalStock = filteredItems.reduce((sum, i) => sum + i.quantity, 0);
+  const totalValue = filteredItems.reduce((sum, i) => sum + (i.quantity * i.cost), 0);
+  const lowStockCount = filteredItems.filter(i => i.quantity < i.minStock).length;
   const recentTransactions = transactions.slice(0, 10);
   
   const html = `
@@ -220,6 +296,18 @@ function renderDashboard() {
         <div class="stat-value">$${totalValue.toLocaleString()}</div>
         <div class="stat-label">Inventory Value</div>
       </div>
+      <div class="stat-card">
+        <div class="stat-header">
+          <span>Low Stock Alerts</span>
+          <div class="stat-icon"><i class="fas fa-exclamation-triangle"></i></div>
+        </div>
+        <div class="stat-value" style="color: ${lowStockCount > 0 ? '#f59e0b' : '#10b981'}">${lowStockCount}</div>
+        <div class="stat-label">Below minimum stock</div>
+      </div>
+    </div>
+    
+    <div class="search-section" style="margin-bottom: 1.5rem;">
+      <input type="text" id="searchInput" class="search-input" placeholder="🔍 Search items by name..." value="${searchTerm}" style="width: 100%; max-width: 400px;">
     </div>
     
     <div class="section-header">
@@ -228,22 +316,30 @@ function renderDashboard() {
     </div>
     
     <div class="cards-grid">
-      ${items.slice(0, 6).map(item => `
-        <div class="inventory-card">
-          <div class="card-header">
-            <span class="item-name">${escapeHtml(item.name)}</span>
-            <span class="item-price">$${item.cost}</span>
+      ${filteredItems.slice(0, 6).map(item => {
+        const status = getStockStatus(item);
+        return `
+          <div class="inventory-card ${status.class === 'status-low' ? 'low-stock-card' : ''}" style="${status.class === 'status-low' ? 'border-left: 3px solid #f59e0b;' : ''} ${status.class === 'status-expired' ? 'border-left: 3px solid #ef4444;' : ''}">
+            <div class="card-header">
+              <span class="item-name">${escapeHtml(item.name)}</span>
+              <span class="item-price">$${item.cost}</span>
+            </div>
+            <div class="card-details">
+              <span>Quantity: <strong style="font-size: 1.1rem;">${item.quantity}</strong> ${item.unit}</span>
+              <span>Expiry: ${item.expiryDate || 'N/A'}</span>
+            </div>
+            <div style="margin: 0.5rem 0;">
+              <span class="stock-status ${status.class}">${status.icon} ${status.text}</span>
+              ${item.quantity < item.minStock ? `<span style="margin-left: 0.5rem; font-size: 0.7rem; color: #f59e0b;">(Min: ${item.minStock})</span>` : ''}
+            </div>
+            <div class="card-actions" style="display: flex; gap: 0.5rem; margin-top: 0.75rem;">
+              <button class="btn btn-success" style="flex:1; padding: 0.4rem;" onclick="openStockInModal('${item.id}')">+ IN</button>
+              <button class="btn btn-danger" style="flex:1; padding: 0.4rem;" onclick="openStockOutModal('${item.id}')">- OUT</button>
+            </div>
           </div>
-          <div class="card-details">
-            <span>Quantity: ${item.quantity} ${item.unit}</span>
-            <span>Expiry: ${item.expiryDate || 'N/A'}</span>
-          </div>
-          <div class="card-actions" style="display: flex; gap: 0.5rem; margin-top: 0.75rem;">
-            <button class="btn btn-success" style="flex:1; padding: 0.4rem;" onclick="openStockInModal('${item.id}')">+ IN</button>
-            <button class="btn btn-danger" style="flex:1; padding: 0.4rem;" onclick="openStockOutModal('${item.id}')">- OUT</button>
-          </div>
-        </div>
-      `).join('')}
+        `;
+      }).join('')}
+      ${filteredItems.length === 0 ? '<div class="empty-state" style="text-align: center; padding: 3rem;">No items found matching your search</div>' : ''}
     </div>
     
     <div class="section-header">
@@ -275,15 +371,22 @@ function renderDashboard() {
   `;
   
   document.getElementById('viewContainer').innerHTML = html;
+  attachSearchListener();
 }
 
 function renderInventory() {
+  const filteredItems = filterItems();
+  const lowStockCount = filteredItems.filter(i => i.quantity < i.minStock).length;
+  
   const html = `
     <div class="section-header">
       <h2><i class="fas fa-boxes"></i> All Inventory Items</h2>
-      <div style="display: flex; gap: 0.5rem;">
+      <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+        <button class="btn btn-secondary" onclick="exportInventoryToCSV()" title="Export Inventory">
+          <i class="fas fa-download"></i> Export CSV
+        </button>
         <button class="btn btn-secondary" onclick="reloadCSV()" title="Sync with CSV file">
-          <i class="fas fa-sync-alt"></i> Sync with CSV
+          <i class="fas fa-sync-alt"></i> Sync CSV
         </button>
         <button class="btn btn-primary" onclick="openStockInModal()">
           <i class="fas fa-plus"></i> Add Stock
@@ -291,58 +394,83 @@ function renderInventory() {
       </div>
     </div>
     
+    ${lowStockCount > 0 ? `
+    <div class="alert-banner" style="background: rgba(245, 158, 11, 0.1); border-left: 3px solid #f59e0b; padding: 0.75rem 1rem; border-radius: 8px; margin-bottom: 1rem;">
+      <i class="fas fa-exclamation-triangle"></i> <strong>${lowStockCount} items</strong> are below minimum stock level. Consider restocking soon.
+    </div>
+    ` : ''}
+    
+    <div class="search-section" style="margin-bottom: 1.5rem;">
+      <input type="text" id="searchInput" class="search-input" placeholder="🔍 Search items by name..." value="${searchTerm}" style="width: 100%; max-width: 400px;">
+    </div>
+    
     <div class="cards-grid">
-      ${items.map(item => `
-        <div class="inventory-card">
-          <div class="card-header">
-            <div>
-              <span class="item-name">${escapeHtml(item.name)}</span>
-              <div style="font-size: 0.7rem; color: var(--gray); margin-top: 0.2rem;">Unit: ${item.unit}</div>
+      ${filteredItems.map(item => {
+        const status = getStockStatus(item);
+        return `
+          <div class="inventory-card ${status.class === 'status-low' ? 'low-stock-card' : ''}" style="${status.class === 'status-low' ? 'border-left: 3px solid #f59e0b;' : ''} ${status.class === 'status-expired' ? 'border-left: 3px solid #ef4444;' : ''}">
+            <div class="card-header">
+              <div>
+                <span class="item-name">${escapeHtml(item.name)}</span>
+                <div style="font-size: 0.7rem; color: var(--gray); margin-top: 0.2rem;">Unit: ${item.unit} | Min: ${item.minStock}</div>
+              </div>
+              <div style="text-align: right;">
+                <span class="item-price">$${item.cost}</span>
+                <div style="font-size: 0.7rem; color: var(--gray);">per unit</div>
+              </div>
             </div>
-            <div style="text-align: right;">
-              <span class="item-price">$${item.cost}</span>
-              <div style="font-size: 0.7rem; color: var(--gray);">per unit</div>
+            
+            <div style="background: var(--bg-light); padding: 0.75rem; border-radius: 12px; margin: 0.75rem 0;">
+              <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                <span style="font-size: 0.7rem; color: var(--gray);">Current Quantity</span>
+                <span style="font-size: 1.5rem; font-weight: 700; ${item.quantity < item.minStock ? 'color: #f59e0b;' : ''}">${item.quantity}</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; margin-top: 0.5rem;">
+                <span>Expiry: ${item.expiryDate || 'N/A'}</span>
+                <span>Total Value: $${(item.quantity * item.cost).toFixed(2)}</span>
+              </div>
+            </div>
+            
+            <div style="margin-bottom: 0.5rem;">
+              <span class="stock-status ${status.class}">${status.icon} ${status.text}</span>
+            </div>
+            
+            <div class="card-actions" style="display: flex; gap: 0.75rem; margin-top: 0.5rem;">
+              <button class="btn btn-success" style="flex:1;" onclick="openStockInModal('${item.id}')">
+                <i class="fas fa-arrow-down"></i> Stock IN
+              </button>
+              <button class="btn btn-danger" style="flex:1;" onclick="openStockOutModal('${item.id}')">
+                <i class="fas fa-arrow-up"></i> Stock OUT
+              </button>
             </div>
           </div>
-          
-          <div style="background: var(--bg-light); padding: 0.75rem; border-radius: 12px; margin: 0.75rem 0;">
-            <div style="display: flex; justify-content: space-between; align-items: baseline;">
-              <span style="font-size: 0.7rem; color: var(--gray);">Current Quantity</span>
-              <span style="font-size: 1.5rem; font-weight: 700;">${item.quantity}</span>
-            </div>
-            <div style="display: flex; justify-content: space-between; margin-top: 0.5rem;">
-              <span>Expiry: ${item.expiryDate || 'N/A'}</span>
-              <span>Total Value: $${(item.quantity * item.cost).toFixed(2)}</span>
-            </div>
-          </div>
-          
-          <div class="card-actions" style="display: flex; gap: 0.75rem; margin-top: 0.5rem;">
-            <button class="btn btn-success" style="flex:1;" onclick="openStockInModal('${item.id}')">
-              <i class="fas fa-arrow-down"></i> Stock IN
-            </button>
-            <button class="btn btn-danger" style="flex:1;" onclick="openStockOutModal('${item.id}')">
-              <i class="fas fa-arrow-up"></i> Stock OUT
-            </button>
-          </div>
-        </div>
-      `).join('')}
-      ${items.length === 0 ? '<div class="empty-state" style="text-align: center; padding: 3rem;">No items found. Click "Sync with CSV" to load data.</div>' : ''}
+        `;
+      }).join('')}
+      ${filteredItems.length === 0 ? '<div class="empty-state" style="text-align: center; padding: 3rem;">No items found matching your search</div>' : ''}
     </div>
   `;
   
   document.getElementById('viewContainer').innerHTML = html;
+  attachSearchListener();
 }
 
 function renderStockIn() {
+  const filteredItems = filterItems();
+  
   const html = `
     <div class="section-header">
       <h2><i class="fas fa-arrow-down"></i> Stock IN - Receive Products</h2>
       <button class="btn btn-secondary" onclick="reloadCSV()">
-        <i class="fas fa-sync-alt"></i> Sync with CSV
+        <i class="fas fa-sync-alt"></i> Sync CSV
       </button>
     </div>
+    
+    <div class="search-section" style="margin-bottom: 1.5rem;">
+      <input type="text" id="searchInput" class="search-input" placeholder="🔍 Search items..." value="${searchTerm}" style="width: 100%; max-width: 400px;">
+    </div>
+    
     <div class="cards-grid">
-      ${items.map(item => `
+      ${filteredItems.map(item => `
         <div class="inventory-card">
           <div class="card-header">
             <span class="item-name">${escapeHtml(item.name)}</span>
@@ -357,42 +485,57 @@ function renderStockIn() {
           </button>
         </div>
       `).join('')}
-      ${items.length === 0 ? '<div class="empty-state" style="text-align: center; padding: 3rem;">No items found. Click "Sync with CSV" to load data.</div>' : ''}
+      ${filteredItems.length === 0 ? '<div class="empty-state" style="text-align: center; padding: 3rem;">No items found</div>' : ''}
     </div>
   `;
   
   document.getElementById('viewContainer').innerHTML = html;
+  attachSearchListener();
 }
 
 function renderStockOut() {
+  const filteredItems = filterItems();
+  
   const html = `
     <div class="section-header">
       <h2><i class="fas fa-arrow-up"></i> Stock OUT - Remove Products</h2>
       <button class="btn btn-secondary" onclick="reloadCSV()">
-        <i class="fas fa-sync-alt"></i> Sync with CSV
+        <i class="fas fa-sync-alt"></i> Sync CSV
       </button>
     </div>
+    
+    <div class="search-section" style="margin-bottom: 1.5rem;">
+      <input type="text" id="searchInput" class="search-input" placeholder="🔍 Search items..." value="${searchTerm}" style="width: 100%; max-width: 400px;">
+    </div>
+    
     <div class="cards-grid">
-      ${items.map(item => `
-        <div class="inventory-card">
-          <div class="card-header">
-            <span class="item-name">${escapeHtml(item.name)}</span>
-            <span class="item-price">Stock: ${item.quantity} ${item.unit}</span>
+      ${filteredItems.map(item => {
+        const status = getStockStatus(item);
+        return `
+          <div class="inventory-card">
+            <div class="card-header">
+              <span class="item-name">${escapeHtml(item.name)}</span>
+              <span class="item-price">Stock: ${item.quantity} ${item.unit}</span>
+            </div>
+            <div class="card-details">
+              <span>Cost: $${item.cost}</span>
+              <span>Expiry: ${item.expiryDate || 'N/A'}</span>
+            </div>
+            <div style="margin-bottom: 0.5rem;">
+              <span class="stock-status ${status.class}">${status.icon} ${status.text}</span>
+            </div>
+            <button class="btn btn-danger" style="margin-top: 0.75rem; width: 100%;" onclick="openStockOutModal('${item.id}')" ${item.quantity <= 0 ? 'disabled' : ''}>
+              <i class="fas fa-arrow-up"></i> Remove Stock from ${escapeHtml(item.name)}
+            </button>
           </div>
-          <div class="card-details">
-            <span>Cost: $${item.cost}</span>
-            <span>Expiry: ${item.expiryDate || 'N/A'}</span>
-          </div>
-          <button class="btn btn-danger" style="margin-top: 0.75rem; width: 100%;" onclick="openStockOutModal('${item.id}')" ${item.quantity <= 0 ? 'disabled' : ''}>
-            <i class="fas fa-arrow-up"></i> Remove Stock from ${escapeHtml(item.name)}
-          </button>
-        </div>
-      `).join('')}
-      ${items.length === 0 ? '<div class="empty-state" style="text-align: center; padding: 3rem;">No items found. Click "Sync with CSV" to load data.</div>' : ''}
+        `;
+      }).join('')}
+      ${filteredItems.length === 0 ? '<div class="empty-state" style="text-align: center; padding: 3rem;">No items found</div>' : ''}
     </div>
   `;
   
   document.getElementById('viewContainer').innerHTML = html;
+  attachSearchListener();
 }
 
 function renderLedger() {
@@ -400,10 +543,13 @@ function renderLedger() {
     <div class="section-header">
       <h2><i class="fas fa-history"></i> Transaction Ledger</h2>
       <div style="display: flex; gap: 0.5rem;">
-        <span style="font-size: 0.7rem; color: var(--gray);">Total: ${transactions.length} transactions</span>
+        <button class="btn btn-secondary" onclick="exportTransactionsToCSV()" title="Export Transactions">
+          <i class="fas fa-download"></i> Export CSV
+        </button>
         <button class="btn btn-secondary" onclick="reloadCSV()">
           <i class="fas fa-sync-alt"></i> Sync CSV
         </button>
+        <span style="font-size: 0.7rem; color: var(--gray); padding: 0.5rem;">Total: ${transactions.length} transactions</span>
       </div>
     </div>
     
@@ -432,7 +578,7 @@ function renderLedger() {
               <td>${escapeHtml(t.note || t.reason || '-')}</td
             </tr>
           `).join('')}
-          ${transactions.length === 0 ? '<tr><td colspan="7" class="text-center">No transactions recorded yet</td</td>' : ''}
+          ${transactions.length === 0 ? '<td><td colspan="7" class="text-center">No transactions recorded yet</td></tr>' : ''}
         </tbody>
       </table>
     </div>
@@ -442,6 +588,8 @@ function renderLedger() {
 }
 
 function renderSettings() {
+  const autoRefreshStatus = autoRefreshInterval ? 'ON' : 'OFF';
+  
   const html = `
     <div class="section-header">
       <h2><i class="fas fa-cog"></i> System Settings</h2>
@@ -449,17 +597,36 @@ function renderSettings() {
     
     <div class="table-container" style="margin-bottom: 1.5rem;">
       <div style="padding: 1.5rem;">
-        <h3>CSV Data Management</h3>
+        <h3>CSV Auto-Refresh</h3>
         <p style="font-size: 0.8rem; color: var(--gray); margin: 0.5rem 0;">
-          Sync with data.csv file - This will:<br>
-          • Add new items from CSV<br>
-          • Update existing items (quantity, cost, expiry)<br>
-          • <strong style="color: #ef4444;">DELETE items that are NOT in CSV</strong><br>
-          • Preserve transaction history
+          Automatically checks for CSV changes every 10 seconds.
+          Current status: <strong>${autoRefreshStatus}</strong>
         </p>
-        <button class="btn btn-primary" onclick="reloadCSV()">
-          <i class="fas fa-sync-alt"></i> Sync with CSV Now
-        </button>
+        <div style="display: flex; gap: 1rem;">
+          <button class="btn btn-primary" onclick="startAutoRefresh()">
+            <i class="fas fa-play"></i> Enable Auto-Refresh
+          </button>
+          <button class="btn btn-secondary" onclick="stopAutoRefresh()">
+            <i class="fas fa-stop"></i> Disable Auto-Refresh
+          </button>
+          <button class="btn btn-secondary" onclick="reloadCSV()">
+            <i class="fas fa-sync-alt"></i> Sync Now
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <div class="table-container" style="margin-bottom: 1.5rem;">
+      <div style="padding: 1.5rem;">
+        <h3>Export Data</h3>
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+          <button class="btn btn-primary" onclick="exportInventoryToCSV()">
+            <i class="fas fa-download"></i> Export Inventory
+          </button>
+          <button class="btn btn-primary" onclick="exportTransactionsToCSV()">
+            <i class="fas fa-download"></i> Export Transactions
+          </button>
+        </div>
       </div>
     </div>
     
@@ -492,6 +659,16 @@ function renderSettings() {
   `;
   
   document.getElementById('viewContainer').innerHTML = html;
+}
+
+function attachSearchListener() {
+  const searchInput = document.getElementById('searchInput');
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      searchTerm = e.target.value;
+      renderCurrentView();
+    });
+  }
 }
 
 // ============================================
@@ -711,11 +888,12 @@ function init() {
   const themeBtn = document.getElementById('themeToggle');
   if (themeBtn) themeBtn.addEventListener('click', () => toggleTheme(!darkMode));
   
-  // Auto-load CSV on page load
   autoLoadCSV();
+  
+  // Auto-refresh is OFF by default, user can enable in Settings
 }
 
-// Make functions global for HTML onclick
+// Make functions global
 window.openStockInModal = openStockInModal;
 window.closeStockInModal = closeStockInModal;
 window.processStockIn = processStockIn;
@@ -727,5 +905,9 @@ window.switchView = switchView;
 window.toggleTheme = toggleTheme;
 window.resetData = resetData;
 window.reloadCSV = reloadCSV;
+window.exportInventoryToCSV = exportInventoryToCSV;
+window.exportTransactionsToCSV = exportTransactionsToCSV;
+window.startAutoRefresh = startAutoRefresh;
+window.stopAutoRefresh = stopAutoRefresh;
 
 init();
