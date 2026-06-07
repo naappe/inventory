@@ -1,5 +1,5 @@
 // ============================================
-// STOCKFLOW ERP - COMPLETE WORKING SYSTEM
+// STOCKFLOW ERP - FIXED SEARCH (No Page Re-render)
 // ============================================
 
 // Data Storage
@@ -42,49 +42,6 @@ function loadSampleData() {
 }
 
 // ============================================
-// CSV LOADING
-// ============================================
-
-async function loadCSVFromFile() {
-  try {
-    const response = await fetch('data.csv', { cache: 'no-store' });
-    if (response.ok) {
-      const csvText = await response.text();
-      Papa.parse(csvText, {
-        header: true,
-        skipEmptyLines: true,
-        complete: function(results) {
-          for (const row of results.data) {
-            const name = row.Name || row.name || row.item_name;
-            if (!name) continue;
-            
-            const existingItem = items.find(i => i.name.toLowerCase() === name.toLowerCase());
-            if (!existingItem) {
-              items.push({
-                id: "item_" + Date.now() + "_" + Math.random(),
-                name: name,
-                quantity: 0,
-                unit: (row.Unit || row.unit || "PCS").toUpperCase(),
-                cost: parseFloat(row.Price || row.price || row.Cost || row.cost || 0),
-                expiryDate: row.ExpiryDate || row.expiry_date || "",
-                minStock: parseInt(row.MinStock || row.minStock || 5)
-              });
-            }
-          }
-          saveData();
-          renderCurrentView();
-          showToast('CSV loaded successfully', 'success');
-        }
-      });
-      return true;
-    }
-  } catch (error) {
-    console.log("No CSV found");
-  }
-  return false;
-}
-
-// ============================================
 // STOCK MANAGEMENT
 // ============================================
 
@@ -110,7 +67,8 @@ function addStock(itemId, quantity, unit, cost, expiryDate, note) {
   
   transactions.unshift(transaction);
   saveData();
-  renderCurrentView();
+  updateInventoryGridOnly(); // Only update grid, not full page
+  updateDashboardStats(); // Update stats only
   showToast(`✅ Added +${quantity} ${unit} of ${item.name}`, 'success');
   return true;
 }
@@ -141,7 +99,8 @@ function removeStock(itemId, quantity, reason, note) {
   
   transactions.unshift(transaction);
   saveData();
-  renderCurrentView();
+  updateInventoryGridOnly(); // Only update grid
+  updateDashboardStats(); // Update stats only
   showToast(`🍳 Used ${quantity} ${item.unit} of ${item.name}`, 'success');
   return true;
 }
@@ -179,58 +138,216 @@ function loadData() {
 }
 
 // ============================================
-// SEARCH FUNCTIONS
+// SEARCH FUNCTIONS - NO PAGE RE-RENDER
 // ============================================
 
 function performSearch() {
   const searchInput = document.getElementById('searchInput');
   if (searchInput) {
     searchTerm = searchInput.value;
-    renderCurrentView();
+    // ONLY update the inventory grid, NOT the whole page
+    updateInventoryGridOnly();
+    // Update search stats
+    updateSearchStats();
   }
 }
 
 function clearSearch() {
   searchTerm = '';
   const searchInput = document.getElementById('searchInput');
-  if (searchInput) searchInput.value = '';
-  renderCurrentView();
+  if (searchInput) {
+    searchInput.value = '';
+    updateInventoryGridOnly();
+    updateSearchStats();
+  }
+}
+
+function updateSearchStats() {
+  const statsSpan = document.getElementById('searchStats');
+  if (statsSpan) {
+    const filtered = filterItems();
+    statsSpan.innerHTML = `${filtered.length} of ${items.length} items`;
+  }
+}
+
+// ONLY updates the inventory grid - NO page re-render
+function updateInventoryGridOnly() {
+  const grid = document.getElementById('inventoryGrid');
+  if (!grid) return;
+  
+  const filtered = filterItems();
+  
+  grid.innerHTML = filtered.map(item => {
+    const status = getStockStatus(item);
+    return `
+      <div class="inventory-card">
+        <div class="card-header">
+          <div>
+            <span class="item-name">${escapeHtml(item.name)}</span>
+            <div style="font-size:0.7rem;color:var(--gray);">${item.unit} | Min: ${item.minStock}</div>
+          </div>
+          <div>
+            <span class="item-price">$${item.cost}</span>
+            <div style="font-size:0.7rem;">per unit</div>
+          </div>
+        </div>
+        <div style="background:var(--bg-light);padding:0.75rem;border-radius:12px;margin:0.75rem 0;">
+          <div style="display:flex;justify-content:space-between;">
+            <span>Current Stock</span>
+            <span style="font-size:1.5rem;font-weight:700;">${item.quantity}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:0.5rem;">
+            <span>Expiry: ${item.expiryDate || 'N/A'}</span>
+            <span>Value: $${(item.quantity * item.cost).toFixed(2)}</span>
+          </div>
+        </div>
+        <div><span class="stock-status ${status.class}">${status.icon} ${status.text}</span></div>
+        <div class="card-actions" style="display:flex;gap:0.5rem;margin-top:0.75rem;">
+          <button class="btn btn-success" style="flex:1;" onclick="openStockInModal('${item.id}')">+ Add Stock</button>
+          ${item.quantity > 0 ? `<button class="btn btn-warning" style="flex:1;" onclick="openStockOutModal('${item.id}')">🍳 Kitchen Use</button>` : `<button class="btn btn-secondary" style="flex:1;" disabled>Out of Stock</button>`}
+        </div>
+      </div>
+    `;
+  }).join('');
+  
+  if (filtered.length === 0) {
+    grid.innerHTML = '<div class="empty-state">No items found</div>';
+  }
+}
+
+// Update only dashboard stats (no page re-render)
+function updateDashboardStats() {
+  const statsGrid = document.getElementById('dashboardStatsGrid');
+  if (!statsGrid) return;
+  
+  const totalItems = items.length;
+  const totalStock = items.reduce((sum, i) => sum + i.quantity, 0);
+  const totalValue = items.reduce((sum, i) => sum + (i.quantity * i.cost), 0);
+  const lowStockCount = items.filter(i => i.quantity < i.minStock).length;
+  
+  statsGrid.innerHTML = `
+    <div class="stat-card" onclick="switchView('inventory')">
+      <div class="stat-header"><span>Total Items</span><div class="stat-icon"><i class="fas fa-box"></i></div></div>
+      <div class="stat-value">${totalItems}</div>
+      <div class="stat-label">Products</div>
+    </div>
+    <div class="stat-card" onclick="switchView('inventory')">
+      <div class="stat-header"><span>Total Stock</span><div class="stat-icon"><i class="fas fa-warehouse"></i></div></div>
+      <div class="stat-value">${totalStock}</div>
+      <div class="stat-label">Units</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-header"><span>Total Value</span><div class="stat-icon"><i class="fas fa-dollar-sign"></i></div></div>
+      <div class="stat-value">$${totalValue.toLocaleString()}</div>
+      <div class="stat-label">Inventory Value</div>
+    </div>
+    <div class="stat-card" onclick="switchView('inventory')">
+      <div class="stat-header"><span>Low Stock</span><div class="stat-icon"><i class="fas fa-exclamation-triangle"></i></div></div>
+      <div class="stat-value" style="color:${lowStockCount>0?'#f59e0b':'#10b981'}">${lowStockCount}</div>
+      <div class="stat-label">Alerts</div>
+    </div>
+  `;
+}
+
+// Update recent transactions only
+function updateRecentTransactions() {
+  const tbody = document.getElementById('recentTransactionsBody');
+  if (!tbody) return;
+  
+  tbody.innerHTML = transactions.slice(0,10).map(t => `
+    <tr>
+      <td>${new Date(t.timestamp).toLocaleString()}</td>
+      <td><span class="badge ${t.type === 'STOCK_IN' ? 'badge-in' : 'badge-out'}">${t.type === 'STOCK_IN' ? 'IN' : 'OUT'}</span></td>
+      <td>${escapeHtml(t.itemName)}</td
+      <td>${t.quantity}</td
+      <td>${t.unit}</td
+      <td>${escapeHtml(t.note || '-')}</td
+    </tr>
+  `).join('');
 }
 
 // ============================================
-// RENDER FUNCTIONS
+// RENDER FUNCTIONS (Page loads only once)
 // ============================================
 
 function renderDashboard() {
-  const filtered = filterItems();
-  const totalStock = filtered.reduce((sum, i) => sum + i.quantity, 0);
-  const totalValue = filtered.reduce((sum, i) => sum + (i.quantity * i.cost), 0);
-  const lowStockCount = filtered.filter(i => i.quantity < i.minStock).length;
+  const totalItems = items.length;
+  const totalStock = items.reduce((sum, i) => sum + i.quantity, 0);
+  const totalValue = items.reduce((sum, i) => sum + (i.quantity * i.cost), 0);
+  const lowStockCount = items.filter(i => i.quantity < i.minStock).length;
   
   const html = `
-    <div class="stats-grid">
-      <div class="stat-card"><div class="stat-header"><span>Total Items</span><div class="stat-icon"><i class="fas fa-box"></i></div></div><div class="stat-value">${filtered.length}</div><div class="stat-label">Products</div></div>
-      <div class="stat-card"><div class="stat-header"><span>Total Stock</span><div class="stat-icon"><i class="fas fa-warehouse"></i></div></div><div class="stat-value">${totalStock}</div><div class="stat-label">Units</div></div>
-      <div class="stat-card"><div class="stat-header"><span>Total Value</span><div class="stat-icon"><i class="fas fa-dollar-sign"></i></div></div><div class="stat-value">$${totalValue.toLocaleString()}</div><div class="stat-label">Inventory Value</div></div>
-      <div class="stat-card"><div class="stat-header"><span>Low Stock</span><div class="stat-icon"><i class="fas fa-exclamation-triangle"></i></div></div><div class="stat-value" style="color:${lowStockCount>0?'#f59e0b':'#10b981'}">${lowStockCount}</div><div class="stat-label">Alerts</div></div>
+    <div class="stats-grid" id="dashboardStatsGrid">
+      <div class="stat-card" onclick="switchView('inventory')">
+        <div class="stat-header"><span>Total Items</span><div class="stat-icon"><i class="fas fa-box"></i></div></div>
+        <div class="stat-value">${totalItems}</div>
+        <div class="stat-label">Products</div>
+      </div>
+      <div class="stat-card" onclick="switchView('inventory')">
+        <div class="stat-header"><span>Total Stock</span><div class="stat-icon"><i class="fas fa-warehouse"></i></div></div>
+        <div class="stat-value">${totalStock}</div>
+        <div class="stat-label">Units</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-header"><span>Total Value</span><div class="stat-icon"><i class="fas fa-dollar-sign"></i></div></div>
+        <div class="stat-value">$${totalValue.toLocaleString()}</div>
+        <div class="stat-label">Inventory Value</div>
+      </div>
+      <div class="stat-card" onclick="switchView('inventory')">
+        <div class="stat-header"><span>Low Stock</span><div class="stat-icon"><i class="fas fa-exclamation-triangle"></i></div></div>
+        <div class="stat-value" style="color:${lowStockCount>0?'#f59e0b':'#10b981'}">${lowStockCount}</div>
+        <div class="stat-label">Alerts</div>
+      </div>
     </div>
     
-    <div class="search-section"><div class="search-wrapper"><i class="fas fa-search"></i><input type="text" id="searchInput" class="search-input" placeholder="Search items..." value="${searchTerm}" onkeyup="performSearch()">${searchTerm ? '<button class="clear-search" onclick="clearSearch()">✕</button>' : ''}</div></div>
-    
-    <div class="section-header"><h2>📦 Recent Items</h2><button class="btn btn-primary" onclick="switchView('inventory')">View All</button></div>
-    <div class="cards-grid">
-      ${filtered.slice(0,6).map(item => {
+    <div class="section-header">
+      <h2>📦 Recent Items</h2>
+      <button class="btn btn-primary" onclick="switchView('inventory')">View All</button>
+    </div>
+    <div class="cards-grid" id="dashboardRecentGrid">
+      ${items.slice(0,6).map(item => {
         const status = getStockStatus(item);
-        return `<div class="inventory-card"><div class="card-header"><span class="item-name">${escapeHtml(item.name)}</span><span class="item-price">$${item.cost}</span></div><div class="card-details"><span>Stock: <strong>${item.quantity}</strong> ${item.unit}</span><span>Expiry: ${item.expiryDate || 'N/A'}</span></div><div><span class="stock-status ${status.class}">${status.icon} ${status.text}</span></div><div class="card-actions" style="display:flex;gap:0.5rem;margin-top:0.75rem;"><button class="btn btn-success" style="flex:1;" onclick="openStockInModal('${item.id}')">+ Add Stock</button>${item.quantity > 0 ? `<button class="btn btn-warning" style="flex:1;" onclick="openStockOutModal('${item.id}')">🍳 Kitchen Use</button>` : `<button class="btn btn-secondary" style="flex:1;" disabled>Out of Stock</button>`}</div></div>`;
+        return `
+          <div class="inventory-card">
+            <div class="card-header">
+              <span class="item-name">${escapeHtml(item.name)}</span>
+              <span class="item-price">$${item.cost}</span>
+            </div>
+            <div class="card-details">
+              <span>Stock: <strong>${item.quantity}</strong> ${item.unit}</span>
+              <span>Expiry: ${item.expiryDate || 'N/A'}</span>
+            </div>
+            <div><span class="stock-status ${status.class}">${status.icon} ${status.text}</span></div>
+            <div class="card-actions" style="display:flex;gap:0.5rem;margin-top:0.75rem;">
+              <button class="btn btn-success" style="flex:1;" onclick="openStockInModal('${item.id}')">+ Add Stock</button>
+              ${item.quantity > 0 ? `<button class="btn btn-warning" style="flex:1;" onclick="openStockOutModal('${item.id}')">🍳 Kitchen Use</button>` : `<button class="btn btn-secondary" style="flex:1;" disabled>Out of Stock</button>`}
+            </div>
+          </div>
+        `;
       }).join('')}
-      ${filtered.length === 0 ? '<div class="empty-state">No items found</div>' : ''}
     </div>
     
-    <div class="section-header"><h2>📋 Recent Activity</h2><button class="btn btn-primary" onclick="switchView('ledger')">View All</button></div>
-    <div class="table-container"><table class="data-table"><thead><tr><th>Date</th><th>Type</th><th>Item</th><th>Qty</th><th>Unit</th><th>Reference</th></tr></thead><tbody>
-      ${transactions.slice(0,10).map(t => `<tr><td>${new Date(t.timestamp).toLocaleString()}</td><td><span class="badge ${t.type === 'STOCK_IN' ? 'badge-in' : 'badge-out'}">${t.type === 'STOCK_IN' ? 'IN' : 'OUT'}</span></td><td>${escapeHtml(t.itemName)}</td><td>${t.quantity}</td><td>${t.unit}</td><td>${escapeHtml(t.note || '-')}</td></tr>`).join('')}
-      ${transactions.length === 0 ? '<tr><td colspan="6" class="text-center">No transactions</td></tr>' : ''}
-    </tbody></table></div>
+    <div class="section-header">
+      <h2>📋 Recent Activity</h2>
+      <button class="btn btn-primary" onclick="switchView('ledger')">View All</button>
+    </div>
+    <div class="table-container">
+      <table class="data-table">
+        <thead><tr><th>Date</th><th>Type</th><th>Item</th><th>Qty</th><th>Unit</th><th>Reference</th></tr></thead>
+        <tbody id="recentTransactionsBody">
+          ${transactions.slice(0,10).map(t => `
+            <tr>
+              <td>${new Date(t.timestamp).toLocaleString()}</td>
+              <td><span class="badge ${t.type === 'STOCK_IN' ? 'badge-in' : 'badge-out'}">${t.type === 'STOCK_IN' ? 'IN' : 'OUT'}</span></td>
+              <td>${escapeHtml(t.itemName)}</td
+              <td>${t.quantity}</td
+              <td>${t.unit}</td
+              <td>${escapeHtml(t.note || '-')}</td
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
   `;
   document.getElementById('viewContainer').innerHTML = html;
 }
@@ -238,42 +355,192 @@ function renderDashboard() {
 function renderInventory() {
   const filtered = filterItems();
   const html = `
-    <div class="section-header"><h2>📦 All Inventory</h2><div><button class="btn btn-success" onclick="openStockInModal()">+ Add Stock (PIN)</button><button class="btn btn-secondary" onclick="exportInventoryToCSV()">📥 Export</button></div></div>
-    <div class="search-section"><div class="search-wrapper"><i class="fas fa-search"></i><input type="text" id="searchInput" class="search-input" placeholder="Search items..." value="${searchTerm}" onkeyup="performSearch()">${searchTerm ? '<button class="clear-search" onclick="clearSearch()">✕</button>' : ''}</div></div>
-    <div class="cards-grid">
+    <div class="section-header">
+      <h2>📦 All Inventory</h2>
+      <div>
+        <button class="btn btn-success" onclick="openStockInModal()">+ Add Stock (PIN)</button>
+        <button class="btn btn-secondary" onclick="exportInventoryToCSV()">📥 Export</button>
+      </div>
+    </div>
+    
+    <!-- SEARCH BAR - Will attach listener after render -->
+    <div class="search-section">
+      <div class="search-wrapper">
+        <i class="fas fa-search"></i>
+        <input type="text" id="searchInput" class="search-input" placeholder="Search items..." value="${searchTerm}" autocomplete="off">
+        ${searchTerm ? '<button class="clear-search" onclick="clearSearch()">✕</button>' : ''}
+      </div>
+      <div class="search-stats" id="searchStats" style="margin-top:0.5rem;font-size:0.7rem;color:var(--gray);">${filtered.length} of ${items.length} items</div>
+    </div>
+    
+    <div class="cards-grid" id="inventoryGrid">
       ${filtered.map(item => {
         const status = getStockStatus(item);
-        return `<div class="inventory-card"><div class="card-header"><div><span class="item-name">${escapeHtml(item.name)}</span><div style="font-size:0.7rem;color:var(--gray);">${item.unit} | Min: ${item.minStock}</div></div><div><span class="item-price">$${item.cost}</span><div style="font-size:0.7rem;">per unit</div></div></div><div style="background:var(--bg-light);padding:0.75rem;border-radius:12px;margin:0.75rem 0;"><div style="display:flex;justify-content:space-between;"><span>Current Stock</span><span style="font-size:1.5rem;font-weight:700;">${item.quantity}</span></div><div style="display:flex;justify-content:space-between;margin-top:0.5rem;"><span>Expiry: ${item.expiryDate || 'N/A'}</span><span>Value: $${(item.quantity * item.cost).toFixed(2)}</span></div></div><div><span class="stock-status ${status.class}">${status.icon} ${status.text}</span></div><div class="card-actions" style="display:flex;gap:0.5rem;margin-top:0.75rem;"><button class="btn btn-success" style="flex:1;" onclick="openStockInModal('${item.id}')">+ Add Stock</button>${item.quantity > 0 ? `<button class="btn btn-warning" style="flex:1;" onclick="openStockOutModal('${item.id}')">🍳 Kitchen Use</button>` : `<button class="btn btn-secondary" style="flex:1;" disabled>Out of Stock</button>`}</div></div>`;
+        return `
+          <div class="inventory-card">
+            <div class="card-header">
+              <div>
+                <span class="item-name">${escapeHtml(item.name)}</span>
+                <div style="font-size:0.7rem;color:var(--gray);">${item.unit} | Min: ${item.minStock}</div>
+              </div>
+              <div>
+                <span class="item-price">$${item.cost}</span>
+                <div style="font-size:0.7rem;">per unit</div>
+              </div>
+            </div>
+            <div style="background:var(--bg-light);padding:0.75rem;border-radius:12px;margin:0.75rem 0;">
+              <div style="display:flex;justify-content:space-between;">
+                <span>Current Stock</span>
+                <span style="font-size:1.5rem;font-weight:700;">${item.quantity}</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;margin-top:0.5rem;">
+                <span>Expiry: ${item.expiryDate || 'N/A'}</span>
+                <span>Value: $${(item.quantity * item.cost).toFixed(2)}</span>
+              </div>
+            </div>
+            <div><span class="stock-status ${status.class}">${status.icon} ${status.text}</span></div>
+            <div class="card-actions" style="display:flex;gap:0.5rem;margin-top:0.75rem;">
+              <button class="btn btn-success" style="flex:1;" onclick="openStockInModal('${item.id}')">+ Add Stock</button>
+              ${item.quantity > 0 ? `<button class="btn btn-warning" style="flex:1;" onclick="openStockOutModal('${item.id}')">🍳 Kitchen Use</button>` : `<button class="btn btn-secondary" style="flex:1;" disabled>Out of Stock</button>`}
+            </div>
+          </div>
+        `;
       }).join('')}
       ${filtered.length === 0 ? '<div class="empty-state">No items found</div>' : ''}
     </div>
   `;
   document.getElementById('viewContainer').innerHTML = html;
+  
+  // Attach search listener AFTER DOM is created (only once)
+  attachSearchListener();
+}
+
+function attachSearchListener() {
+  const searchInput = document.getElementById('searchInput');
+  if (searchInput) {
+    // Remove existing listener to avoid duplicates
+    const newSearchInput = searchInput.cloneNode(true);
+    searchInput.parentNode.replaceChild(newSearchInput, searchInput);
+    
+    newSearchInput.addEventListener('input', (e) => {
+      searchTerm = e.target.value;
+      // ONLY update the grid, NOT the whole page
+      updateInventoryGridOnly();
+      updateSearchStats();
+    });
+  }
 }
 
 function renderStockOut() {
   const filtered = filterItems();
   const html = `
-    <div class="section-header"><h2>🍳 Kitchen Use</h2><p style="font-size:0.8rem;color:var(--gray);">No PIN required</p></div>
-    <div class="search-section"><div class="search-wrapper"><i class="fas fa-search"></i><input type="text" id="searchInput" class="search-input" placeholder="Search items..." value="${searchTerm}" onkeyup="performSearch()">${searchTerm ? '<button class="clear-search" onclick="clearSearch()">✕</button>' : ''}</div></div>
-    <div class="cards-grid">
+    <div class="section-header">
+      <h2>🍳 Kitchen Use</h2>
+      <p style="font-size:0.8rem;color:var(--gray);">No PIN required</p>
+    </div>
+    <div class="search-section">
+      <div class="search-wrapper">
+        <i class="fas fa-search"></i>
+        <input type="text" id="searchInput" class="search-input" placeholder="Search items..." value="${searchTerm}" autocomplete="off">
+        ${searchTerm ? '<button class="clear-search" onclick="clearSearch()">✕</button>' : ''}
+      </div>
+      <div class="search-stats" id="searchStats" style="margin-top:0.5rem;font-size:0.7rem;color:var(--gray);">${filtered.length} of ${items.length} items</div>
+    </div>
+    <div class="cards-grid" id="kitchenGrid">
       ${filtered.map(item => {
         const status = getStockStatus(item);
-        return `<div class="inventory-card"><div class="card-header"><span class="item-name">${escapeHtml(item.name)}</span><span class="item-price">Stock: ${item.quantity} ${item.unit}</span></div><div class="card-details"><span>Cost: $${item.cost}</span><span>Expiry: ${item.expiryDate || 'N/A'}</span></div><div><span class="stock-status ${status.class}">${status.icon} ${status.text}</span></div>${item.quantity > 0 ? `<button class="btn btn-warning" style="margin-top:0.75rem;width:100%;" onclick="openStockOutModal('${item.id}')">🍳 Use in Kitchen</button>` : `<button class="btn btn-secondary" style="margin-top:0.75rem;width:100%;" disabled>❌ Out of Stock</button>`}</div>`;
+        return `
+          <div class="inventory-card">
+            <div class="card-header">
+              <span class="item-name">${escapeHtml(item.name)}</span>
+              <span class="item-price">Stock: ${item.quantity} ${item.unit}</span>
+            </div>
+            <div class="card-details">
+              <span>Cost: $${item.cost}</span>
+              <span>Expiry: ${item.expiryDate || 'N/A'}</span>
+            </div>
+            <div><span class="stock-status ${status.class}">${status.icon} ${status.text}</span></div>
+            ${item.quantity > 0 ? `<button class="btn btn-warning" style="margin-top:0.75rem;width:100%;" onclick="openStockOutModal('${item.id}')">🍳 Use in Kitchen</button>` : `<button class="btn btn-secondary" style="margin-top:0.75rem;width:100%;" disabled>❌ Out of Stock</button>`}
+          </div>
+        `;
       }).join('')}
       ${filtered.length === 0 ? '<div class="empty-state">No items found</div>' : ''}
     </div>
   `;
   document.getElementById('viewContainer').innerHTML = html;
+  attachKitchenSearchListener();
+}
+
+function attachKitchenSearchListener() {
+  const searchInput = document.getElementById('searchInput');
+  if (searchInput) {
+    const newSearchInput = searchInput.cloneNode(true);
+    searchInput.parentNode.replaceChild(newSearchInput, searchInput);
+    
+    newSearchInput.addEventListener('input', (e) => {
+      searchTerm = e.target.value;
+      updateKitchenGridOnly();
+      updateSearchStats();
+    });
+  }
+}
+
+function updateKitchenGridOnly() {
+  const grid = document.getElementById('kitchenGrid');
+  if (!grid) return;
+  
+  const filtered = filterItems();
+  
+  grid.innerHTML = filtered.map(item => {
+    const status = getStockStatus(item);
+    return `
+      <div class="inventory-card">
+        <div class="card-header">
+          <span class="item-name">${escapeHtml(item.name)}</span>
+          <span class="item-price">Stock: ${item.quantity} ${item.unit}</span>
+        </div>
+        <div class="card-details">
+          <span>Cost: $${item.cost}</span>
+          <span>Expiry: ${item.expiryDate || 'N/A'}</span>
+        </div>
+        <div><span class="stock-status ${status.class}">${status.icon} ${status.text}</span></div>
+        ${item.quantity > 0 ? `<button class="btn btn-warning" style="margin-top:0.75rem;width:100%;" onclick="openStockOutModal('${item.id}')">🍳 Use in Kitchen</button>` : `<button class="btn btn-secondary" style="margin-top:0.75rem;width:100%;" disabled>❌ Out of Stock</button>`}
+      </div>
+    `;
+  }).join('');
+  
+  if (filtered.length === 0) {
+    grid.innerHTML = '<div class="empty-state">No items found</div>';
+  }
 }
 
 function renderLedger() {
   const html = `
-    <div class="section-header"><h2>📋 Transaction Ledger</h2><button class="btn btn-secondary" onclick="exportTransactionsToCSV()">📥 Export CSV (PIN)</button></div>
-    <div class="table-container"><table class="data-table"><thead><tr><th>Date & Time</th><th>Type</th><th>Item</th><th>Quantity</th><th>Unit</th><th>Value</th><th>Reference</th></tr></thead><tbody>
-      ${transactions.map(t => `<tr><td>${new Date(t.timestamp).toLocaleString()}</td><td><span class="badge ${t.type === 'STOCK_IN' ? 'badge-in' : 'badge-out'}">${t.type === 'STOCK_IN' ? '📥 IN' : '🍳 OUT'}</span></td><td><strong>${escapeHtml(t.itemName)}</strong></td><td>${t.quantity}</td><td>${t.unit}</td><td>$${(t.quantity * (t.cost || 0)).toFixed(2)}</td><td>${escapeHtml(t.note || '-')}</td></tr>`).join('')}
-      ${transactions.length === 0 ? '<tr><td colspan="7" class="text-center">No transactions</td></tr>' : ''}
-    </tbody></table></div>
+    <div class="section-header">
+      <h2>📋 Transaction Ledger</h2>
+      <button class="btn btn-secondary" onclick="exportTransactionsToCSV()">📥 Export CSV (PIN)</button>
+    </div>
+    <div class="table-container">
+      <table class="data-table">
+        <thead>
+          <tr><th>Date & Time</th><th>Type</th><th>Item</th><th>Quantity</th><th>Unit</th><th>Value</th><th>Reference</th></tr>
+        </thead>
+        <tbody id="ledgerBody">
+          ${transactions.map(t => `
+            <tr>
+              <td>${new Date(t.timestamp).toLocaleString()}</td>
+              <td><span class="badge ${t.type === 'STOCK_IN' ? 'badge-in' : 'badge-out'}">${t.type === 'STOCK_IN' ? '📥 IN' : '🍳 OUT'}</span></td>
+              <td><strong>${escapeHtml(t.itemName)}</strong></td>
+              <td>${t.quantity}</td>
+              <td>${t.unit}</td>
+              <td>$${(t.quantity * (t.cost || 0)).toFixed(2)}</td
+              <td>${escapeHtml(t.note || '-')}</td
+            </tr>
+          `).join('')}
+          ${transactions.length === 0 ? '<tr><td colspan="7" class="text-center">No transactions</td</table>' : ''}
+        </tbody>
+      </table>
+    </div>
   `;
   document.getElementById('viewContainer').innerHTML = html;
 }
@@ -281,9 +548,28 @@ function renderLedger() {
 function renderSettings() {
   const html = `
     <div class="section-header"><h2>⚙️ Settings</h2></div>
-    <div class="table-container" style="margin-bottom:1rem;"><div style="padding:1.5rem;"><h3>🔒 PIN Protection</h3><p>Master PIN: <strong>${MASTER_PIN}</strong><br>Protected: Add Stock, Export Data</p></div></div>
-    <div class="table-container" style="margin-bottom:1rem;"><div style="padding:1.5rem;"><h3>🎨 Theme</h3><div style="display:flex;gap:1rem;"><button class="btn ${!darkMode ? 'btn-primary' : 'btn-secondary'}" onclick="toggleTheme(false)">☀️ Light</button><button class="btn ${darkMode ? 'btn-primary' : 'btn-secondary'}" onclick="toggleTheme(true)">🌙 Dark</button></div></div></div>
-    <div class="table-container"><div style="padding:1.5rem;"><h3>🗑️ Danger Zone</h3><button class="btn btn-danger" onclick="resetData()">Reset All Data</button><p style="font-size:0.7rem;margin-top:0.5rem;">Deletes all inventory and transactions</p></div></div>
+    <div class="table-container" style="margin-bottom:1rem;">
+      <div style="padding:1.5rem;">
+        <h3>🔒 PIN Protection</h3>
+        <p>Master PIN: <strong>${MASTER_PIN}</strong><br>Protected: Add Stock, Export Data</p>
+      </div>
+    </div>
+    <div class="table-container" style="margin-bottom:1rem;">
+      <div style="padding:1.5rem;">
+        <h3>🎨 Theme</h3>
+        <div style="display:flex;gap:1rem;">
+          <button class="btn ${!darkMode ? 'btn-primary' : 'btn-secondary'}" onclick="toggleTheme(false)">☀️ Light</button>
+          <button class="btn ${darkMode ? 'btn-primary' : 'btn-secondary'}" onclick="toggleTheme(true)">🌙 Dark</button>
+        </div>
+      </div>
+    </div>
+    <div class="table-container">
+      <div style="padding:1.5rem;">
+        <h3>🗑️ Danger Zone</h3>
+        <button class="btn btn-danger" onclick="resetData()">Reset All Data</button>
+        <p style="font-size:0.7rem;margin-top:0.5rem;">Deletes all inventory and transactions</p>
+      </div>
+    </div>
   `;
   document.getElementById('viewContainer').innerHTML = html;
 }
@@ -437,6 +723,8 @@ function switchView(view) {
   currentView = view;
   const titles = { dashboard: 'Dashboard', inventory: 'Inventory', stockout: 'Kitchen Use', ledger: 'Ledger', settings: 'Settings' };
   document.getElementById('pageTitle').innerText = titles[view] || 'Dashboard';
+  document.getElementById('pageSubtitle').innerText = view === 'stockout' ? 'Record ingredients used in kitchen (No PIN)' : (view === 'settings' ? 'System preferences' : 'Manage your inventory');
+  
   document.querySelectorAll('.nav-item, .mobile-nav-item').forEach(btn => {
     btn.classList.remove('active');
     if (btn.dataset.nav === view) btn.classList.add('active');
@@ -464,7 +752,6 @@ async function init() {
   
   if (items.length === 0) {
     loadSampleData();
-    await loadCSVFromFile();
   }
   
   renderCurrentView();
