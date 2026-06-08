@@ -13,10 +13,10 @@ let searchTerm = "";
 const MASTER_PIN = "1234";
 
 // ============================================
-// SAMPLE DATA
+// LOAD DATA FROM CSV FILE (FIXED)
 // ============================================
 
-function loadSampleData() {
+async function loadSampleData() {
   const savedItems = localStorage.getItem('stockflow_items');
   if (savedItems && JSON.parse(savedItems).length > 0) {
     items = JSON.parse(savedItems);
@@ -24,6 +24,77 @@ function loadSampleData() {
     return;
   }
   
+  // Try to load from CSV file first
+  try {
+    const response = await fetch('data.csv');
+    if (response.ok) {
+      const csvText = await response.text();
+      
+      // Parse CSV using PapaParse
+      const result = Papa.parse(csvText, {
+        header: true,
+        skipEmptyLines: true,
+        dynamicTyping: false
+      });
+      
+      const parsedItems = [];
+      let idCounter = 1;
+      
+      result.data.forEach(row => {
+        const vendor = row.Vendor || '';
+        const name = row.Name || '';
+        const unit = row.Unit || 'PCS';
+        let rate = parseFloat(row.Rate);
+        
+        // Skip rows with missing name or invalid rate
+        if (!name || isNaN(rate) || rate <= 0) return;
+        
+        // Skip rows with zero rate
+        if (rate === 0) return;
+        
+        // Clean up name - combine vendor and name if vendor exists
+        let cleanName = name.trim();
+        if (vendor && vendor.trim() && vendor.trim() !== '') {
+          cleanName = `${vendor.trim()} - ${cleanName}`;
+        }
+        
+        parsedItems.push({
+          id: (idCounter++).toString(),
+          name: cleanName,
+          quantity: 0,
+          unit: unit,
+          cost: rate,
+          expiryDate: '',
+          minStock: 1
+        });
+      });
+      
+      if (parsedItems.length > 0) {
+        items = parsedItems;
+        
+        // Add initial transaction record
+        transactions = [{
+          id: Date.now().toString(),
+          type: "STOCK_IN",
+          itemId: "import",
+          itemName: "CSV Data Imported",
+          quantity: items.length,
+          unit: "items",
+          cost: 0,
+          timestamp: new Date().toISOString(),
+          note: `Imported ${items.length} products from data.csv`
+        }];
+        
+        saveData();
+        showToast(`✅ Successfully loaded ${items.length} items from CSV`, 'success');
+        return;
+      }
+    }
+  } catch (error) {
+    console.log('CSV file not found or error loading:', error);
+  }
+  
+  // Fallback sample data if CSV fails to load
   items = [
     { id: "1", name: "Basmati Rice", quantity: 50, unit: "KG", cost: 2.5, expiryDate: "2025-12-31", minStock: 10 },
     { id: "2", name: "Olive Oil", quantity: 25, unit: "L", cost: 8.99, expiryDate: "2025-06-15", minStock: 5 },
@@ -220,7 +291,7 @@ function updateInventoryGridOnly() {
             <div style="font-size:0.7rem;color:var(--gray);">${item.unit} | Min: ${item.minStock}</div>
           </div>
           <div>
-            <span class="item-price">$${item.cost}</span>
+            <span class="item-price">$${item.cost.toFixed(2)}</span>
             <div style="font-size:0.7rem;">per unit</div>
           </div>
         </div>
@@ -264,7 +335,7 @@ function updateKitchenGridOnly() {
           <span class="item-price">Stock: ${item.quantity} ${item.unit}</span>
         </div>
         <div class="card-details">
-          <span>Cost: $${item.cost}</span>
+          <span>Cost: $${item.cost.toFixed(2)}</span>
           <span>Expiry: ${item.expiryDate || 'N/A'}</span>
         </div>
         <div><span class="stock-status ${status.class}">${status.icon} ${status.text}</span></div>
@@ -337,7 +408,7 @@ function updateDashboardRecentGrid() {
       <div class="inventory-card">
         <div class="card-header">
           <span class="item-name">${escapeHtml(item.name)}</span>
-          <span class="item-price">$${item.cost}</span>
+          <span class="item-price">$${item.cost.toFixed(2)}</span>
         </div>
         <div class="card-details">
           <span>Stock: <strong>${item.quantity}</strong> ${item.unit}</span>
@@ -398,7 +469,7 @@ function renderDashboard() {
           <div class="inventory-card">
             <div class="card-header">
               <span class="item-name">${escapeHtml(item.name)}</span>
-              <span class="item-price">$${item.cost}</span>
+              <span class="item-price">$${item.cost.toFixed(2)}</span>
             </div>
             <div class="card-details">
               <span>Stock: <strong>${item.quantity}</strong> ${item.unit}</span>
@@ -420,7 +491,7 @@ function renderDashboard() {
     </div>
     <div class="table-container">
       <table class="data-table">
-        <thead><tr><th>Date</th><th>Type</th><th>Item</th><th>Qty</th><th>Unit</th><th>Reference</th></tr></thead>
+        <thead><tr><th>Date</th><th>Type</th><th>Item</th><th>Qty</th><th>Unit</th><th>Reference</th></thead>
         <tbody id="recentTransactionsBody">
           ${transactions.slice(0,10).map(t => `
             <tr>
@@ -472,7 +543,7 @@ function renderInventory() {
                 <div style="font-size:0.7rem;color:var(--gray);">${item.unit} | Min: ${item.minStock}</div>
               </div>
               <div>
-                <span class="item-price">$${item.cost}</span>
+                <span class="item-price">$${item.cost.toFixed(2)}</span>
                 <div style="font-size:0.7rem;">per unit</div>
               </div>
             </div>
@@ -547,7 +618,7 @@ function renderStockOut() {
               <span class="item-price">Stock: ${item.quantity} ${item.unit}</span>
             </div>
             <div class="card-details">
-              <span>Cost: $${item.cost}</span>
+              <span>Cost: $${item.cost.toFixed(2)}</span>
               <span>Expiry: ${item.expiryDate || 'N/A'}</span>
             </div>
             <div><span class="stock-status ${status.class}">${status.icon} ${status.text}</span></div>
@@ -600,7 +671,7 @@ function renderLedger() {
               <td>${escapeHtml(t.note || '-')}</td>
             </tr>
           `).join('')}
-          ${transactions.length === 0 ? '<tr><td colspan="7" class="text-center">No transactions</td></tr>' : ''}
+          ${transactions.length === 0 ? ' hilab<td colspan="7" class="text-center">No transactions</td></tr>' : ''}
         </tbody>
       </table>
     </div>
@@ -698,151 +769,4 @@ function processStockOut() {
   const itemId = document.getElementById('stockOutItem').value;
   const quantity = parseFloat(document.getElementById('stockOutQty').value);
   const reason = document.getElementById('stockOutReason').value;
-  const note = document.getElementById('stockOutNote').value;
-  
-  if (!itemId || !quantity || quantity <= 0) { showToast('Please select item and valid quantity', 'error'); return; }
-  removeStock(itemId, quantity, reason, note);
-  closeStockOutModal();
-}
-
-// ============================================
-// EXPORT FUNCTIONS
-// ============================================
-
-function exportInventoryToCSV() {
-  verifyPIN("Export Inventory", () => {
-    let csv = "Name,Stock,Unit,Cost,Total Value,Expiry Date,Min Stock\n";
-    items.forEach(i => csv += `"${i.name}",${i.quantity},${i.unit},${i.cost},${(i.quantity*i.cost).toFixed(2)},${i.expiryDate || 'N/A'},${i.minStock}\n`);
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `inventory_${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-    showToast('Inventory exported', 'success');
-  });
-}
-
-function exportTransactionsToCSV() {
-  verifyPIN("Export Transactions", () => {
-    let csv = "Date,Type,Item,Quantity,Unit,Value,Reference\n";
-    transactions.forEach(t => csv += `"${new Date(t.timestamp).toLocaleString()}",${t.type === 'STOCK_IN' ? 'IN' : 'OUT'},"${t.itemName}",${t.quantity},${t.unit},${(t.quantity*(t.cost||0)).toFixed(2)},"${t.note || ''}"\n`);
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `transactions_${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-    showToast('Transactions exported', 'success');
-  });
-}
-
-// ============================================
-// UTILITY FUNCTIONS
-// ============================================
-
-function resetData() {
-  if (confirm('⚠️ Delete ALL data? This cannot be undone!')) {
-    localStorage.clear();
-    location.reload();
-  }
-}
-
-function toggleTheme(isDark) {
-  darkMode = isDark;
-  document.body.classList.toggle('dark', darkMode);
-  localStorage.setItem('darkMode', darkMode);
-}
-
-function loadTheme() {
-  darkMode = localStorage.getItem('darkMode') === 'true';
-  document.body.classList.toggle('dark', darkMode);
-}
-
-function showToast(message, type) {
-  const toast = document.createElement('div');
-  toast.className = 'toast';
-  toast.style.background = type === 'success' ? '#10b981' : '#ef4444';
-  toast.style.color = 'white';
-  toast.innerHTML = message;
-  document.body.appendChild(toast);
-  setTimeout(() => toast.remove(), 3000);
-}
-
-function escapeHtml(str) {
-  if (!str) return '';
-  return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
-}
-
-// CRITICAL FIX: updateDateTime ONLY updates the clock text, NOT the whole page!
-function updateDateTime() {
-  const el = document.getElementById('currentDateTime');
-  if (el) {
-    el.textContent = new Date().toLocaleString();
-  }
-}
-
-function switchView(view) {
-  currentView = view;
-  const titles = { dashboard: 'Dashboard', inventory: 'Inventory', stockout: 'Kitchen Use', ledger: 'Ledger', settings: 'Settings' };
-  document.getElementById('pageTitle').innerText = titles[view] || 'Dashboard';
-  document.getElementById('pageSubtitle').innerText = view === 'stockout' ? 'Record ingredients used in kitchen (No PIN)' : (view === 'settings' ? 'System preferences' : 'Manage your inventory');
-  
-  document.querySelectorAll('.nav-item, .mobile-nav-item').forEach(btn => {
-    btn.classList.remove('active');
-    if (btn.dataset.nav === view) btn.classList.add('active');
-  });
-  renderCurrentView();
-}
-
-function renderCurrentView() {
-  if (currentView === 'dashboard') renderDashboard();
-  else if (currentView === 'inventory') renderInventory();
-  else if (currentView === 'stockout') renderStockOut();
-  else if (currentView === 'ledger') renderLedger();
-  else if (currentView === 'settings') renderSettings();
-}
-
-// ============================================
-// INITIALIZATION
-// ============================================
-
-function init() {
-  loadData();
-  loadTheme();
-  updateDateTime();
-  setInterval(updateDateTime, 1000); // This ONLY updates the clock, NOT the whole page!
-  
-  if (items.length === 0) {
-    loadSampleData();
-  }
-  
-  renderCurrentView();
-  
-  document.querySelectorAll('.nav-item, .mobile-nav-item').forEach(btn => {
-    btn.addEventListener('click', () => switchView(btn.dataset.nav));
-  });
-  
-  const themeBtn = document.getElementById('themeToggle');
-  if (themeBtn) themeBtn.addEventListener('click', () => toggleTheme(!darkMode));
-}
-
-// Global exports
-window.openStockInModal = openStockInModal;
-window.closeStockInModal = closeStockInModal;
-window.processStockIn = processStockIn;
-window.openStockOutModal = openStockOutModal;
-window.closeStockOutModal = closeStockOutModal;
-window.processStockOut = processStockOut;
-window.updateStockOutInfo = updateStockOutInfo;
-window.switchView = switchView;
-window.toggleTheme = toggleTheme;
-window.resetData = resetData;
-window.exportInventoryToCSV = exportInventoryToCSV;
-window.exportTransactionsToCSV = exportTransactionsToCSV;
-window.performSearch = performSearch;
-window.clearSearch = clearSearch;
-
-init();
+  const note
