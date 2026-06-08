@@ -1,5 +1,5 @@
 // ============================================
-// STOCKFLOW ERP - PERFECT SEARCH (No Focus Loss)
+// STOCKFLOW ERP - PERFECT SEARCH WITH CSV LOADING
 // ============================================
 
 // Data Storage
@@ -30,7 +30,7 @@ async function loadSampleData() {
     if (response.ok) {
       const csvText = await response.text();
       
-      // Parse CSV using PapaParse
+      // Parse CSV using PapaParse (already included in your HTML)
       const result = Papa.parse(csvText, {
         header: true,
         skipEmptyLines: true,
@@ -41,9 +41,9 @@ async function loadSampleData() {
       let idCounter = 1;
       
       result.data.forEach(row => {
-        const vendor = row.Vendor || '';
-        const name = row.Name || '';
-        const unit = row.Unit || 'PCS';
+        const vendor = row.Vendor ? row.Vendor.trim() : '';
+        const name = row.Name ? row.Name.trim() : '';
+        const unit = row.Unit ? row.Unit.trim() : 'PCS';
         let rate = parseFloat(row.Rate);
         
         // Skip rows with missing name or invalid rate
@@ -53,15 +53,15 @@ async function loadSampleData() {
         if (rate === 0) return;
         
         // Clean up name - combine vendor and name if vendor exists
-        let cleanName = name.trim();
-        if (vendor && vendor.trim() && vendor.trim() !== '') {
-          cleanName = `${vendor.trim()} - ${cleanName}`;
+        let cleanName = name;
+        if (vendor && vendor !== '') {
+          cleanName = `${vendor} - ${name}`;
         }
         
         parsedItems.push({
           id: (idCounter++).toString(),
           name: cleanName,
-          quantity: 0,
+          quantity: 0,  // Start with 0 stock, user can add stock manually
           unit: unit,
           cost: rate,
           expiryDate: '',
@@ -87,11 +87,16 @@ async function loadSampleData() {
         
         saveData();
         showToast(`✅ Successfully loaded ${items.length} items from CSV`, 'success');
+        console.log(`Loaded ${items.length} items from CSV`);
         return;
+      } else {
+        console.log('No valid items found in CSV');
       }
+    } else {
+      console.log('CSV file not found, using sample data');
     }
   } catch (error) {
-    console.log('CSV file not found or error loading:', error);
+    console.log('Error loading CSV:', error);
   }
   
   // Fallback sample data if CSV fails to load
@@ -120,7 +125,7 @@ function addStock(itemId, quantity, unit, cost, expiryDate, note) {
   const item = items.find(i => i.id === itemId);
   if (!item) return false;
   
-  item.quantity = item.quantity + quantity;
+  item.quantity = (item.quantity || 0) + quantity;
   if (cost && cost > 0) item.cost = cost;
   if (expiryDate) item.expiryDate = expiryDate;
   
@@ -157,12 +162,12 @@ function removeStock(itemId, quantity, reason, note) {
   const item = items.find(i => i.id === itemId);
   if (!item) return false;
   
-  if (quantity > item.quantity) {
-    showToast(`Insufficient stock! Only ${item.quantity} ${item.unit} available`, 'error');
+  if (quantity > (item.quantity || 0)) {
+    showToast(`Insufficient stock! Only ${item.quantity || 0} ${item.unit} available`, 'error');
     return false;
   }
   
-  item.quantity = item.quantity - quantity;
+  item.quantity = (item.quantity || 0) - quantity;
   
   const transaction = {
     id: Date.now().toString(),
@@ -195,8 +200,9 @@ function removeStock(itemId, quantity, reason, note) {
 }
 
 function getStockStatus(item) {
-  if (item.quantity <= 0) return { class: 'status-expired', text: 'Out of Stock', icon: '❌' };
-  if (item.quantity < item.minStock) return { class: 'status-low', text: 'Low Stock', icon: '⚠️' };
+  const quantity = item.quantity || 0;
+  if (quantity <= 0) return { class: 'status-expired', text: 'Out of Stock', icon: '❌' };
+  if (quantity < (item.minStock || 1)) return { class: 'status-low', text: 'Low Stock', icon: '⚠️' };
   return { class: 'status-ok', text: 'In Stock', icon: '✅' };
 }
 
@@ -227,14 +233,13 @@ function loadData() {
 }
 
 // ============================================
-// SEARCH FUNCTIONS - NO PAGE RE-RENDER, NO FOCUS LOSS
+// SEARCH FUNCTIONS
 // ============================================
 
 function performSearch() {
   const searchInput = document.getElementById('searchInput');
   if (searchInput) {
     searchTerm = searchInput.value;
-    // ONLY update the grid - NO re-render of entire page
     if (currentView === 'inventory') {
       updateInventoryGridOnly();
     } else if (currentView === 'stockout') {
@@ -267,7 +272,7 @@ function updateSearchStats() {
 }
 
 // ============================================
-// INVENTORY GRID UPDATE ONLY (No page re-render)
+// INVENTORY GRID UPDATE ONLY
 // ============================================
 
 function updateInventoryGridOnly() {
@@ -283,32 +288,33 @@ function updateInventoryGridOnly() {
   
   grid.innerHTML = filtered.map(item => {
     const status = getStockStatus(item);
+    const quantity = item.quantity || 0;
     return `
       <div class="inventory-card">
         <div class="card-header">
           <div>
             <span class="item-name">${escapeHtml(item.name)}</span>
-            <div style="font-size:0.7rem;color:var(--gray);">${item.unit} | Min: ${item.minStock}</div>
+            <div style="font-size:0.7rem;color:var(--gray);">${item.unit} | Min: ${item.minStock || 1}</div>
           </div>
           <div>
-            <span class="item-price">$${item.cost.toFixed(2)}</span>
+            <span class="item-price">$${(item.cost || 0).toFixed(2)}</span>
             <div style="font-size:0.7rem;">per unit</div>
           </div>
         </div>
         <div style="background:var(--bg-light);padding:0.75rem;border-radius:12px;margin:0.75rem 0;">
           <div style="display:flex;justify-content:space-between;">
             <span>Current Stock</span>
-            <span style="font-size:1.5rem;font-weight:700;">${item.quantity}</span>
+            <span style="font-size:1.5rem;font-weight:700;">${quantity}</span>
           </div>
           <div style="display:flex;justify-content:space-between;margin-top:0.5rem;">
             <span>Expiry: ${item.expiryDate || 'N/A'}</span>
-            <span>Value: $${(item.quantity * item.cost).toFixed(2)}</span>
+            <span>Value: $${(quantity * (item.cost || 0)).toFixed(2)}</span>
           </div>
         </div>
         <div><span class="stock-status ${status.class}">${status.icon} ${status.text}</span></div>
         <div class="card-actions" style="display:flex;gap:0.5rem;margin-top:0.75rem;">
           <button class="btn btn-success" style="flex:1;" onclick="openStockInModal('${item.id}')">+ Add Stock</button>
-          ${item.quantity > 0 ? `<button class="btn btn-warning" style="flex:1;" onclick="openStockOutModal('${item.id}')">🍳 Kitchen Use</button>` : `<button class="btn btn-secondary" style="flex:1;" disabled>Out of Stock</button>`}
+          ${quantity > 0 ? `<button class="btn btn-warning" style="flex:1;" onclick="openStockOutModal('${item.id}')">🍳 Kitchen Use</button>` : `<button class="btn btn-secondary" style="flex:1;" disabled>Out of Stock</button>`}
         </div>
       </div>
     `;
@@ -328,25 +334,26 @@ function updateKitchenGridOnly() {
   
   grid.innerHTML = filtered.map(item => {
     const status = getStockStatus(item);
+    const quantity = item.quantity || 0;
     return `
       <div class="inventory-card">
         <div class="card-header">
           <span class="item-name">${escapeHtml(item.name)}</span>
-          <span class="item-price">Stock: ${item.quantity} ${item.unit}</span>
+          <span class="item-price">Stock: ${quantity} ${item.unit}</span>
         </div>
         <div class="card-details">
-          <span>Cost: $${item.cost.toFixed(2)}</span>
+          <span>Cost: $${(item.cost || 0).toFixed(2)}</span>
           <span>Expiry: ${item.expiryDate || 'N/A'}</span>
         </div>
         <div><span class="stock-status ${status.class}">${status.icon} ${status.text}</span></div>
-        ${item.quantity > 0 ? `<button class="btn btn-warning" style="margin-top:0.75rem;width:100%;" onclick="openStockOutModal('${item.id}')">🍳 Use in Kitchen</button>` : `<button class="btn btn-secondary" style="margin-top:0.75rem;width:100%;" disabled>❌ Out of Stock</button>`}
+        ${quantity > 0 ? `<button class="btn btn-warning" style="margin-top:0.75rem;width:100%;" onclick="openStockOutModal('${item.id}')">🍳 Use in Kitchen</button>` : `<button class="btn btn-secondary" style="margin-top:0.75rem;width:100%;" disabled>❌ Out of Stock</button>`}
       </div>
     `;
   }).join('');
 }
 
 // ============================================
-// DASHBOARD UPDATE FUNCTIONS (No page re-render)
+// DASHBOARD UPDATE FUNCTIONS
 // ============================================
 
 function updateDashboardStats() {
@@ -354,9 +361,9 @@ function updateDashboardStats() {
   if (!statsGrid) return;
   
   const totalItems = items.length;
-  const totalStock = items.reduce((sum, i) => sum + i.quantity, 0);
-  const totalValue = items.reduce((sum, i) => sum + (i.quantity * i.cost), 0);
-  const lowStockCount = items.filter(i => i.quantity < i.minStock).length;
+  const totalStock = items.reduce((sum, i) => sum + (i.quantity || 0), 0);
+  const totalValue = items.reduce((sum, i) => sum + ((i.quantity || 0) * (i.cost || 0)), 0);
+  const lowStockCount = items.filter(i => (i.quantity || 0) < (i.minStock || 1)).length;
   
   statsGrid.innerHTML = `
     <div class="stat-card" onclick="switchView('inventory')">
@@ -398,41 +405,15 @@ function updateRecentTransactionsOnly() {
   `).join('');
 }
 
-function updateDashboardRecentGrid() {
-  const grid = document.getElementById('dashboardRecentGrid');
-  if (!grid) return;
-  
-  grid.innerHTML = items.slice(0,6).map(item => {
-    const status = getStockStatus(item);
-    return `
-      <div class="inventory-card">
-        <div class="card-header">
-          <span class="item-name">${escapeHtml(item.name)}</span>
-          <span class="item-price">$${item.cost.toFixed(2)}</span>
-        </div>
-        <div class="card-details">
-          <span>Stock: <strong>${item.quantity}</strong> ${item.unit}</span>
-          <span>Expiry: ${item.expiryDate || 'N/A'}</span>
-        </div>
-        <div><span class="stock-status ${status.class}">${status.icon} ${status.text}</span></div>
-        <div class="card-actions" style="display:flex;gap:0.5rem;margin-top:0.75rem;">
-          <button class="btn btn-success" style="flex:1;" onclick="openStockInModal('${item.id}')">+ Add Stock</button>
-          ${item.quantity > 0 ? `<button class="btn btn-warning" style="flex:1;" onclick="openStockOutModal('${item.id}')">🍳 Kitchen Use</button>` : `<button class="btn btn-secondary" style="flex:1;" disabled>Out of Stock</button>`}
-        </div>
-      </div>
-    `;
-  }).join('');
-}
-
 // ============================================
-// RENDER FUNCTIONS (Called only when switching views)
+// RENDER FUNCTIONS
 // ============================================
 
 function renderDashboard() {
   const totalItems = items.length;
-  const totalStock = items.reduce((sum, i) => sum + i.quantity, 0);
-  const totalValue = items.reduce((sum, i) => sum + (i.quantity * i.cost), 0);
-  const lowStockCount = items.filter(i => i.quantity < i.minStock).length;
+  const totalStock = items.reduce((sum, i) => sum + (i.quantity || 0), 0);
+  const totalValue = items.reduce((sum, i) => sum + ((i.quantity || 0) * (i.cost || 0)), 0);
+  const lowStockCount = items.filter(i => (i.quantity || 0) < (i.minStock || 1)).length;
   
   const html = `
     <div class="stats-grid" id="dashboardStatsGrid">
@@ -465,20 +446,21 @@ function renderDashboard() {
     <div class="cards-grid" id="dashboardRecentGrid">
       ${items.slice(0,6).map(item => {
         const status = getStockStatus(item);
+        const quantity = item.quantity || 0;
         return `
           <div class="inventory-card">
             <div class="card-header">
               <span class="item-name">${escapeHtml(item.name)}</span>
-              <span class="item-price">$${item.cost.toFixed(2)}</span>
+              <span class="item-price">$${(item.cost || 0).toFixed(2)}</span>
             </div>
             <div class="card-details">
-              <span>Stock: <strong>${item.quantity}</strong> ${item.unit}</span>
+              <span>Stock: <strong>${quantity}</strong> ${item.unit}</span>
               <span>Expiry: ${item.expiryDate || 'N/A'}</span>
             </div>
             <div><span class="stock-status ${status.class}">${status.icon} ${status.text}</span></div>
             <div class="card-actions" style="display:flex;gap:0.5rem;margin-top:0.75rem;">
               <button class="btn btn-success" style="flex:1;" onclick="openStockInModal('${item.id}')">+ Add Stock</button>
-              ${item.quantity > 0 ? `<button class="btn btn-warning" style="flex:1;" onclick="openStockOutModal('${item.id}')">🍳 Kitchen Use</button>` : `<button class="btn btn-secondary" style="flex:1;" disabled>Out of Stock</button>`}
+              ${quantity > 0 ? `<button class="btn btn-warning" style="flex:1;" onclick="openStockOutModal('${item.id}')">🍳 Kitchen Use</button>` : `<button class="btn btn-secondary" style="flex:1;" disabled>Out of Stock</button>`}
             </div>
           </div>
         `;
@@ -522,7 +504,6 @@ function renderInventory() {
       </div>
     </div>
     
-    <!-- SEARCH BAR - Static, never recreated -->
     <div class="search-section">
       <div class="search-wrapper">
         <i class="fas fa-search"></i>
@@ -535,32 +516,33 @@ function renderInventory() {
     <div class="cards-grid" id="inventoryGrid">
       ${filtered.map(item => {
         const status = getStockStatus(item);
+        const quantity = item.quantity || 0;
         return `
           <div class="inventory-card">
             <div class="card-header">
               <div>
                 <span class="item-name">${escapeHtml(item.name)}</span>
-                <div style="font-size:0.7rem;color:var(--gray);">${item.unit} | Min: ${item.minStock}</div>
+                <div style="font-size:0.7rem;color:var(--gray);">${item.unit} | Min: ${item.minStock || 1}</div>
               </div>
               <div>
-                <span class="item-price">$${item.cost.toFixed(2)}</span>
+                <span class="item-price">$${(item.cost || 0).toFixed(2)}</span>
                 <div style="font-size:0.7rem;">per unit</div>
               </div>
             </div>
             <div style="background:var(--bg-light);padding:0.75rem;border-radius:12px;margin:0.75rem 0;">
               <div style="display:flex;justify-content:space-between;">
                 <span>Current Stock</span>
-                <span style="font-size:1.5rem;font-weight:700;">${item.quantity}</span>
+                <span style="font-size:1.5rem;font-weight:700;">${quantity}</span>
               </div>
               <div style="display:flex;justify-content:space-between;margin-top:0.5rem;">
                 <span>Expiry: ${item.expiryDate || 'N/A'}</span>
-                <span>Value: $${(item.quantity * item.cost).toFixed(2)}</span>
+                <span>Value: $${(quantity * (item.cost || 0)).toFixed(2)}</span>
               </div>
             </div>
             <div><span class="stock-status ${status.class}">${status.icon} ${status.text}</span></div>
             <div class="card-actions" style="display:flex;gap:0.5rem;margin-top:0.75rem;">
               <button class="btn btn-success" style="flex:1;" onclick="openStockInModal('${item.id}')">+ Add Stock</button>
-              ${item.quantity > 0 ? `<button class="btn btn-warning" style="flex:1;" onclick="openStockOutModal('${item.id}')">🍳 Kitchen Use</button>` : `<button class="btn btn-secondary" style="flex:1;" disabled>Out of Stock</button>`}
+              ${quantity > 0 ? `<button class="btn btn-warning" style="flex:1;" onclick="openStockOutModal('${item.id}')">🍳 Kitchen Use</button>` : `<button class="btn btn-secondary" style="flex:1;" disabled>Out of Stock</button>`}
             </div>
           </div>
         `;
@@ -569,21 +551,17 @@ function renderInventory() {
     </div>
   `;
   document.getElementById('viewContainer').innerHTML = html;
-  
-  // Attach search listener AFTER DOM is created
   attachInventorySearchListener();
 }
 
 function attachInventorySearchListener() {
   const searchInput = document.getElementById('searchInput');
   if (searchInput) {
-    // Remove any existing listener by cloning
     const newInput = searchInput.cloneNode(true);
     searchInput.parentNode.replaceChild(newInput, searchInput);
     
     newInput.addEventListener('input', function(e) {
       searchTerm = e.target.value;
-      // ONLY update the grid - NO page re-render
       updateInventoryGridOnly();
       updateSearchStats();
     });
@@ -611,18 +589,19 @@ function renderStockOut() {
     <div class="cards-grid" id="kitchenGrid">
       ${filtered.map(item => {
         const status = getStockStatus(item);
+        const quantity = item.quantity || 0;
         return `
           <div class="inventory-card">
             <div class="card-header">
               <span class="item-name">${escapeHtml(item.name)}</span>
-              <span class="item-price">Stock: ${item.quantity} ${item.unit}</span>
+              <span class="item-price">Stock: ${quantity} ${item.unit}</span>
             </div>
             <div class="card-details">
-              <span>Cost: $${item.cost.toFixed(2)}</span>
+              <span>Cost: $${(item.cost || 0).toFixed(2)}</span>
               <span>Expiry: ${item.expiryDate || 'N/A'}</span>
             </div>
             <div><span class="stock-status ${status.class}">${status.icon} ${status.text}</span></div>
-            ${item.quantity > 0 ? `<button class="btn btn-warning" style="margin-top:0.75rem;width:100%;" onclick="openStockOutModal('${item.id}')">🍳 Use in Kitchen</button>` : `<button class="btn btn-secondary" style="margin-top:0.75rem;width:100%;" disabled>❌ Out of Stock</button>`}
+            ${quantity > 0 ? `<button class="btn btn-warning" style="margin-top:0.75rem;width:100%;" onclick="openStockOutModal('${item.id}')">🍳 Use in Kitchen</button>` : `<button class="btn btn-secondary" style="margin-top:0.75rem;width:100%;" disabled>❌ Out of Stock</button>`}
           </div>
         `;
       }).join('')}
@@ -630,7 +609,6 @@ function renderStockOut() {
     </div>
   `;
   document.getElementById('viewContainer').innerHTML = html;
-  
   attachKitchenSearchListener();
 }
 
@@ -671,7 +649,7 @@ function renderLedger() {
               <td>${escapeHtml(t.note || '-')}</td>
             </tr>
           `).join('')}
-          ${transactions.length === 0 ? ' hilab<td colspan="7" class="text-center">No transactions</td></tr>' : ''}
+          ${transactions.length === 0 ? '<tr><td colspan="7" class="text-center">No transactions</td>' : ''}
         </tbody>
       </table>
     </div>
@@ -715,7 +693,7 @@ function renderSettings() {
 function openStockInModal(presetItemId = null) {
   verifyPIN("Add Stock", () => {
     const select = document.getElementById('stockInItem');
-    select.innerHTML = '<option value="">-- Select Item --</option>' + items.map(i => `<option value="${i.id}" ${presetItemId === i.id ? 'selected' : ''}>${escapeHtml(i.name)} (Current: ${i.quantity} ${i.unit})</option>`).join('');
+    select.innerHTML = '<option value="">-- Select Item --</option>' + items.map(i => `<option value="${i.id}" ${presetItemId === i.id ? 'selected' : ''}>${escapeHtml(i.name)} (Current: ${i.quantity || 0} ${i.unit})</option>`).join('');
     document.getElementById('stockInQty').value = '';
     document.getElementById('stockInUnit').value = '';
     document.getElementById('stockInCost').value = '';
@@ -744,7 +722,7 @@ function processStockIn() {
 
 function openStockOutModal(presetItemId = null) {
   const select = document.getElementById('stockOutItem');
-  select.innerHTML = '<option value="">-- Select Item --</option>' + items.map(i => `<option value="${i.id}" ${presetItemId === i.id ? 'selected' : ''}>${escapeHtml(i.name)} (Available: ${i.quantity} ${i.unit})</option>`).join('');
+  select.innerHTML = '<option value="">-- Select Item --</option>' + items.map(i => `<option value="${i.id}" ${presetItemId === i.id ? 'selected' : ''}>${escapeHtml(i.name)} (Available: ${i.quantity || 0} ${i.unit})</option>`).join('');
   document.getElementById('stockOutQty').value = '';
   document.getElementById('stockOutReason').value = 'Kitchen Preparation';
   document.getElementById('stockOutNote').value = '';
@@ -761,7 +739,7 @@ function updateStockOutInfo() {
   const infoDiv = document.getElementById('currentStockInfo');
   if (itemId && infoDiv) {
     const item = items.find(i => i.id === itemId);
-    if (item) infoDiv.innerHTML = `Current Stock: ${item.quantity} ${item.unit} available`;
+    if (item) infoDiv.innerHTML = `Current Stock: ${item.quantity || 0} ${item.unit} available`;
   }
 }
 
@@ -783,7 +761,7 @@ function processStockOut() {
 function exportInventoryToCSV() {
   verifyPIN("Export Inventory", () => {
     let csv = "Name,Stock,Unit,Cost,Total Value,Expiry Date,Min Stock\n";
-    items.forEach(i => csv += `"${i.name}",${i.quantity},${i.unit},${i.cost},${(i.quantity*i.cost).toFixed(2)},${i.expiryDate || 'N/A'},${i.minStock}\n`);
+    items.forEach(i => csv += `"${i.name}",${i.quantity || 0},${i.unit},${i.cost || 0},${((i.quantity || 0) * (i.cost || 0)).toFixed(2)},${i.expiryDate || 'N/A'},${i.minStock || 1}\n`);
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -847,7 +825,6 @@ function escapeHtml(str) {
   return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
 }
 
-// CRITICAL FIX: updateDateTime ONLY updates the clock text, NOT the whole page!
 function updateDateTime() {
   const el = document.getElementById('currentDateTime');
   if (el) {
@@ -877,17 +854,17 @@ function renderCurrentView() {
 }
 
 // ============================================
-// INITIALIZATION (FIXED - Async)
+// INITIALIZATION
 // ============================================
 
 async function init() {
   loadData();
   loadTheme();
   updateDateTime();
-  setInterval(updateDateTime, 1000); // This ONLY updates the clock, NOT the whole page!
+  setInterval(updateDateTime, 1000);
   
   if (items.length === 0) {
-    await loadSampleData();  // Added 'await' here to ensure CSV loads first
+    await loadSampleData();
   }
   
   renderCurrentView();
