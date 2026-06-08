@@ -769,4 +769,151 @@ function processStockOut() {
   const itemId = document.getElementById('stockOutItem').value;
   const quantity = parseFloat(document.getElementById('stockOutQty').value);
   const reason = document.getElementById('stockOutReason').value;
-  const note
+  const note = document.getElementById('stockOutNote').value;
+  
+  if (!itemId || !quantity || quantity <= 0) { showToast('Please select item and valid quantity', 'error'); return; }
+  removeStock(itemId, quantity, reason, note);
+  closeStockOutModal();
+}
+
+// ============================================
+// EXPORT FUNCTIONS
+// ============================================
+
+function exportInventoryToCSV() {
+  verifyPIN("Export Inventory", () => {
+    let csv = "Name,Stock,Unit,Cost,Total Value,Expiry Date,Min Stock\n";
+    items.forEach(i => csv += `"${i.name}",${i.quantity},${i.unit},${i.cost},${(i.quantity*i.cost).toFixed(2)},${i.expiryDate || 'N/A'},${i.minStock}\n`);
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `inventory_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('Inventory exported', 'success');
+  });
+}
+
+function exportTransactionsToCSV() {
+  verifyPIN("Export Transactions", () => {
+    let csv = "Date,Type,Item,Quantity,Unit,Value,Reference\n";
+    transactions.forEach(t => csv += `"${new Date(t.timestamp).toLocaleString()}",${t.type === 'STOCK_IN' ? 'IN' : 'OUT'},"${t.itemName}",${t.quantity},${t.unit},${(t.quantity*(t.cost||0)).toFixed(2)},"${t.note || ''}"\n`);
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `transactions_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('Transactions exported', 'success');
+  });
+}
+
+// ============================================
+// UTILITY FUNCTIONS
+// ============================================
+
+function resetData() {
+  if (confirm('⚠️ Delete ALL data? This cannot be undone!')) {
+    localStorage.clear();
+    location.reload();
+  }
+}
+
+function toggleTheme(isDark) {
+  darkMode = isDark;
+  document.body.classList.toggle('dark', darkMode);
+  localStorage.setItem('darkMode', darkMode);
+}
+
+function loadTheme() {
+  darkMode = localStorage.getItem('darkMode') === 'true';
+  document.body.classList.toggle('dark', darkMode);
+}
+
+function showToast(message, type) {
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.style.background = type === 'success' ? '#10b981' : '#ef4444';
+  toast.style.color = 'white';
+  toast.innerHTML = message;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
+}
+
+// CRITICAL FIX: updateDateTime ONLY updates the clock text, NOT the whole page!
+function updateDateTime() {
+  const el = document.getElementById('currentDateTime');
+  if (el) {
+    el.textContent = new Date().toLocaleString();
+  }
+}
+
+function switchView(view) {
+  currentView = view;
+  const titles = { dashboard: 'Dashboard', inventory: 'Inventory', stockout: 'Kitchen Use', ledger: 'Ledger', settings: 'Settings' };
+  document.getElementById('pageTitle').innerText = titles[view] || 'Dashboard';
+  document.getElementById('pageSubtitle').innerText = view === 'stockout' ? 'Record ingredients used in kitchen (No PIN)' : (view === 'settings' ? 'System preferences' : 'Manage your inventory');
+  
+  document.querySelectorAll('.nav-item, .mobile-nav-item').forEach(btn => {
+    btn.classList.remove('active');
+    if (btn.dataset.nav === view) btn.classList.add('active');
+  });
+  renderCurrentView();
+}
+
+function renderCurrentView() {
+  if (currentView === 'dashboard') renderDashboard();
+  else if (currentView === 'inventory') renderInventory();
+  else if (currentView === 'stockout') renderStockOut();
+  else if (currentView === 'ledger') renderLedger();
+  else if (currentView === 'settings') renderSettings();
+}
+
+// ============================================
+// INITIALIZATION (FIXED - Async)
+// ============================================
+
+async function init() {
+  loadData();
+  loadTheme();
+  updateDateTime();
+  setInterval(updateDateTime, 1000); // This ONLY updates the clock, NOT the whole page!
+  
+  if (items.length === 0) {
+    await loadSampleData();  // Added 'await' here to ensure CSV loads first
+  }
+  
+  renderCurrentView();
+  
+  document.querySelectorAll('.nav-item, .mobile-nav-item').forEach(btn => {
+    btn.addEventListener('click', () => switchView(btn.dataset.nav));
+  });
+  
+  const themeBtn = document.getElementById('themeToggle');
+  if (themeBtn) themeBtn.addEventListener('click', () => toggleTheme(!darkMode));
+}
+
+// Global exports
+window.openStockInModal = openStockInModal;
+window.closeStockInModal = closeStockInModal;
+window.processStockIn = processStockIn;
+window.openStockOutModal = openStockOutModal;
+window.closeStockOutModal = closeStockOutModal;
+window.processStockOut = processStockOut;
+window.updateStockOutInfo = updateStockOutInfo;
+window.switchView = switchView;
+window.toggleTheme = toggleTheme;
+window.resetData = resetData;
+window.exportInventoryToCSV = exportInventoryToCSV;
+window.exportTransactionsToCSV = exportTransactionsToCSV;
+window.performSearch = performSearch;
+window.clearSearch = clearSearch;
+
+init();
