@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>🛍️ Ewity Products - PRODUCTION</title>
+    <title>🛍️ Ewity Products</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Arial, sans-serif; background: #f0f2f5; padding: 20px; }
@@ -50,7 +50,6 @@
         .empty-state .icon { font-size: 48px; margin-bottom: 15px; }
         .info-box { background: #e8f5e9; padding: 20px; border-radius: 10px; margin: 15px 0; border-left: 4px solid #2e7d32; }
         .info-box code { background: #f5f5f5; padding: 2px 6px; border-radius: 3px; font-size: 13px; word-break: break-all; }
-        .info-box.error { background: #ffebee; border-left-color: #c62828; }
         .debug-section { margin-top: 25px; }
         .debug-section .debug-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
         .debug-section .debug-header h3 { font-size: 14px; color: #333; }
@@ -62,14 +61,14 @@
         .debug-log .warning { color: #ffb74d; }
         .fade-in { animation: fadeIn 0.3s ease-in; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .success-box { background: #e8f5e9; padding: 20px; border-radius: 10px; border-left: 4px solid #2e7d32; margin: 16px 0; }
-        .success-box h3 { color: #2e7d32; margin-bottom: 8px; }
         .error-box { background: #ffebee; padding: 20px; border-radius: 10px; border-left: 4px solid #c62828; margin: 16px 0; }
         .error-box h3 { color: #c62828; margin-bottom: 8px; }
         .error-box ul { margin: 8px 0 8px 20px; color: #555; }
         .error-box details { margin-top: 12px; }
         .error-box details summary { cursor: pointer; color: #1a237e; font-weight: 600; }
-        .error-box pre { background: #f5f5f5; padding: 12px; border-radius: 6px; overflow: auto; font-size: 12px; margin-top: 8px; }
+        .error-box pre { background: #f5f5f5; padding: 12px; border-radius: 6px; overflow: auto; font-size: 12px; margin-top: 8px; white-space: pre-wrap; word-break: break-all; }
+        .success-box { background: #e8f5e9; padding: 20px; border-radius: 10px; border-left: 4px solid #2e7d32; margin: 16px 0; }
+        .success-box h3 { color: #2e7d32; margin-bottom: 8px; }
     </style>
 </head>
 <body>
@@ -90,7 +89,7 @@
         <br />
         <strong>📌 Status:</strong> <span id="statusMessage">Ready</span>
         <br />
-        <strong>🔄 Using:</strong> <code id="proxyDisplay">Backend Proxy (PHP)</code>
+        <strong>🔄 Using:</strong> <code>Backend Proxy (PHP)</code>
     </div>
 
     <div id="status" class="status loading">
@@ -124,7 +123,7 @@
 
 <script>
 // ============================================================
-// CONFIGURATION - BACKEND PROXY
+// CONFIGURATION
 // ============================================================
 const CONFIG = {
     token: 'uat_eZdWQEJhFlf8KyKJL5CD9CkLAh3g',
@@ -159,7 +158,6 @@ const statusBadge = document.getElementById('statusBadge');
 const productCountEl = document.getElementById('productCount');
 const tokenDisplay = document.getElementById('tokenDisplay');
 const statusMessage = document.getElementById('statusMessage');
-const proxyDisplay = document.getElementById('proxyDisplay');
 const debugStatus = document.getElementById('debugStatus');
 const infoBox = document.getElementById('infoBox');
 
@@ -258,7 +256,7 @@ function loadMockData() {
 }
 
 // ============================================================
-// FETCH PRODUCTS - USING BACKEND PROXY
+// FETCH PRODUCTS - WITH PROPER ERROR HANDLING
 // ============================================================
 async function fetchProducts() {
     statusEl.className = 'status loading';
@@ -267,7 +265,6 @@ async function fetchProducts() {
     statusBadge.className = 'badge loading';
     statusMessage.textContent = '🔄 Fetching from Ewity...';
     debugStatus.textContent = 'Fetching...';
-    proxyDisplay.textContent = 'Backend Proxy (PHP)';
     
     productsEl.innerHTML = '<div class="empty-state"><div class="icon">⏳</div><p>Fetching products from Ewity API...</p></div>';
     statsEl.innerHTML = '';
@@ -276,8 +273,7 @@ async function fetchProducts() {
     const endpoints = [
         'ecom-v1/products',
         'v1/products',
-        'ecom-v1/locations/1/products',
-        'v1/locations/1/products'
+        'ecom-v1/locations/1/products'
     ];
 
     let foundProducts = null;
@@ -301,8 +297,77 @@ async function fetchProducts() {
 
             debug(`📊 Status: ${response.status}`, response.ok ? 'success' : 'error');
 
-            if (response.ok) {
-                const data = await response.json();
+            // Get response as text first
+            const rawResponse = await response.text();
+            
+            // Check for HTML response
+            if (rawResponse.startsWith('<!DOCTYPE') || rawResponse.startsWith('<html') || rawResponse.includes('<')) {
+                // Try to parse as JSON error from proxy
+                try {
+                    const jsonError = JSON.parse(rawResponse);
+                    if (jsonError.error) {
+                        debug(`❌ Proxy Error: ${jsonError.error} - ${jsonError.message}`, 'error');
+                        statusEl.className = 'status error';
+                        statusEl.innerHTML = `❌ ${jsonError.error}: ${jsonError.message}`;
+                        statusMessage.textContent = `❌ ${jsonError.error}`;
+                        debugStatus.textContent = `❌ ${jsonError.error}`;
+                        
+                        productsEl.innerHTML = `
+                            <div class="error-box fade-in">
+                                <h3>❌ ${jsonError.error}</h3>
+                                <p><strong>${jsonError.message}</strong></p>
+                                <p><strong>Check:</strong></p>
+                                <ul>
+                                    <li>Enable ALL E-commerce permissions in Company Admin → Users → Manage Levels</li>
+                                    <li>Verify your token is valid</li>
+                                    ${jsonError.hint ? `<li>💡 ${jsonError.hint}</li>` : ''}
+                                    ${jsonError.status ? `<li>Status: ${jsonError.status}</li>` : ''}
+                                </ul>
+                                <details>
+                                    <summary style="cursor:pointer;font-weight:bold;color:#1a237e;">🔍 Debug Details</summary>
+                                    <pre>${JSON.stringify(jsonError, null, 2)}</pre>
+                                </details>
+                                <button onclick="loadMockData()" style="margin-top:15px;padding:10px 20px;background:#2e7d32;color:white;border:none;border-radius:5px;cursor:pointer;">
+                                    📦 Load Mock Data Instead
+                                </button>
+                            </div>
+                        `;
+                        return;
+                    }
+                } catch (e) {
+                    // Not JSON, show HTML preview
+                    debug('❌ HTML response from server', 'error');
+                    statusEl.className = 'status error';
+                    statusEl.innerHTML = '❌ Server returned HTML instead of JSON';
+                    statusMessage.textContent = '❌ HTML response';
+                    debugStatus.textContent = '❌ HTML error';
+                    
+                    productsEl.innerHTML = `
+                        <div class="error-box fade-in">
+                            <h3>❌ HTML Response Received</h3>
+                            <p><strong>The server returned HTML instead of JSON.</strong></p>
+                            <p><strong>This usually means:</strong></p>
+                            <ul>
+                                <li>Your token is missing or invalid</li>
+                                <li>Permissions are not enabled</li>
+                                <li>The endpoint path is wrong</li>
+                            </ul>
+                            <details>
+                                <summary style="cursor:pointer;font-weight:bold;color:#1a237e;">🔍 HTML Preview</summary>
+                                <pre>${rawResponse.substring(0, 500)}</pre>
+                            </details>
+                            <button onclick="loadMockData()" style="margin-top:15px;padding:10px 20px;background:#2e7d32;color:white;border:none;border-radius:5px;cursor:pointer;">
+                                📦 Load Mock Data Instead
+                            </button>
+                        </div>
+                    `;
+                    return;
+                }
+            }
+
+            // Try to parse as JSON
+            try {
+                const data = JSON.parse(rawResponse);
                 const products = data.data || data.products || data.items || [];
                 
                 if (products.length > 0) {
@@ -310,13 +375,16 @@ async function fetchProducts() {
                     workingEndpoint = endpoint;
                     debug(`✅ Found ${products.length} products at ${endpoint}`, 'success');
                     break;
+                } else {
+                    debug(`⚠️ No products in response from ${endpoint}`, 'warning');
                 }
+            } catch (e) {
+                debug(`❌ JSON parse error: ${e.message}`, 'error');
             }
         }
 
         if (foundProducts && foundProducts.length > 0) {
             displayProducts(foundProducts, 'Ewity API (' + workingEndpoint + ')');
-            infoBox.className = 'info-box';
         } else {
             debug('⚠️ No products found in any endpoint', 'warning');
             statusEl.className = 'status warning';
@@ -339,7 +407,6 @@ async function fetchProducts() {
                 <p><strong>Check:</strong></p>
                 <ul>
                     <li>Make sure <code>proxy.php</code> exists in your Hostinger file manager</li>
-                    <li>Verify the code in <code>proxy.php</code> is correct</li>
                     <li>Enable ALL E-commerce permissions in Company Admin</li>
                 </ul>
                 <details>
