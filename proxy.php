@@ -1,257 +1,216 @@
 <?php
 // ============================================================
-// proxy.php - PRODUCTION-GRADE API GATEWAY
+// proxy.php - PRODUCTION GRADE WITH FULL LOGGING
 // ============================================================
 
 // ============================================================
-// 1. CORS CONFIGURATION
+// 1. CORS HEADERS
 // ============================================================
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Authorization, Content-Type, X-Ewity-Platform, x-client, x-pos-client-id');
 
-// Handle preflight
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit();
 }
 
-// Always return JSON
 header('Content-Type: application/json');
 
 // ============================================================
 // 2. CONFIGURATION
 // ============================================================
-define('EWITY_BASE_URL', 'https://app.ewitypos.com/api');
-define('DEFAULT_ENDPOINT', 'ecom-v1/products');
+define('EWITY_BASE', 'https://app.ewitypos.com/api');
 define('TIMEOUT', 30);
-define('MAX_RETRIES', 2);
-
-// Debug mode (only enabled with ?debug=1)
-$debug = isset($_GET['debug']) && $_GET['debug'] === '1';
+define('LOG_FILE', __DIR__ . '/proxy_log.txt');
 
 // ============================================================
-// 3. HELPER FUNCTIONS
+// 3. LOGGING FUNCTION
 // ============================================================
+function logMessage($message, $data = null) {
+    $log = date('Y-m-d H:i:s') . ' - ' . $message;
+    if ($data !== null) {
+        $log .= ' - ' . json_encode($data);
+    }
+    $log .= PHP_EOL;
+    file_put_contents(LOG_FILE, $log, FILE_APPEND);
+}
 
-// Get Authorization header (Hostinger-safe)
+// ============================================================
+// 4. SAFE AUTH CAPTURE (HOSTINGER COMPATIBLE)
+// ============================================================
 function getAuthHeader() {
-    // Check $_SERVER first (most reliable on Hostinger)
+    // Method 1: Direct $_SERVER
     if (isset($_SERVER['HTTP_AUTHORIZATION']) && !empty($_SERVER['HTTP_AUTHORIZATION'])) {
+        logMessage('Auth found in HTTP_AUTHORIZATION');
         return $_SERVER['HTTP_AUTHORIZATION'];
     }
     
-    // Fallback to getallheaders()
+    // Method 2: Redirected version (common on Hostinger)
+    if (isset($_SERVER['REDIRECT_HTTP_AUTHORIZATION']) && !empty($_SERVER['REDIRECT_HTTP_AUTHORIZATION'])) {
+        logMessage('Auth found in REDIRECT_HTTP_AUTHORIZATION');
+        return $_SERVER['REDIRECT_HTTP_AUTHORIZATION'];
+    }
+    
+    // Method 3: getallheaders()
     if (function_exists('getallheaders')) {
         $headers = getallheaders();
-        if (isset($headers['Authorization']) && !empty($headers['Authorization'])) {
-            return $headers['Authorization'];
+        foreach ($headers as $key => $value) {
+            if (strtolower($key) === 'authorization') {
+                logMessage('Auth found in getallheaders()');
+                return $value;
+            }
         }
     }
     
+    logMessage('No Authorization header found');
     return null;
 }
 
-// Safe JSON response
-function jsonResponse($data, $status = 200) {
-    http_response_code($status);
-    echo json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-    exit();
-}
-
-// Error response
-function errorResponse($code, $message, $details = null, $status = 400) {
-    $response = [
-        'success' => false,
-        'error' => $code,
-        'message' => $message
-    ];
-    
-    if ($details && $debug) {
-        $response['details'] = $details;
-    }
-    
-    jsonResponse($response, $status);
-}
-
-// Success response
-function successResponse($data) {
-    jsonResponse([
-        'success' => true,
-        'data' => $data
-    ], 200);
-}
-
 // ============================================================
-// 4. INPUT VALIDATION
+// 5. MAIN PROXY LOGIC
 // ============================================================
 
-// Get and sanitize path
-$path = isset($_GET['path']) ? trim($_GET['path'], '/') : DEFAULT_ENDPOINT;
+// Get the path
+$path = isset($_GET['path']) ? trim($_GET['path'], '/') : 'ecom-v1/products';
+$url = EWITY_BASE . '/' . $path;
 
-// Whitelist allowed endpoints (security)
-$allowedEndpoints = [
-    'ecom-v1/products',
-    'ecom-v1/locations',
-    'ecom-v1/users/me',
-    'v1/products',
-    'v1/locations',
-    'ecom-v1/locations/1/products'
-];
+logMessage('Request started', ['path' => $path, 'url' => $url]);
 
-if (!in_array($path, $allowedEndpoints) && $debug) {
-    errorResponse('INVALID_ENDPOINT', 'Endpoint not in whitelist', ['path' => $path], 403);
-}
-
-// Build URL
-$url = EWITY_BASE_URL . '/' . $path;
-
-// ============================================================
-// 5. GET AUTHENTICATION
-// ============================================================
-
+// Get auth
 $auth = getAuthHeader();
 
-if (empty($auth)) {
-    errorResponse('MISSING_AUTH', 'Authorization header is required', null, 401);
+// Log auth status (without exposing full token)
+$authStatus = $auth ? 'YES (length: ' . strlen($auth) . ')' : 'NO';
+logMessage('Auth present: ' . $authStatus);
+
+// Initialize cURL
+$ch = curl_init($url);
+
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+curl_setopt($ch, CURLOPT_TIMEOUT, TIMEOUT);
+curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+curl_setopt($ch, CURLOPT_HEADER, true); // Capture headers too
+
+// Build headers
+$headers = [
+    'Accept: application/json',
+    'Content-Type: application/json',
+    'X-Ewity-Platform: web',
+    'User-Agent: Ewity-Proxy/1.0'
+];
+
+// Only add Authorization if it exists
+if ($auth) {
+    $headers[] = 'Authorization: ' . $auth;
+    logMessage('Authorization header added');
+} else {
+    logMessage('WARNING: No Authorization header to send');
 }
 
-// ============================================================
-// 6. EXECUTE REQUEST (WITH RETRY)
-// ============================================================
+curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
 
-$attempt = 0;
-$response = null;
-$httpCode = null;
-$error = null;
-$contentType = null;
+// Execute
+$response = curl_exec($ch);
+$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+$contentType = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
+$error = curl_error($ch);
+$info = curl_getinfo($ch);
 
-do {
-    $attempt++;
-    
-    $ch = curl_init($url);
-    
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT, TIMEOUT);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-    
-    // Build headers (ONLY if auth exists)
-    $headers = [
-        'Accept: application/json',
-        'Content-Type: application/json',
-        'X-Ewity-Platform: web'
-    ];
-    
-    if (!empty($auth)) {
-        $headers[] = 'Authorization: ' . $auth;
-    }
-    
-    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-    
-    // Execute
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $contentType = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
-    $error = curl_error($ch);
-    $info = curl_getinfo($ch);
-    
-    curl_close($ch);
-    
-    // If cURL failed and we have retries left
-    if ($response === false && $attempt < MAX_RETRIES) {
-        usleep(500000); // Wait 0.5 seconds
-        continue;
-    }
-    
-    break;
-    
-} while ($attempt < MAX_RETRIES);
+curl_close($ch);
 
 // ============================================================
-// 7. ERROR HANDLING
+// 6. ERROR HANDLING WITH FULL LOGGING
 // ============================================================
 
-// 7.1: cURL failed
-if ($response === false) {
-    errorResponse('CURL_ERROR', 'Failed to connect to Ewity API', [
-        'attempt' => $attempt,
-        'error' => $error,
-        'url' => $url
-    ], 500);
+// Log the result
+logMessage('Response', [
+    'status' => $httpCode,
+    'content_type' => $contentType,
+    'error' => $error,
+    'response_size' => strlen($response)
+]);
+
+// Case 1: cURL failed
+if ($response === false || $error) {
+    logMessage('CURL ERROR: ' . $error);
+    http_response_code(500);
+    echo json_encode([
+        'error' => 'CURL_ERROR',
+        'message' => $error ?: 'Unknown cURL error',
+        'url' => $url,
+        'auth_sent' => $auth ? true : false
+    ]);
+    exit;
 }
 
-// 7.2: Check Content-Type (MOST RELIABLE method)
+// Case 2: Non-JSON response (HTML error)
 if (strpos($contentType, 'application/json') === false) {
-    $htmlPreview = substr($response, 0, 500);
+    // Check if it's HTML
+    $isHtml = strpos($response, '<!DOCTYPE') !== false || strpos($response, '<html') !== false;
+    $preview = $isHtml ? 'HTML response' : substr($response, 0, 300);
     
-    // Try to extract a meaningful error from HTML
-    $message = 'Non-JSON response received';
+    logMessage('NON-JSON RESPONSE', ['content_type' => $contentType, 'is_html' => $isHtml]);
+    
+    // Extract meaningful error from HTML if possible
+    $errorMessage = 'Non-JSON response received';
     if (strpos($response, '401') !== false || strpos($response, 'Unauthorized') !== false) {
-        $message = '401 Unauthorized - Check your API token and permissions';
+        $errorMessage = '401 Unauthorized - Check your API token and permissions';
     } elseif (strpos($response, '403') !== false || strpos($response, 'Forbidden') !== false) {
-        $message = '403 Forbidden - Insufficient permissions';
+        $errorMessage = '403 Forbidden - Insufficient permissions';
     } elseif (strpos($response, '404') !== false || strpos($response, 'Not Found') !== false) {
-        $message = '404 Not Found - Invalid endpoint';
+        $errorMessage = '404 Not Found - Check endpoint path: ' . $path;
     } elseif (strpos($response, '500') !== false) {
-        $message = '500 Internal Server Error - Try again later';
+        $errorMessage = '500 Internal Server Error - Try again later';
     }
     
-    errorResponse('INVALID_RESPONSE', $message, [
+    http_response_code($httpCode ?: 500);
+    echo json_encode([
+        'error' => 'HTML_RESPONSE',
+        'message' => $errorMessage,
+        'path' => $path,
+        'url' => $url,
+        'auth_sent' => $auth ? true : false,
+        'status' => $httpCode,
         'content_type' => $contentType,
-        'html_preview' => $htmlPreview,
-        'status' => $httpCode
-    ], $httpCode ?: 500);
+        'html_preview' => substr($response, 0, 500)
+    ]);
+    exit;
 }
 
-// 7.3: Validate JSON
+// Case 3: Validate JSON
 $json = json_decode($response, true);
 if ($json === null) {
-    errorResponse('INVALID_JSON', 'Response is not valid JSON', [
+    logMessage('INVALID JSON: ' . json_last_error_msg());
+    http_response_code(500);
+    echo json_encode([
+        'error' => 'INVALID_JSON',
+        'message' => 'Response is not valid JSON',
         'preview' => substr($response, 0, 300)
-    ], 500);
+    ]);
+    exit;
 }
 
-// 7.4: Detect API error response
+// Case 4: API error response
 if (isset($json['error']) || isset($json['errorCode']) || isset($json['code'])) {
     $errorCode = $json['error'] ?? $json['errorCode'] ?? $json['code'] ?? 'API_ERROR';
     $errorMessage = $json['message'] ?? $json['errorMessage'] ?? 'Unknown API error';
     
-    errorResponse($errorCode, $errorMessage, $json, $httpCode ?: 400);
+    logMessage('API ERROR: ' . $errorCode . ' - ' . $errorMessage);
+    http_response_code($httpCode ?: 400);
+    echo json_encode([
+        'error' => $errorCode,
+        'message' => $errorMessage,
+        'details' => $json
+    ]);
+    exit;
 }
 
 // ============================================================
-// 8. DEBUG MODE (only if explicitly enabled)
+// 7. SUCCESS
 // ============================================================
-
-if ($debug) {
-    $debugInfo = [
-        'url' => $url,
-        'path' => $path,
-        'status' => $httpCode,
-        'content_type' => $contentType,
-        'attempts' => $attempt,
-        'auth_present' => !empty($auth),
-        'response_size' => strlen($response)
-    ];
-    
-    // Only add if response is an array
-    if (is_array($json)) {
-        $json['_debug'] = $debugInfo;
-        successResponse($json);
-    } else {
-        successResponse([
-            'data' => $json,
-            '_debug' => $debugInfo
-        ]);
-    }
-}
-
-// ============================================================
-// 9. SUCCESS
-// ============================================================
-
-// Return the original response
+logMessage('SUCCESS: Returning JSON response');
 http_response_code($httpCode);
 echo $response;
 ?>
