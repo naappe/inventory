@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>🛍️ Ewity Products - WORKING!</title>
+    <title>🛍️ Ewity Products - ALL ENDPOINTS</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Arial, sans-serif; background: #f0f2f5; padding: 20px; }
@@ -67,7 +67,6 @@
         .permission-guide { background: #fff3e0; padding: 16px; border-radius: 10px; margin: 16px 0; border-left: 4px solid #ff9800; }
         .permission-guide strong { color: #e65100; }
         .permission-guide ul { margin-left: 20px; margin-top: 8px; }
-        .permission-guide li { margin: 4px 0; }
         .error-box { background: #ffebee; padding: 20px; border-radius: 10px; border-left: 4px solid #c62828; margin: 16px 0; }
         .error-box h3 { color: #c62828; margin-bottom: 8px; }
         .error-box ul { margin: 8px 0 8px 20px; color: #555; }
@@ -76,6 +75,8 @@
         .error-box pre { background: #f5f5f5; padding: 12px; border-radius: 6px; overflow: auto; font-size: 12px; margin-top: 8px; white-space: pre-wrap; word-break: break-all; }
         .success-box { background: #e8f5e9; padding: 20px; border-radius: 10px; border-left: 4px solid #2e7d32; margin: 16px 0; }
         .success-box h3 { color: #2e7d32; margin-bottom: 8px; }
+        .endpoint-list { background: #f5f5f5; padding: 12px 16px; border-radius: 8px; margin: 12px 0; font-size: 13px; }
+        .endpoint-list code { background: #e8eaf6; padding: 2px 6px; border-radius: 3px; }
     </style>
 </head>
 <body>
@@ -92,40 +93,43 @@
     </div>
 
     <div class="permission-guide" id="permissionGuide">
-        <strong>⚠️ FINAL STEP: Enable E-commerce API Permissions</strong>
+        <strong>⚠️ IMPORTANT: Enable E-commerce API Permissions</strong>
         <ul>
             <li>Go to <strong>Company Admin → Users</strong></li>
             <li>Find your API user</li>
             <li>Click <strong>"Manage Levels"</strong></li>
-            <li><strong>Enable these EXACT permissions:</strong></li>
-            <ul>
-                <li>✅ Read Locations</li>
-                <li>✅ Read Categories</li>
-                <li>✅ Read Products</li>
-                <li>✅ Read Catalogue</li>
-            </ul>
+            <li><strong>Enable ALL permissions:</strong> Read Locations, Categories, Products, Catalogue</li>
         </ul>
-        <p style="margin-top: 8px;">After enabling, wait 1-2 minutes, then click <strong>"Test Token"</strong> below.</p>
+        <p style="margin-top: 8px;">Then click <strong>"Find Products"</strong> - it will try 5 different endpoints!</p>
     </div>
 
     <div class="info-box" id="infoBox">
-        <strong>🔑 NEW Token:</strong> <code id="tokenDisplay">Loading...</code>
+        <strong>🔑 Token:</strong> <code id="tokenDisplay">Loading...</code>
         <br />
         <strong>📌 Status:</strong> <span id="statusMessage">Ready</span>
         <br />
-        <strong>📡 API:</strong> <code>https://app.ewitypos.com/api/ecom-v1</code>
+        <strong>📡 Testing:</strong> <span id="endpointDisplay">5 endpoints</span>
+    </div>
+
+    <div class="endpoint-list">
+        <strong>📡 Will try these 5 endpoints:</strong><br>
+        <code>1. /api/ecom-v1/products</code><br>
+        <code>2. /api/v1/products</code><br>
+        <code>3. /api/ecom-v1/locations/1/products</code><br>
+        <code>4. /api/v1/locations/1/products</code><br>
+        <code>5. /api/ecom-v1/catalogue/products</code>
     </div>
 
     <div id="status" class="status loading">
         <span class="spinner"></span>
-        Ready to test...
+        Ready to find products...
     </div>
 
     <div id="stats" class="stats"></div>
 
     <div class="controls">
-        <button class="primary" onclick="testToken()">🔑 Test Token</button>
-        <button class="info-btn" onclick="fetchLocations()">📍 Get Locations</button>
+        <button class="primary" onclick="findProducts()">🔍 Find Products</button>
+        <button class="info-btn" onclick="testToken()">🔑 Test Token</button>
         <button class="success-btn" onclick="loadMockData()">📦 Mock Data</button>
         <button class="danger" onclick="clearDebug()">🗑️ Clear Log</button>
     </div>
@@ -133,7 +137,7 @@
     <div id="products">
         <div class="empty-state">
             <div class="icon">👆</div>
-            <p>Click "Test Token" to verify your API token works.</p>
+            <p>Click "Find Products" to search all endpoints.</p>
         </div>
     </div>
 
@@ -148,16 +152,20 @@
 
 <script>
 // ============================================================
-// CONFIGURATION - NEW TOKEN!
+// CONFIGURATION - NEW TOKEN + ALL ENDPOINTS
 // ============================================================
 const CONFIG = {
     token: 'uat_eZdWQEJhFlf8KyKJL5CD9CkLAh3g',
-    baseUrl: 'https://app.ewitypos.com/api/ecom-v1',
+    baseUrl: 'https://app.ewitypos.com/api',
     platform: 'web',
-    proxies: [
-        'https://api.allorigins.win/raw?url=',
-        'https://corsproxy.io/?',
-        'https://thingproxy.freeboard.io/fetch/'
+    clientId: 'web-client',
+    proxy: 'https://api.allorigins.win/raw?url=',
+    endpoints: [
+        '/ecom-v1/products',
+        '/v1/products',
+        '/ecom-v1/locations/1/products',
+        '/v1/locations/1/products',
+        '/ecom-v1/catalogue/products'
     ]
 };
 
@@ -187,6 +195,7 @@ const statusBadge = document.getElementById('statusBadge');
 const productCountEl = document.getElementById('productCount');
 const tokenDisplay = document.getElementById('tokenDisplay');
 const statusMessage = document.getElementById('statusMessage');
+const endpointDisplay = document.getElementById('endpointDisplay');
 const debugStatus = document.getElementById('debugStatus');
 const infoBox = document.getElementById('infoBox');
 const permissionGuide = document.getElementById('permissionGuide');
@@ -291,41 +300,42 @@ function loadMockData() {
 // FETCH WITH PROXY
 // ============================================================
 async function fetchWithProxy(url, headers) {
-    let lastError = null;
+    const proxyUrl = CONFIG.proxy + encodeURIComponent(url);
+    debug(`🌐 Fetching: ${proxyUrl.substring(0, 80)}...`, 'info');
     
-    for (const proxy of CONFIG.proxies) {
-        try {
-            const proxyUrl = proxy + encodeURIComponent(url);
-            const proxyName = proxy.split('/')[2] || 'proxy';
-            debug(`🌐 Trying ${proxyName}...`, 'info');
-            
-            const response = await fetch(proxyUrl, {
-                method: 'GET',
-                headers: headers,
-                signal: AbortSignal.timeout(10000)
-            });
-            
-            debug(`📊 ${proxyName} → Status: ${response.status}`, response.ok ? 'success' : 'error');
-            
-            if (response.ok) {
-                const data = await response.json();
-                debug(`✅ ${proxyName} succeeded!`, 'success');
-                return data;
+    try {
+        const response = await fetch(proxyUrl, {
+            method: 'GET',
+            headers: headers,
+            signal: AbortSignal.timeout(10000)
+        });
+        
+        debug(`📊 Status: ${response.status}`, response.ok ? 'success' : 'error');
+        
+        if (!response.ok) {
+            const text = await response.text();
+            let errorMsg = 'HTTP ' + response.status;
+            try {
+                const json = JSON.parse(text);
+                errorMsg = json.message || json.error || errorMsg;
+            } catch {
+                errorMsg = text || errorMsg;
             }
-        } catch (e) {
-            debug(`❌ ${proxy.split('/')[2] || 'proxy'} failed: ${e.message}`, 'error');
-            lastError = e;
+            throw new Error(errorMsg);
         }
+        
+        return await response.json();
+    } catch (e) {
+        debug(`❌ Fetch failed: ${e.message}`, 'error');
+        throw e;
     }
-    
-    throw new Error(lastError ? lastError.message : 'All proxies failed');
 }
 
 // ============================================================
 // TEST TOKEN
 // ============================================================
 async function testToken() {
-    const url = CONFIG.baseUrl + '/users/me';
+    const url = CONFIG.baseUrl + '/ecom-v1/users/me';
     statusEl.className = 'status loading';
     statusEl.innerHTML = '<span class="spinner"></span> Testing token...';
     statusBadge.textContent = 'Testing...';
@@ -337,9 +347,8 @@ async function testToken() {
     statsEl.innerHTML = '';
 
     try {
-        debug('🔑 Testing token with URL: ' + url, 'info');
-        debug('🔑 NEW Token: ' + CONFIG.token.substring(0, 20) + '...', 'info');
-
+        debug('🔑 Testing token: ' + url, 'info');
+        
         const headers = {
             'Authorization': 'Bearer ' + CONFIG.token,
             'X-Ewity-Platform': CONFIG.platform,
@@ -348,7 +357,6 @@ async function testToken() {
 
         const data = await fetchWithProxy(url, headers);
         const userName = data.data?.name || data.name || 'Unknown User';
-        const userEmail = data.data?.email || data.email || 'No email';
 
         debug('✅ Token is valid! User: ' + userName, 'success');
         
@@ -365,9 +373,8 @@ async function testToken() {
             <div class="success-box fade-in">
                 <h3>✅ Token is Valid!</h3>
                 <p><strong>User:</strong> ${userName}</p>
-                <p><strong>Email:</strong> ${userEmail}</p>
                 <p><strong>Token:</strong> ${CONFIG.token.substring(0, 20)}...</p>
-                <p style="margin-top:10px;">Now try <strong>"Get Locations"</strong> to fetch your data.</p>
+                <p style="margin-top:10px;">Now click <strong>"Find Products"</strong> to search all endpoints!</p>
             </div>
         `;
 
@@ -384,17 +391,10 @@ async function testToken() {
             <div class="error-box fade-in">
                 <h3>❌ Token Validation Failed</h3>
                 <p><strong>${error.message}</strong></p>
-                <p><strong>Try these fixes:</strong></p>
-                <ul>
-                    <li>Go to <strong>Company Admin → Users</strong></li>
-                    <li>Find your API user and click <strong>"Manage Levels"</strong></li>
-                    <li>Enable <strong>ALL</strong> E-commerce permissions</li>
-                    <li>Wait 1-2 minutes for permissions to sync</li>
-                    <li>Or click <strong>"Mock Data"</strong> to see products immediately</li>
-                </ul>
+                <p><strong>Fix:</strong> Enable ALL E-commerce permissions in Company Admin → Users → Manage Levels</p>
                 <details>
-                    <summary style="cursor:pointer;font-weight:bold;color:#1a237e;">🔍 Debug Details</summary>
-                    <pre>Token: ${CONFIG.token}\nURL: ${url}\nError: ${error.stack || error.message}</pre>
+                    <summary style="cursor:pointer;font-weight:bold;color:#1a237e;">🔍 Debug</summary>
+                    <pre>Token: ${CONFIG.token}\nError: ${error.stack || error.message}</pre>
                 </details>
             </div>
         `;
@@ -403,89 +403,60 @@ async function testToken() {
 }
 
 // ============================================================
-// FETCH LOCATIONS
+// FIND PRODUCTS - TRIES ALL ENDPOINTS
 // ============================================================
-async function fetchLocations() {
-    const url = CONFIG.baseUrl + '/locations';
+async function findProducts() {
     statusEl.className = 'status loading';
-    statusEl.innerHTML = '<span class="spinner"></span> Fetching locations...';
-    statusBadge.textContent = 'Loading...';
+    statusEl.innerHTML = '<span class="spinner"></span> Searching all endpoints...';
+    statusBadge.textContent = 'Searching...';
     statusBadge.className = 'badge loading';
-    statusMessage.textContent = '🔄 Fetching locations...';
-    debugStatus.textContent = 'Fetching locations...';
+    statusMessage.textContent = '🔍 Searching 5 endpoints...';
+    debugStatus.textContent = 'Searching...';
+    endpointDisplay.textContent = 'Trying 5 endpoints...';
     
-    productsEl.innerHTML = '<div class="empty-state"><div class="icon">⏳</div><p>Fetching locations...</p></div>';
+    productsEl.innerHTML = '<div class="empty-state"><div class="icon">🔍</div><p>Searching all 5 endpoints...</p></div>';
     statsEl.innerHTML = '';
 
-    try {
-        debug('📍 Fetching locations: ' + url, 'info');
+    const headers = {
+        'Authorization': 'Bearer ' + CONFIG.token,
+        'X-Ewity-Platform': CONFIG.platform,
+        'x-client': 'Web',
+        'x-pos-client-id': CONFIG.clientId,
+        'Accept': 'application/json'
+    };
 
-        const headers = {
-            'Authorization': 'Bearer ' + CONFIG.token,
-            'X-Ewity-Platform': CONFIG.platform,
-            'Accept': 'application/json'
-        };
+    let foundProducts = null;
+    let workingEndpoint = '';
 
-        const data = await fetchWithProxy(url, headers);
-        const locations = data.data || data.locations || [];
-
-        debug('📍 Found ' + locations.length + ' locations', 'info');
-
-        if (locations.length === 0) {
-            statusEl.className = 'status warning';
-            statusEl.innerHTML = '⚠️ No locations found';
-            statusMessage.textContent = 'No locations found';
-            debugStatus.textContent = 'No locations found';
-            return;
+    for (const endpoint of CONFIG.endpoints) {
+        const url = CONFIG.baseUrl + endpoint;
+        try {
+            debug(`📡 Trying: ${url}`, 'info');
+            const data = await fetchWithProxy(url, headers);
+            const products = data.data || data.products || data.items || [];
+            
+            if (products.length > 0) {
+                foundProducts = products;
+                workingEndpoint = endpoint;
+                debug(`✅ Found ${products.length} products at ${endpoint}`, 'success');
+                break;
+            }
+        } catch (e) {
+            debug(`❌ ${endpoint} failed`, 'error');
         }
+    }
 
-        statusEl.className = 'status success';
-        statusEl.innerHTML = '✅ Found ' + locations.length + ' locations!';
-        statusBadge.textContent = locations.length + ' Locations';
-        statusBadge.className = 'badge success';
-        statusMessage.textContent = locations.length + ' locations found';
+    if (foundProducts && foundProducts.length > 0) {
+        displayProducts(foundProducts, 'Ewity API (' + workingEndpoint + ')');
+        endpointDisplay.textContent = '✅ Working: ' + workingEndpoint;
         infoBox.className = 'info-box';
-        debugStatus.textContent = '✅ ' + locations.length + ' locations found';
-        permissionGuide.style.display = 'none';
-
-        productsEl.innerHTML = `
-            <div class="product-grid fade-in">
-                ${locations.map(l => `
-                    <div class="product-card">
-                        <h3>${l.name || 'Unnamed Location'}</h3>
-                        <div class="price" style="font-size:16px;">ID: ${l.id || 'N/A'}</div>
-                        ${l.address ? `<div style="font-size:12px;color:#666;">📍 ${l.address}</div>` : ''}
-                        ${l.city ? `<div style="font-size:12px;color:#666;">🏙️ ${l.city}</div>` : ''}
-                        <div class="meta"><span>Type: ${l.type || 'N/A'}</span></div>
-                    </div>
-                `).join('')}
-            </div>
-        `;
-        debug('✅ Found ' + locations.length + ' locations', 'success');
-
-    } catch (error) {
-        debug('❌ Error: ' + error.message, 'error');
+    } else {
+        debug('❌ All 5 endpoints failed. Loading mock data...', 'error');
         statusEl.className = 'status error';
-        statusEl.innerHTML = '❌ Error: ' + error.message;
-        statusMessage.textContent = '❌ ' + error.message;
-        debugStatus.textContent = '❌ Error';
-        
-        productsEl.innerHTML = `
-            <div class="error-box fade-in">
-                <h3>❌ Failed to Fetch Locations</h3>
-                <p><strong>${error.message}</strong></p>
-                <p><strong>Try:</strong></p>
-                <ul>
-                    <li>Click <strong>"Test Token"</strong> first to verify permissions</li>
-                    <li>Enable <strong>"Read Locations"</strong> in Company Admin</li>
-                    <li>Click <strong>"Mock Data"</strong> to see products immediately</li>
-                </ul>
-                <button onclick="loadMockData()" style="margin-top:15px;padding:10px 20px;background:#2e7d32;color:white;border:none;border-radius:5px;cursor:pointer;">
-                    📦 Load Mock Data Instead
-                </button>
-            </div>
-        `;
-        statsEl.innerHTML = '';
+        statusEl.innerHTML = '❌ All endpoints failed. Enable permissions and try again.';
+        statusMessage.textContent = '❌ No endpoints worked';
+        endpointDisplay.textContent = '❌ All failed';
+        loadMockData();
     }
 }
 
@@ -496,18 +467,17 @@ function init() {
     tokenDisplay.textContent = CONFIG.token;
     debug('🚀 Page loaded', 'info');
     debug('📌 NEW Token: ' + CONFIG.token.substring(0, 20) + '...', 'info');
-    debug('📌 Base URL: ' + CONFIG.baseUrl, 'info');
-    debug('📌 Will try 3 different proxies automatically', 'info');
-    debug('📌 Click "Test Token" to verify your API token', 'info');
-    statusMessage.textContent = 'Click "Test Token" to start';
+    debug('📌 Will try 5 different product endpoints', 'info');
+    debug('📌 Click "Find Products" to search all endpoints', 'info');
+    statusMessage.textContent = 'Click "Find Products" to search';
     debugStatus.textContent = 'Ready';
 }
 
 // ============================================================
 // EXPOSE
 // ============================================================
+window.findProducts = findProducts;
 window.testToken = testToken;
-window.fetchLocations = fetchLocations;
 window.loadMockData = loadMockData;
 window.clearDebug = clearDebug;
 
