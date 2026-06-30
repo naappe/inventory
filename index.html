@@ -1,20 +1,9 @@
-**We're getting HTML response from the proxy.** Now we need to see what the HTML actually says. The proxy should be returning a JSON error message, but the frontend is detecting HTML.
-
-Let me give you a **debug version** that will show us exactly what's happening.
-
----
-
-## 🔍 **UPDATED index.html - DEBUG VERSION**
-
-Replace your `index.html` with this version that shows the raw HTML response:
-
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>🛍️ Ewity Products - DEBUG</title>
+    <title>🛍️ Ewity Products</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Arial, sans-serif; background: #f0f2f5; padding: 20px; }
@@ -32,6 +21,12 @@ Replace your `index.html` with this version that shows the raw HTML response:
         .status.error { background: #ffebee; color: #b71c1c; border-left: 4px solid #e53935; }
         .status .spinner { display: inline-block; width: 20px; height: 20px; border: 3px solid #e3f2fd; border-top: 3px solid #1976d2; border-radius: 50%; animation: spin 0.8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
+        .stats { display: flex; gap: 15px; margin: 15px 0 20px; flex-wrap: wrap; }
+        .stat-box { background: #f8f9fa; padding: 12px 24px; border-radius: 10px; border: 1px solid #e9ecef; min-width: 100px; }
+        .stat-box .number { font-size: 24px; font-weight: 700; color: #1a237e; }
+        .stat-box .number.green { color: #2e7d32; }
+        .stat-box .number.red { color: #c62828; }
+        .stat-box .label { font-size: 12px; color: #666; }
         .controls { display: flex; gap: 10px; flex-wrap: wrap; margin: 15px 0 20px; }
         .controls button { padding: 10px 24px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
         .controls button.primary { background: #1a237e; color: #fff; }
@@ -40,22 +35,43 @@ Replace your `index.html` with this version that shows the raw HTML response:
         .controls button.success-btn:hover { background: #c8e6c9; }
         .controls button.danger { background: #ffebee; color: #c62828; }
         .controls button.danger:hover { background: #ffcdd2; }
+        .controls button.info-btn { background: #e3f2fd; color: #0d47a1; }
+        .controls button.info-btn:hover { background: #bbdefb; }
+        .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 20px; margin-top: 20px; }
+        .product-card { background: #fff; border: 1px solid #e9ecef; border-radius: 12px; padding: 18px; transition: all 0.2s; }
+        .product-card:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.08); border-color: #1a237e; }
+        .product-card h3 { font-size: 16px; color: #1a237e; margin-bottom: 8px; }
+        .product-card .sku { font-size: 12px; color: #999; background: #f5f5f5; padding: 2px 10px; border-radius: 12px; display: inline-block; margin-bottom: 8px; }
+        .product-card .price { font-size: 22px; font-weight: 700; color: #1a237e; margin: 8px 0; }
+        .product-card .stock { font-size: 13px; padding: 4px 12px; border-radius: 12px; display: inline-block; font-weight: 600; }
+        .product-card .stock.in-stock { background: #e8f5e9; color: #2e7d32; }
+        .product-card .stock.low-stock { background: #fff3e0; color: #e65100; }
+        .product-card .stock.out-of-stock { background: #ffebee; color: #c62828; }
+        .product-card .meta { font-size: 12px; color: #999; margin-top: 12px; padding-top: 10px; border-top: 1px solid #f0f0f0; display: flex; justify-content: space-between; }
+        .empty-state { text-align: center; padding: 60px 20px; color: #999; }
+        .empty-state .icon { font-size: 48px; margin-bottom: 15px; }
         .info-box { background: #e8f5e9; padding: 20px; border-radius: 10px; margin: 15px 0; border-left: 4px solid #2e7d32; }
         .info-box code { background: #f5f5f5; padding: 2px 6px; border-radius: 3px; font-size: 13px; word-break: break-all; }
+        .info-box.error { background: #ffebee; border-left-color: #c62828; }
         .debug-section { margin-top: 25px; }
         .debug-section .debug-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
         .debug-section .debug-header h3 { font-size: 14px; color: #333; }
-        .debug-log { background: #1a1a2e; color: #aed581; padding: 15px; border-radius: 10px; font-family: monospace; font-size: 12px; max-height: 400px; overflow: auto; white-space: pre-wrap; line-height: 1.6; }
+        .debug-log { background: #1a1a2e; color: #aed581; padding: 15px; border-radius: 10px; font-family: monospace; font-size: 12px; max-height: 350px; overflow: auto; white-space: pre-wrap; line-height: 1.6; }
         .debug-log .time { color: #78909c; }
         .debug-log .info { color: #4fc3f7; }
         .debug-log .success { color: #81c784; }
         .debug-log .error { color: #ef5350; }
         .debug-log .warning { color: #ffb74d; }
-        .debug-log .raw { color: #ce93d8; }
-        .raw-response { background: #1a1a2e; color: #aed581; padding: 15px; border-radius: 10px; font-family: monospace; font-size: 12px; max-height: 300px; overflow: auto; white-space: pre-wrap; margin-top: 10px; border: 1px solid #333; }
-        .raw-response .label { color: #78909c; font-weight: bold; }
-        .empty-state { text-align: center; padding: 60px 20px; color: #999; }
-        .empty-state .icon { font-size: 48px; margin-bottom: 15px; }
+        .fade-in { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .error-box { background: #ffebee; padding: 20px; border-radius: 10px; border-left: 4px solid #c62828; margin: 16px 0; }
+        .error-box h3 { color: #c62828; margin-bottom: 8px; }
+        .error-box ul { margin: 8px 0 8px 20px; color: #555; }
+        .error-box details { margin-top: 12px; }
+        .error-box details summary { cursor: pointer; color: #1a237e; font-weight: 600; }
+        .error-box pre { background: #f5f5f5; padding: 12px; border-radius: 6px; overflow: auto; font-size: 12px; margin-top: 8px; white-space: pre-wrap; word-break: break-all; }
+        .success-box { background: #e8f5e9; padding: 20px; border-radius: 10px; border-left: 4px solid #2e7d32; margin: 16px 0; }
+        .success-box h3 { color: #2e7d32; margin-bottom: 8px; }
     </style>
 </head>
 <body>
@@ -63,7 +79,7 @@ Replace your `index.html` with this version that shows the raw HTML response:
 <div class="container">
     <div class="header">
         <div>
-            <h1>🛍️ Ewity Products - DEBUG</h1>
+            <h1>🛍️ Ewity Products</h1>
             <span class="badge loading" id="statusBadge">Loading...</span>
         </div>
         <div class="product-count">
@@ -76,7 +92,9 @@ Replace your `index.html` with this version that shows the raw HTML response:
         <br />
         <strong>📌 Status:</strong> <span id="statusMessage">Ready</span>
         <br />
-        <strong>📡 Endpoint:</strong> <span id="endpointDisplay">proxy.php?path=ecom-v1/products</span>
+        <strong>🌐 Proxy:</strong> <span id="proxyDisplay">Cloudflare Worker</span>
+        <br />
+        <strong>📡 Endpoint:</strong> <span id="endpointDisplay">Testing...</span>
     </div>
 
     <div id="status" class="status loading">
@@ -88,15 +106,15 @@ Replace your `index.html` with this version that shows the raw HTML response:
 
     <div class="controls">
         <button class="primary" onclick="fetchProducts()">🚀 Fetch Products</button>
-        <button class="primary" onclick="testProxyDirect()">🔍 Test Proxy Direct</button>
+        <button class="info-btn" onclick="testPlatforms()">🔍 Test Platforms</button>
         <button class="success-btn" onclick="loadMockData()">📦 Mock Data</button>
         <button class="danger" onclick="clearDebug()">🗑️ Clear Log</button>
     </div>
 
     <div id="products">
         <div class="empty-state">
-            <div class="icon">🔍</div>
-            <p>Click "Test Proxy Direct" to see the raw response from proxy.php</p>
+            <div class="icon">🚀</div>
+            <p>Click "Fetch Products" to get real data from Ewity API.</p>
         </div>
     </div>
 
@@ -107,22 +125,24 @@ Replace your `index.html` with this version that shows the raw HTML response:
         </div>
         <div class="debug-log" id="debugLog">[System] Initializing...</div>
     </div>
-
-    <div id="rawResponseContainer" style="display:none; margin-top: 20px;">
-        <h3>📄 Raw Response from Proxy</h3>
-        <div class="raw-response" id="rawResponse"></div>
-    </div>
 </div>
 
 <script>
 // ============================================================
-// CONFIGURATION
+// CONFIGURATION - WITH NEW TOKEN
 // ============================================================
 const CONFIG = {
-    token: 'uat_eZdWQEJhFlf8KyKJL5CD9CkLAh3g',
-    proxyUrl: 'proxy.php?path=',
+    token: 'uat_LFV9hqUG0YsXMbmNKZhcJip8KV75',
+    workerUrl: 'https://throbbing-rice-035e.naappe.workers.dev',
     platform: 'web',
-    clientId: 'web-client'
+    clientId: 'web-client',
+    endpoints: [
+        'ecom-v1/locations',
+        'ecom-v1/locations/1/categories',
+        'ecom-v1/users/me',
+        'v1/locations',
+        'v1/products'
+    ]
 };
 
 // ============================================================
@@ -151,18 +171,17 @@ const statusBadge = document.getElementById('statusBadge');
 const productCountEl = document.getElementById('productCount');
 const tokenDisplay = document.getElementById('tokenDisplay');
 const statusMessage = document.getElementById('statusMessage');
+const proxyDisplay = document.getElementById('proxyDisplay');
 const endpointDisplay = document.getElementById('endpointDisplay');
 const debugStatus = document.getElementById('debugStatus');
 const infoBox = document.getElementById('infoBox');
-const rawResponseContainer = document.getElementById('rawResponseContainer');
-const rawResponse = document.getElementById('rawResponse');
 
 // ============================================================
 // DEBUG
 // ============================================================
 function debug(msg, type = 'info') {
     const time = new Date().toLocaleTimeString();
-    const colors = { info: 'info', success: 'success', error: 'error', warning: 'warning', raw: 'raw' };
+    const colors = { info: 'info', success: 'success', error: 'error', warning: 'warning' };
     const cls = colors[type] || 'info';
     debugEl.innerHTML += `<div><span class="time">[${time}]</span> <span class="${cls}">${msg}</span></div>`;
     debugEl.scrollTop = debugEl.scrollHeight;
@@ -172,146 +191,6 @@ function debug(msg, type = 'info') {
 function clearDebug() {
     debugEl.innerHTML = '[System] Log cleared';
     debug('Log cleared', 'info');
-}
-
-// ============================================================
-// TEST PROXY DIRECT - SHOWS RAW RESPONSE
-// ============================================================
-async function testProxyDirect() {
-    const path = 'ecom-v1/products';
-    const url = CONFIG.proxyUrl + path;
-    
-    debug(`🔍 Testing proxy directly: ${url}`, 'info');
-    endpointDisplay.textContent = url;
-    
-    try {
-        const response = await fetch(url, {
-            method: 'GET',
-            headers: {
-                'Authorization': 'Bearer ' + CONFIG.token,
-                'X-Ewity-Platform': CONFIG.platform,
-                'x-client': 'Web',
-                'x-pos-client-id': CONFIG.clientId
-            }
-        });
-        
-        const rawText = await response.text();
-        
-        debug(`📊 Status: ${response.status}`, response.ok ? 'success' : 'error');
-        debug(`📊 Content-Type: ${response.headers.get('content-type')}`, 'info');
-        
-        // Show raw response
-        rawResponseContainer.style.display = 'block';
-        rawResponse.innerHTML = `<span class="label">Status:</span> ${response.status}\n\n<span class="label">Response:</span>\n${rawText}`;
-        
-        // Show first 200 chars in log
-        debug(`📄 Raw response (first 200 chars): ${rawText.substring(0, 200)}`, 'raw');
-        
-        // Check if it's HTML
-        if (rawText.startsWith('<!DOCTYPE') || rawText.startsWith('<html') || rawText.includes('<!DOCTYPE')) {
-            debug('❌ Response is HTML - check proxy.php', 'error');
-            
-            // Try to extract error message from HTML
-            let errorMsg = 'HTML response received';
-            if (rawText.includes('401') || rawText.includes('Unauthorized')) {
-                errorMsg = '401 Unauthorized - Check your token and permissions';
-            } else if (rawText.includes('403') || rawText.includes('Forbidden')) {
-                errorMsg = '403 Forbidden - Insufficient permissions';
-            } else if (rawText.includes('404') || rawText.includes('Not Found')) {
-                errorMsg = '404 Not Found - Check the endpoint path';
-            } else if (rawText.includes('500')) {
-                errorMsg = '500 Internal Server Error';
-            }
-            
-            statusEl.className = 'status error';
-            statusEl.innerHTML = `❌ ${errorMsg}`;
-            statusMessage.textContent = errorMsg;
-            
-            productsEl.innerHTML = `
-                <div style="background:#ffebee;padding:20px;border-radius:10px;border-left:4px solid #c62828;">
-                    <h3 style="color:#c62828;">❌ HTML Response Received</h3>
-                    <p><strong>${errorMsg}</strong></p>
-                    <p>The proxy returned HTML instead of JSON. This usually means:</p>
-                    <ul style="margin:10px 0 10px 20px;">
-                        <li>The Authorization header is not reaching the proxy</li>
-                        <li>Your token is invalid or expired</li>
-                        <li>Permissions are not enabled for this API user</li>
-                        <li>The endpoint path is wrong</li>
-                    </ul>
-                    <details>
-                        <summary style="cursor:pointer;font-weight:bold;color:#1a237e;">🔍 Full Raw Response</summary>
-                        <pre style="background:#f5f5f5;padding:10px;border-radius:5px;overflow:auto;font-size:12px;margin-top:10px;max-height:300px;">${rawText}</pre>
-                    </details>
-                    <button onclick="loadMockData()" style="margin-top:15px;padding:10px 20px;background:#2e7d32;color:white;border:none;border-radius:5px;cursor:pointer;">
-                        📦 Load Mock Data Instead
-                    </button>
-                </div>
-            `;
-            return;
-        }
-        
-        // Try to parse JSON
-        try {
-            const json = JSON.parse(rawText);
-            debug('✅ Response is valid JSON!', 'success');
-            statusEl.className = 'status success';
-            statusEl.innerHTML = '✅ Proxy is working! JSON received.';
-            statusMessage.textContent = '✅ JSON received';
-            
-            // Check if it's an error
-            if (json.error) {
-                debug(`❌ API Error: ${json.error} - ${json.message}`, 'error');
-                productsEl.innerHTML = `
-                    <div style="background:#ffebee;padding:20px;border-radius:10px;border-left:4px solid #c62828;">
-                        <h3 style="color:#c62828;">❌ API Error</h3>
-                        <p><strong>${json.error}:</strong> ${json.message || 'Unknown error'}</p>
-                        ${json.hint ? `<p>💡 ${json.hint}</p>` : ''}
-                        <details>
-                            <summary style="cursor:pointer;font-weight:bold;color:#1a237e;">🔍 Full Response</summary>
-                            <pre style="background:#f5f5f5;padding:10px;border-radius:5px;overflow:auto;font-size:12px;margin-top:10px;">${JSON.stringify(json, null, 2)}</pre>
-                        </details>
-                    </div>
-                `;
-                return;
-            }
-            
-            // Success - show data
-            const products = json.data || json.products || json.items || [];
-            if (products.length > 0) {
-                displayProducts(products, 'Ewity API (Direct Test)');
-            } else {
-                productsEl.innerHTML = `
-                    <div style="background:#fff3e0;padding:20px;border-radius:10px;border-left:4px solid #ff9800;">
-                        <h3 style="color:#e65100;">⚠️ No Products Found</h3>
-                        <p>The API returned success but no products.</p>
-                        <details>
-                            <summary style="cursor:pointer;font-weight:bold;color:#1a237e;">🔍 Full Response</summary>
-                            <pre style="background:#f5f5f5;padding:10px;border-radius:5px;overflow:auto;font-size:12px;margin-top:10px;">${JSON.stringify(json, null, 2)}</pre>
-                        </details>
-                    </div>
-                `;
-            }
-            
-        } catch (e) {
-            debug(`❌ JSON Parse Error: ${e.message}`, 'error');
-            productsEl.innerHTML = `
-                <div style="background:#ffebee;padding:20px;border-radius:10px;border-left:4px solid #c62828;">
-                    <h3 style="color:#c62828;">❌ Invalid JSON Response</h3>
-                    <p><strong>${e.message}</strong></p>
-                    <details>
-                        <summary style="cursor:pointer;font-weight:bold;color:#1a237e;">🔍 Raw Response</summary>
-                        <pre style="background:#f5f5f5;padding:10px;border-radius:5px;overflow:auto;font-size:12px;margin-top:10px;max-height:300px;">${rawText}</pre>
-                    </details>
-                </div>
-            `;
-        }
-        
-    } catch (error) {
-        debug(`❌ Fetch Error: ${error.message}`, 'error');
-        statusEl.className = 'status error';
-        statusEl.innerHTML = `❌ Error: ${error.message}`;
-        statusMessage.textContent = `❌ ${error.message}`;
-    }
 }
 
 // ============================================================
@@ -389,15 +268,195 @@ function loadMockData() {
     displayProducts(MOCK_PRODUCTS, 'Mock Data');
     debugStatus.textContent = 'Using Mock Data';
     infoBox.className = 'info-box';
-    rawResponseContainer.style.display = 'none';
 }
 
 // ============================================================
-// FETCH PRODUCTS - ORIGINAL
+// TEST PLATFORMS - Find the correct Platform ID
+// ============================================================
+async function testPlatforms() {
+    const platforms = ['web', 'pos', 'ecom', 'admin', 'mobile', 'web-client', 'naappe', 'api', 'pos-api'];
+    const results = [];
+    
+    debug('🔍 Testing different Platform IDs...', 'info');
+    endpointDisplay.textContent = 'Testing platforms...';
+    
+    for (const platform of platforms) {
+        try {
+            const url = CONFIG.workerUrl + '?path=ecom-v1/locations&platform=' + platform;
+            const response = await fetch(url, {
+                headers: {
+                    'Authorization': 'Bearer ' + CONFIG.token,
+                    'X-Ewity-Platform': platform
+                }
+            });
+            
+            const status = response.status;
+            let result = 'Unknown';
+            let preview = '';
+            
+            try {
+                const text = await response.text();
+                preview = text.substring(0, 100);
+                if (text.includes('data')) result = '✅ SUCCESS';
+                else if (text.includes('401')) result = '❌ 401';
+                else if (text.includes('403')) result = '❌ 403';
+                else if (text.includes('404')) result = '❌ 404';
+                else result = '⚠️ ' + status;
+            } catch (e) {
+                result = '⚠️ Error';
+            }
+            
+            debug(`📊 Platform: ${platform} → ${result} (${status})`, result.includes('SUCCESS') ? 'success' : 'info');
+            results.push({ platform, status, result, preview });
+            
+        } catch (e) {
+            debug(`❌ Platform: ${platform} → Error: ${e.message}`, 'error');
+        }
+    }
+    
+    // Show results
+    let html = '<div style="background:#f5f5f5;padding:20px;border-radius:10px;margin-top:20px;">';
+    html += '<h3>🔍 Platform Test Results</h3>';
+    html += '<table style="width:100%;border-collapse:collapse;margin-top:10px;">';
+    html += '<tr style="background:#e9ecef;"><th style="padding:8px;text-align:left;">Platform</th><th style="padding:8px;text-align:left;">Status</th><th style="padding:8px;text-align:left;">Result</th></tr>';
+    
+    for (const r of results) {
+        const color = r.result.includes('SUCCESS') ? 'green' : r.result.includes('401') ? 'orange' : 'red';
+        html += `<tr><td style="padding:8px;border-bottom:1px solid #ddd;"><code>${r.platform}</code></td><td style="padding:8px;border-bottom:1px solid #ddd;">${r.status}</td><td style="padding:8px;border-bottom:1px solid #ddd;color:${color};">${r.result}</td></tr>`;
+    }
+    html += '</table>';
+    html += '<p style="margin-top:10px;font-size:12px;color:#666;">💡 The platform that shows "SUCCESS" is the correct one!</p>';
+    html += '</div>';
+    
+    productsEl.innerHTML = html;
+    statusEl.className = 'status info';
+    statusEl.innerHTML = '🔍 Platform test completed. Check results above.';
+    debugStatus.textContent = 'Platform test done';
+    endpointDisplay.textContent = 'Test completed';
+}
+
+// ============================================================
+// FETCH PRODUCTS
 // ============================================================
 async function fetchProducts() {
-    debug('🔄 Fetch products called - use "Test Proxy Direct" for debugging', 'info');
-    testProxyDirect();
+    statusEl.className = 'status loading';
+    statusEl.innerHTML = '<span class="spinner"></span> Fetching products...';
+    statusBadge.textContent = 'Loading...';
+    statusBadge.className = 'badge loading';
+    statusMessage.textContent = '🔄 Fetching...';
+    debugStatus.textContent = 'Fetching...';
+    endpointDisplay.textContent = 'Searching endpoints...';
+    
+    productsEl.innerHTML = '<div class="empty-state"><div class="icon">⏳</div><p>Fetching products...</p></div>';
+    statsEl.innerHTML = '';
+
+    let foundProducts = null;
+    let workingEndpoint = '';
+    let workingPlatform = CONFIG.platform;
+
+    try {
+        // First, test platforms to find the right one
+        const platformResults = await testPlatformsSilent();
+        if (platformResults.workingPlatform) {
+            workingPlatform = platformResults.workingPlatform;
+            debug(`✅ Found working platform: ${workingPlatform}`, 'success');
+        }
+
+        // Try all endpoints with the working platform
+        for (const endpoint of CONFIG.endpoints) {
+            const url = CONFIG.workerUrl + '?path=' + endpoint + '&platform=' + workingPlatform;
+            debug(`📡 Trying: ${endpoint} with platform ${workingPlatform}`, 'info');
+            endpointDisplay.textContent = endpoint;
+            
+            const response = await fetch(url, {
+                headers: {
+                    'Authorization': 'Bearer ' + CONFIG.token,
+                    'X-Ewity-Platform': workingPlatform
+                }
+            });
+
+            debug(`📊 Status: ${response.status}`, response.ok ? 'success' : 'error');
+
+            if (response.ok) {
+                const data = await response.json();
+                const products = data.data || data.products || data.items || [];
+                
+                if (products.length > 0) {
+                    foundProducts = products;
+                    workingEndpoint = endpoint;
+                    debug(`✅ Found ${products.length} products at ${endpoint}`, 'success');
+                    break;
+                }
+            }
+        }
+
+        if (foundProducts && foundProducts.length > 0) {
+            displayProducts(foundProducts, 'Ewity API (' + workingEndpoint + ')');
+            endpointDisplay.textContent = '✅ ' + workingEndpoint;
+        } else {
+            debug('⚠️ No products found', 'warning');
+            statusEl.className = 'status warning';
+            statusEl.innerHTML = '⚠️ No products found. Try "Test Platforms" button.';
+            statusMessage.textContent = '⚠️ No products';
+            loadMockData();
+        }
+
+    } catch (error) {
+        debug('❌ Error: ' + error.message, 'error');
+        statusEl.className = 'status error';
+        statusEl.innerHTML = '❌ Error: ' + error.message;
+        statusMessage.textContent = '❌ ' + error.message;
+        debugStatus.textContent = '❌ Error';
+        
+        productsEl.innerHTML = `
+            <div class="error-box fade-in">
+                <h3>❌ Failed to Fetch Products</h3>
+                <p><strong>${error.message}</strong></p>
+                <p><strong>Try:</strong></p>
+                <ul>
+                    <li>Click <strong>"Test Platforms"</strong> to find the correct Platform ID</li>
+                    <li>Enable ALL E-commerce permissions in Company Admin</li>
+                </ul>
+                <details>
+                    <summary style="cursor:pointer;font-weight:bold;color:#1a237e;">🔍 Debug</summary>
+                    <pre>Token: ${CONFIG.token}\nWorker URL: ${CONFIG.workerUrl}\nError: ${error.stack || error.message}</pre>
+                </details>
+                <button onclick="testPlatforms()" style="margin-top:15px;padding:10px 20px;background:#1a237e;color:white;border:none;border-radius:5px;cursor:pointer;">
+                    🔍 Test Platforms
+                </button>
+            </div>
+        `;
+        statsEl.innerHTML = '';
+    }
+}
+
+// ============================================================
+// SILENT PLATFORM TEST
+// ============================================================
+async function testPlatformsSilent() {
+    const platforms = ['web', 'pos', 'ecom', 'admin', 'mobile', 'web-client', 'naappe'];
+    
+    for (const platform of platforms) {
+        try {
+            const url = CONFIG.workerUrl + '?path=ecom-v1/locations&platform=' + platform;
+            const response = await fetch(url, {
+                headers: {
+                    'Authorization': 'Bearer ' + CONFIG.token,
+                    'X-Ewity-Platform': platform
+                }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                if (data.data || data.locations) {
+                    return { workingPlatform: platform };
+                }
+            }
+        } catch (e) {
+            // Silent fail
+        }
+    }
+    return { workingPlatform: CONFIG.platform };
 }
 
 // ============================================================
@@ -405,10 +464,12 @@ async function fetchProducts() {
 // ============================================================
 function init() {
     tokenDisplay.textContent = CONFIG.token;
-    debug('🚀 Page loaded - DEBUG VERSION', 'info');
+    proxyDisplay.textContent = 'Cloudflare Worker';
+    debug('🚀 Page loaded - FINAL VERSION', 'info');
     debug('📌 Token: ' + CONFIG.token.substring(0, 20) + '...', 'info');
-    debug('📌 Click "Test Proxy Direct" to see raw response', 'info');
-    statusMessage.textContent = 'Click "Test Proxy Direct" to debug';
+    debug('📌 Worker URL: ' + CONFIG.workerUrl, 'info');
+    debug('📌 Click "Test Platforms" to find the correct Platform ID', 'info');
+    statusMessage.textContent = 'Click "Test Platforms" first!';
     debugStatus.textContent = 'Ready';
 }
 
@@ -416,7 +477,7 @@ function init() {
 // EXPOSE
 // ============================================================
 window.fetchProducts = fetchProducts;
-window.testProxyDirect = testProxyDirect;
+window.testPlatforms = testPlatforms;
 window.loadMockData = loadMockData;
 window.clearDebug = clearDebug;
 
@@ -425,28 +486,3 @@ document.addEventListener('DOMContentLoaded', init);
 
 </body>
 </html>
-```
-
----
-
-## 🚀 **WHAT TO DO:**
-
-1. **Replace your `index.html`** with this debug version
-2. **Refresh your website**
-3. Click **"Test Proxy Direct"**
-4. **Look at the "Raw Response" section** at the bottom
-5. **Tell me what the raw HTML says**
-
----
-
-## 🎯 **What We're Looking For:**
-
-The raw response will tell us EXACTLY what's happening:
-- Is it a **401 Unauthorized** page?
-- Is it a **403 Forbidden** page?
-- Is it a **404 Not Found** page?
-- Is it a **Hostinger error page**?
-
----
-
-**Click "Test Proxy Direct" and tell me what you see!** 🔍
