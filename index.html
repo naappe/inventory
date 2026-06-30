@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>🛍️ Ewity Products</title>
+    <title>🛍️ Ewity Products - Working</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Arial, sans-serif; background: #f0f2f5; padding: 20px; }
@@ -15,7 +15,7 @@
         .badge.error { background: #ffebee; color: #c62828; }
         .badge.warning { background: #fff3e0; color: #e65100; }
         .badge.loading { background: #e3f2fd; color: #0d47a1; }
-        .status { padding: 15px 20px; margin: 15px 0 20px; border-radius: 10px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+        .status { padding: 15px 20px; margin: 15px 0 20px; border-radius: 10px; font-weight: 600; }
         .status.loading { background: #e3f2fd; color: #0d47a1; border-left: 4px solid #1976d2; }
         .status.success { background: #e8f5e9; color: #1b5e20; border-left: 4px solid #43a047; }
         .status.error { background: #ffebee; color: #b71c1c; border-left: 4px solid #e53935; }
@@ -52,7 +52,6 @@
         .empty-state .icon { font-size: 48px; margin-bottom: 15px; }
         .info-box { background: #e8f5e9; padding: 20px; border-radius: 10px; margin: 15px 0; border-left: 4px solid #2e7d32; }
         .info-box code { background: #f5f5f5; padding: 2px 6px; border-radius: 3px; font-size: 13px; word-break: break-all; }
-        .info-box.error { background: #ffebee; border-left-color: #c62828; }
         .debug-section { margin-top: 25px; }
         .debug-section .debug-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
         .debug-section .debug-header h3 { font-size: 14px; color: #333; }
@@ -69,9 +68,7 @@
         .error-box ul { margin: 8px 0 8px 20px; color: #555; }
         .error-box details { margin-top: 12px; }
         .error-box details summary { cursor: pointer; color: #1a237e; font-weight: 600; }
-        .error-box pre { background: #f5f5f5; padding: 12px; border-radius: 6px; overflow: auto; font-size: 12px; margin-top: 8px; white-space: pre-wrap; word-break: break-all; }
-        .success-box { background: #e8f5e9; padding: 20px; border-radius: 10px; border-left: 4px solid #2e7d32; margin: 16px 0; }
-        .success-box h3 { color: #2e7d32; margin-bottom: 8px; }
+        .error-box pre { background: #f5f5f5; padding: 12px; border-radius: 6px; overflow: auto; font-size: 12px; margin-top: 8px; }
     </style>
 </head>
 <body>
@@ -92,14 +89,12 @@
         <br />
         <strong>📌 Status:</strong> <span id="statusMessage">Ready</span>
         <br />
-        <strong>🌐 Proxy:</strong> <span id="proxyDisplay">Cloudflare Worker</span>
-        <br />
-        <strong>📡 Endpoint:</strong> <span id="endpointDisplay">Testing...</span>
+        <strong>🌐 Worker:</strong> <span id="workerDisplay">throbbing-rice-035e</span>
     </div>
 
     <div id="status" class="status loading">
         <span class="spinner"></span>
-        Ready to fetch products...
+        Click a button below to start
     </div>
 
     <div id="stats" class="stats"></div>
@@ -113,8 +108,8 @@
 
     <div id="products">
         <div class="empty-state">
-            <div class="icon">🚀</div>
-            <p>Click "Test Platforms" first to find the correct Platform ID.</p>
+            <div class="icon">👆</div>
+            <p>Click "Test Platforms" to find the correct Platform ID.</p>
         </div>
     </div>
 
@@ -133,17 +128,9 @@
 // ============================================================
 const CONFIG = {
     token: 'uat_LFV9hqUG0YsXMbmNKZhcJip8KV75',
-    // ⚠️ UPDATE THIS WITH YOUR WORKER URL
-    workerUrl: 'workerUrl: 'https://throbbing-rice-035e.naappe.workers.dev',',
+    workerUrl: 'https://throbbing-rice-035e.naappe.workers.dev',
     platform: 'web',
-    clientId: 'web-client',
-    endpoints: [
-        'ecom-v1/locations',
-        'ecom-v1/locations/1/categories',
-        'ecom-v1/users/me',
-        'v1/locations',
-        'v1/products'
-    ]
+    clientId: 'web-client'
 };
 
 // ============================================================
@@ -172,8 +159,6 @@ const statusBadge = document.getElementById('statusBadge');
 const productCountEl = document.getElementById('productCount');
 const tokenDisplay = document.getElementById('tokenDisplay');
 const statusMessage = document.getElementById('statusMessage');
-const proxyDisplay = document.getElementById('proxyDisplay');
-const endpointDisplay = document.getElementById('endpointDisplay');
 const debugStatus = document.getElementById('debugStatus');
 const infoBox = document.getElementById('infoBox');
 
@@ -275,15 +260,20 @@ function loadMockData() {
 // TEST PLATFORMS
 // ============================================================
 async function testPlatforms() {
-    const platforms = ['web', 'pos', 'ecom', 'admin', 'mobile', 'web-client', 'naappe', 'api', 'pos-api'];
+    debug('🔍 Starting platform test...', 'info');
+    const platforms = ['web', 'pos', 'ecom', 'admin', 'mobile', 'web-client', 'naappe', 'api', 'pos-api', 'ewity', 'platform', 'client', 'app'];
     const results = [];
     
-    debug('🔍 Testing different Platform IDs...', 'info');
-    endpointDisplay.textContent = 'Testing platforms...';
+    statusEl.className = 'status loading';
+    statusEl.innerHTML = '<span class="spinner"></span> Testing platforms...';
+    statusMessage.textContent = '🔄 Testing platforms...';
+    productsEl.innerHTML = '<div class="empty-state"><div class="icon">⏳</div><p>Testing all platform IDs...</p></div>';
     
     for (const platform of platforms) {
         try {
             const url = CONFIG.workerUrl + '?path=ecom-v1/locations&platform=' + platform;
+            debug(`📡 Testing: ${platform}`, 'info');
+            
             const response = await fetch(url, {
                 headers: {
                     'Authorization': 'Bearer ' + CONFIG.token,
@@ -291,27 +281,31 @@ async function testPlatforms() {
                 }
             });
             
-            const status = response.status;
-            let result = 'Unknown';
-            let preview = '';
+            let result = '❌ ' + response.status;
+            let isSuccess = false;
             
             try {
                 const text = await response.text();
-                preview = text.substring(0, 100);
-                if (text.includes('data')) result = '✅ SUCCESS';
-                else if (text.includes('401')) result = '❌ 401';
-                else if (text.includes('403')) result = '❌ 403';
-                else if (text.includes('404')) result = '❌ 404';
-                else result = '⚠️ ' + status;
+                if (text.includes('data') || text.includes('locations') || text.includes('success')) {
+                    result = '✅ SUCCESS!';
+                    isSuccess = true;
+                    debug(`✅ Platform "${platform}" works!`, 'success');
+                } else if (text.includes('401')) {
+                    result = '❌ 401 - Invalid Platform';
+                } else if (text.includes('403')) {
+                    result = '❌ 403 - Forbidden';
+                } else if (text.includes('404')) {
+                    result = '❌ 404 - Not Found';
+                }
             } catch (e) {
                 result = '⚠️ Error';
             }
             
-            debug(`📊 Platform: ${platform} → ${result} (${status})`, result.includes('SUCCESS') ? 'success' : 'info');
-            results.push({ platform, status, result, preview });
+            results.push({ platform, status: response.status, result, isSuccess });
             
         } catch (e) {
-            debug(`❌ Platform: ${platform} → Error: ${e.message}`, 'error');
+            debug(`❌ Platform "${platform}" error: ${e.message}`, 'error');
+            results.push({ platform, status: 'Error', result: '⚠️ ' + e.message, isSuccess: false });
         }
     }
     
@@ -321,19 +315,25 @@ async function testPlatforms() {
     html += '<table style="width:100%;border-collapse:collapse;margin-top:10px;">';
     html += '<tr style="background:#e9ecef;"><th style="padding:8px;text-align:left;">Platform</th><th style="padding:8px;text-align:left;">Status</th><th style="padding:8px;text-align:left;">Result</th></tr>';
     
+    let found = false;
     for (const r of results) {
-        const color = r.result.includes('SUCCESS') ? 'green' : r.result.includes('401') ? 'orange' : 'red';
+        const color = r.isSuccess ? 'green' : r.result.includes('401') ? 'orange' : 'red';
+        if (r.isSuccess) found = true;
         html += `<tr><td style="padding:8px;border-bottom:1px solid #ddd;"><code>${r.platform}</code></td><td style="padding:8px;border-bottom:1px solid #ddd;">${r.status}</td><td style="padding:8px;border-bottom:1px solid #ddd;color:${color};">${r.result}</td></tr>`;
     }
     html += '</table>';
-    html += '<p style="margin-top:10px;font-size:12px;color:#666;">💡 The platform that shows "SUCCESS" is the correct one!</p>';
+    
+    if (found) {
+        html += '<p style="margin-top:10px;color:#2e7d32;font-weight:bold;">✅ Found working platform! Copy it and click "Fetch Products"</p>';
+    } else {
+        html += '<p style="margin-top:10px;color:#c62828;font-weight:bold;">❌ No working platform found. Check your Ewity dashboard for the Platform ID.</p>';
+    }
     html += '</div>';
     
     productsEl.innerHTML = html;
     statusEl.className = 'status info';
     statusEl.innerHTML = '🔍 Platform test completed. Check results above.';
     debugStatus.textContent = 'Platform test done';
-    endpointDisplay.textContent = 'Test completed';
 }
 
 // ============================================================
@@ -346,21 +346,19 @@ async function fetchProducts() {
     statusBadge.className = 'badge loading';
     statusMessage.textContent = '🔄 Fetching...';
     debugStatus.textContent = 'Fetching...';
-    endpointDisplay.textContent = 'Searching endpoints...';
     
     productsEl.innerHTML = '<div class="empty-state"><div class="icon">⏳</div><p>Fetching products...</p></div>';
     statsEl.innerHTML = '';
 
-    let foundProducts = null;
-    let workingEndpoint = '';
-    let workingPlatform = CONFIG.platform;
-
     try {
-        // Try all endpoints with platform
-        for (const endpoint of CONFIG.endpoints) {
+        const endpoints = ['ecom-v1/locations', 'ecom-v1/locations/1/categories', 'v1/locations'];
+        let foundProducts = null;
+        let workingEndpoint = '';
+        let workingPlatform = CONFIG.platform;
+
+        for (const endpoint of endpoints) {
             const url = CONFIG.workerUrl + '?path=' + endpoint + '&platform=' + workingPlatform;
             debug(`📡 Trying: ${endpoint} with platform ${workingPlatform}`, 'info');
-            endpointDisplay.textContent = endpoint;
             
             const response = await fetch(url, {
                 headers: {
@@ -369,12 +367,9 @@ async function fetchProducts() {
                 }
             });
 
-            debug(`📊 Status: ${response.status}`, response.ok ? 'success' : 'error');
-
             if (response.ok) {
                 const data = await response.json();
                 const products = data.data || data.products || data.items || [];
-                
                 if (products.length > 0) {
                     foundProducts = products;
                     workingEndpoint = endpoint;
@@ -386,13 +381,17 @@ async function fetchProducts() {
 
         if (foundProducts && foundProducts.length > 0) {
             displayProducts(foundProducts, 'Ewity API (' + workingEndpoint + ')');
-            endpointDisplay.textContent = '✅ ' + workingEndpoint;
         } else {
-            debug('⚠️ No products found', 'warning');
+            debug('⚠️ No products found. Click "Test Platforms" first.', 'warning');
             statusEl.className = 'status warning';
-            statusEl.innerHTML = '⚠️ No products found. Try "Test Platforms" button.';
-            statusMessage.textContent = '⚠️ No products';
-            loadMockData();
+            statusEl.innerHTML = '⚠️ Click "Test Platforms" first to find the right Platform ID';
+            statusMessage.textContent = '⚠️ Need Platform ID';
+            productsEl.innerHTML = `
+                <div class="empty-state">
+                    <div class="icon">🔍</div>
+                    <p>No products found. Click <strong>"Test Platforms"</strong> first to find the correct Platform ID.</p>
+                </div>
+            `;
         }
 
     } catch (error) {
@@ -415,9 +414,6 @@ async function fetchProducts() {
                     <summary style="cursor:pointer;font-weight:bold;color:#1a237e;">🔍 Debug</summary>
                     <pre>Token: ${CONFIG.token}\nWorker URL: ${CONFIG.workerUrl}\nError: ${error.stack || error.message}</pre>
                 </details>
-                <button onclick="testPlatforms()" style="margin-top:15px;padding:10px 20px;background:#1a237e;color:white;border:none;border-radius:5px;cursor:pointer;">
-                    🔍 Test Platforms
-                </button>
             </div>
         `;
         statsEl.innerHTML = '';
@@ -429,13 +425,15 @@ async function fetchProducts() {
 // ============================================================
 function init() {
     tokenDisplay.textContent = CONFIG.token;
-    proxyDisplay.textContent = 'Cloudflare Worker';
-    debug('🚀 Page loaded - FINAL VERSION', 'info');
+    debug('🚀 Page loaded', 'info');
     debug('📌 Token: ' + CONFIG.token.substring(0, 20) + '...', 'info');
-    debug('📌 Worker URL: ' + CONFIG.workerUrl, 'info');
+    debug('📌 Worker: ' + CONFIG.workerUrl, 'info');
     debug('📌 Click "Test Platforms" to find the correct Platform ID', 'info');
-    statusMessage.textContent = 'Click "Test Platforms" first!';
+    statusMessage.textContent = 'Click "Test Platforms" to start';
     debugStatus.textContent = 'Ready';
+    
+    // Check if buttons work
+    console.log('Buttons are ready! Click "Test Platforms" or "Fetch Products"');
 }
 
 // ============================================================
