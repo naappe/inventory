@@ -114,7 +114,7 @@
     <div id="products">
         <div class="empty-state">
             <div class="icon">🚀</div>
-            <p>Click "Fetch Products" to get real data from Ewity API.</p>
+            <p>Click "Test Platforms" first to find the correct Platform ID.</p>
         </div>
     </div>
 
@@ -129,10 +129,11 @@
 
 <script>
 // ============================================================
-// CONFIGURATION - WITH NEW TOKEN
+// CONFIGURATION
 // ============================================================
 const CONFIG = {
     token: 'uat_LFV9hqUG0YsXMbmNKZhcJip8KV75',
+    // ⚠️ UPDATE THIS WITH YOUR WORKER URL
     workerUrl: 'https://throbbing-rice-035e.naappe.workers.dev',
     platform: 'web',
     clientId: 'web-client',
@@ -271,7 +272,7 @@ function loadMockData() {
 }
 
 // ============================================================
-// TEST PLATFORMS - Find the correct Platform ID
+// TEST PLATFORMS
 // ============================================================
 async function testPlatforms() {
     const platforms = ['web', 'pos', 'ecom', 'admin', 'mobile', 'web-client', 'naappe', 'api', 'pos-api'];
@@ -355,14 +356,7 @@ async function fetchProducts() {
     let workingPlatform = CONFIG.platform;
 
     try {
-        // First, test platforms to find the right one
-        const platformResults = await testPlatformsSilent();
-        if (platformResults.workingPlatform) {
-            workingPlatform = platformResults.workingPlatform;
-            debug(`✅ Found working platform: ${workingPlatform}`, 'success');
-        }
-
-        // Try all endpoints with the working platform
+        // Try all endpoints with platform
         for (const endpoint of CONFIG.endpoints) {
             const url = CONFIG.workerUrl + '?path=' + endpoint + '&platform=' + workingPlatform;
             debug(`📡 Trying: ${endpoint} with platform ${workingPlatform}`, 'info');
@@ -428,35 +422,6 @@ async function fetchProducts() {
         `;
         statsEl.innerHTML = '';
     }
-}
-
-// ============================================================
-// SILENT PLATFORM TEST
-// ============================================================
-async function testPlatformsSilent() {
-    const platforms = ['web', 'pos', 'ecom', 'admin', 'mobile', 'web-client', 'naappe'];
-    
-    for (const platform of platforms) {
-        try {
-            const url = CONFIG.workerUrl + '?path=ecom-v1/locations&platform=' + platform;
-            const response = await fetch(url, {
-                headers: {
-                    'Authorization': 'Bearer ' + CONFIG.token,
-                    'X-Ewity-Platform': platform
-                }
-            });
-            
-            if (response.ok) {
-                const data = await response.json();
-                if (data.data || data.locations) {
-                    return { workingPlatform: platform };
-                }
-            }
-        } catch (e) {
-            // Silent fail
-        }
-    }
-    return { workingPlatform: CONFIG.platform };
 }
 
 // ============================================================
