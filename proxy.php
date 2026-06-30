@@ -1,5 +1,5 @@
 <?php
-// proxy.php - Ewity API Proxy
+// proxy.php - Ewity API Proxy (FIXED)
 
 // Enable CORS for your frontend
 header('Access-Control-Allow-Origin: *');
@@ -19,16 +19,17 @@ $baseUrl = 'https://app.ewitypos.com/api';
 // Build the full URL
 $url = $baseUrl . '/' . ltrim($path, '/');
 
-// Get the Authorization header
+// Get all headers
 $headers = getallheaders();
 $authHeader = isset($headers['Authorization']) ? $headers['Authorization'] : '';
 
-// Forward the request to Ewity API
+// Initialize cURL
 $ch = curl_init($url);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 
-// Set headers
+// Build headers for cURL
 $curlHeaders = [
     'Authorization: ' . $authHeader,
     'Content-Type: application/json',
@@ -51,9 +52,21 @@ curl_setopt($ch, CURLOPT_HTTPHEADER, $curlHeaders);
 // Execute the request
 $response = curl_exec($ch);
 $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+$error = curl_error($ch);
 curl_close($ch);
 
-// Return the response
+// If there's an error, return it as JSON
+if ($error) {
+    http_response_code(500);
+    echo json_encode(['error' => $error]);
+    exit();
+}
+
+// Return the response with the correct status code
 http_response_code($httpCode);
+
+// Set content type to JSON
+header('Content-Type: application/json');
+
 echo $response;
 ?>
