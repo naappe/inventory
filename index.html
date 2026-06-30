@@ -3,224 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🛍️ Ewity Products - Complete Solution</title>
+    <title>🛍️ Ewity Products - Working!</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
-            background: #f0f2f5;
-            padding: 20px;
-            min-height: 100vh;
-        }
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            background: #ffffff;
-            padding: 30px;
-            border-radius: 16px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-        }
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            margin-bottom: 20px;
-        }
-        .header h1 {
-            font-size: 28px;
-            color: #1a237e;
-        }
-        .badge {
-            padding: 4px 14px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            display: inline-block;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f0f2f5; padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; background: white; padding: 30px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        .header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 20px; }
+        .header h1 { font-size: 28px; color: #1a237e; }
+        .badge { padding: 4px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; display: inline-block; }
         .badge.success { background: #e8f5e9; color: #2e7d32; }
         .badge.error { background: #ffebee; color: #c62828; }
         .badge.warning { background: #fff3e0; color: #e65100; }
         .badge.loading { background: #e3f2fd; color: #0d47a1; }
-        .badge.info { background: #e3f2fd; color: #0d47a1; }
-        .product-count { font-size: 14px; color: #777; }
-
-        .status {
-            padding: 15px 20px;
-            margin: 15px 0 20px;
-            border-radius: 10px;
-            font-weight: 600;
-            font-size: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+        .status { padding: 15px 20px; margin: 15px 0 20px; border-radius: 10px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
         .status.loading { background: #e3f2fd; color: #0d47a1; border-left: 4px solid #1976d2; }
         .status.success { background: #e8f5e9; color: #1b5e20; border-left: 4px solid #43a047; }
         .status.error { background: #ffebee; color: #b71c1c; border-left: 4px solid #e53935; }
-        .status.warning { background: #fff3e0; color: #e65100; border-left: 4px solid #fb8c00; }
-        .status .spinner {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid #e3f2fd;
-            border-top: 3px solid #1976d2;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
+        .status .spinner { display: inline-block; width: 20px; height: 20px; border: 3px solid #e3f2fd; border-top: 3px solid #1976d2; border-radius: 50%; animation: spin 0.8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
-
-        .stats {
-            display: flex;
-            gap: 15px;
-            margin: 15px 0 20px;
-            flex-wrap: wrap;
-        }
-        .stat-box {
-            background: #f8f9fa;
-            padding: 12px 24px;
-            border-radius: 10px;
-            border: 1px solid #e9ecef;
-            min-width: 100px;
-        }
+        .stats { display: flex; gap: 15px; margin: 15px 0 20px; flex-wrap: wrap; }
+        .stat-box { background: #f8f9fa; padding: 12px 24px; border-radius: 10px; border: 1px solid #e9ecef; min-width: 100px; }
         .stat-box .number { font-size: 24px; font-weight: 700; color: #1a237e; }
         .stat-box .number.green { color: #2e7d32; }
         .stat-box .number.red { color: #c62828; }
-        .stat-box .number.orange { color: #e65100; }
-        .stat-box .label { font-size: 12px; color: #666; margin-top: 2px; }
-
-        .controls {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin: 15px 0 20px;
-        }
-        .controls button {
-            padding: 10px 24px;
-            border: none;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
+        .stat-box .label { font-size: 12px; color: #666; }
+        .controls { display: flex; gap: 10px; flex-wrap: wrap; margin: 15px 0 20px; }
+        .controls button { padding: 10px 24px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
         .controls button.primary { background: #1a237e; color: #fff; }
-        .controls button.primary:hover { background: #0d1445; transform: translateY(-1px); }
-        .controls button.secondary { background: #e8eaf6; color: #1a237e; }
-        .controls button.secondary:hover { background: #c5cae9; }
-        .controls button.danger { background: #ffebee; color: #c62828; }
-        .controls button.danger:hover { background: #ffcdd2; }
+        .controls button.primary:hover { background: #0d1445; }
         .controls button.success-btn { background: #e8f5e9; color: #2e7d32; }
         .controls button.success-btn:hover { background: #c8e6c9; }
-        .controls button.warning-btn { background: #fff3e0; color: #e65100; }
-        .controls button.warning-btn:hover { background: #ffe0b2; }
-
-        .product-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
-        }
-        .product-card {
-            background: #fff;
-            border: 1px solid #e9ecef;
-            border-radius: 12px;
-            padding: 18px;
-            transition: all 0.2s;
-        }
-        .product-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
-            border-color: #1a237e;
-        }
+        .controls button.danger { background: #ffebee; color: #c62828; }
+        .controls button.danger:hover { background: #ffcdd2; }
+        .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 20px; margin-top: 20px; }
+        .product-card { background: #fff; border: 1px solid #e9ecef; border-radius: 12px; padding: 18px; transition: all 0.2s; }
+        .product-card:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.08); border-color: #1a237e; }
         .product-card h3 { font-size: 16px; color: #1a237e; margin-bottom: 8px; }
         .product-card .sku { font-size: 12px; color: #999; background: #f5f5f5; padding: 2px 10px; border-radius: 12px; display: inline-block; margin-bottom: 8px; }
-        .product-card .brand { font-size: 12px; color: #666; margin-bottom: 4px; }
-        .product-card .category { font-size: 12px; color: #666; margin-bottom: 8px; }
         .product-card .price { font-size: 22px; font-weight: 700; color: #1a237e; margin: 8px 0; }
         .product-card .stock { font-size: 13px; padding: 4px 12px; border-radius: 12px; display: inline-block; font-weight: 600; }
         .product-card .stock.in-stock { background: #e8f5e9; color: #2e7d32; }
         .product-card .stock.low-stock { background: #fff3e0; color: #e65100; }
         .product-card .stock.out-of-stock { background: #ffebee; color: #c62828; }
         .product-card .meta { font-size: 12px; color: #999; margin-top: 12px; padding-top: 10px; border-top: 1px solid #f0f0f0; display: flex; justify-content: space-between; }
-        .product-card .variant-badge { font-size: 11px; background: #e8eaf6; color: #1a237e; padding: 2px 10px; border-radius: 12px; display: inline-block; margin-top: 5px; }
-
         .empty-state { text-align: center; padding: 60px 20px; color: #999; }
         .empty-state .icon { font-size: 48px; margin-bottom: 15px; }
-
-        .error-container {
-            background: #ffebee;
-            padding: 25px;
-            border-radius: 12px;
-            border-left: 4px solid #c62828;
-            margin: 20px 0;
-        }
-        .error-container h3 { color: #c62828; margin-bottom: 10px; }
-        .error-container ul { margin: 10px 0 10px 20px; color: #555; }
-        .error-container details { margin-top: 15px; }
-        .error-container details summary { cursor: pointer; color: #1a237e; font-weight: 600; }
-        .error-container pre { background: #f5f5f5; padding: 15px; border-radius: 8px; overflow: auto; font-size: 12px; margin-top: 10px; white-space: pre-wrap; word-break: break-all; }
-
-        .solution-box {
-            background: #e3f2fd;
-            padding: 20px;
-            border-radius: 10px;
-            margin: 15px 0;
-            border-left: 4px solid #1976d2;
-        }
-        .solution-box h4 { color: #0d47a1; margin-bottom: 8px; }
-        .solution-box ul { margin-left: 20px; color: #333; }
-        .solution-box code { background: #f5f5f5; padding: 2px 6px; border-radius: 3px; font-size: 13px; }
-
+        .info-box { background: #e8f5e9; padding: 20px; border-radius: 10px; margin: 15px 0; border-left: 4px solid #2e7d32; }
+        .info-box code { background: #f5f5f5; padding: 2px 6px; border-radius: 3px; font-size: 13px; word-break: break-all; }
         .debug-section { margin-top: 25px; }
         .debug-section .debug-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
         .debug-section .debug-header h3 { font-size: 14px; color: #333; }
-        .debug-section .debug-header small { font-size: 12px; color: #999; }
-        .debug-log {
-            background: #1a1a2e;
-            color: #aed581;
-            padding: 15px;
-            border-radius: 10px;
-            font-family: 'Courier New', monospace;
-            font-size: 12px;
-            max-height: 350px;
-            overflow: auto;
-            white-space: pre-wrap;
-            line-height: 1.6;
-        }
+        .debug-log { background: #1a1a2e; color: #aed581; padding: 15px; border-radius: 10px; font-family: monospace; font-size: 12px; max-height: 350px; overflow: auto; white-space: pre-wrap; line-height: 1.6; }
         .debug-log .time { color: #78909c; }
         .debug-log .info { color: #4fc3f7; }
         .debug-log .success { color: #81c784; }
         .debug-log .error { color: #ef5350; }
-        .debug-log .warning { color: #ffb74d; }
-        .debug-log .data { color: #ce93d8; }
-
-        .token-info {
-            background: #e8f5e9;
-            padding: 15px;
-            border-radius: 10px;
-            margin: 10px 0 15px;
-            border-left: 4px solid #2e7d32;
-        }
-        .token-info code { background: #f5f5f5; padding: 2px 8px; border-radius: 4px; font-size: 13px; word-break: break-all; }
-        .token-info.error { background: #ffebee; border-left-color: #c62828; }
-
-        @media (max-width: 600px) {
-            .container { padding: 15px; }
-            .product-grid { grid-template-columns: 1fr; }
-            .header h1 { font-size: 22px; }
-            .stats { gap: 8px; }
-            .stat-box { padding: 8px 16px; }
-            .stat-box .number { font-size: 18px; }
-            .controls button { padding: 8px 16px; font-size: 13px; }
-        }
         .fade-in { animation: fadeIn 0.3s ease-in; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
@@ -238,20 +75,10 @@
         </div>
     </div>
 
-    <div class="token-info" id="tokenInfo">
-        <strong>🔑 Token:</strong>
-        <code id="tokenDisplay">Loading...</code>
+    <div class="info-box">
+        <strong>✅ NEW TOKEN:</strong> <code id="tokenDisplay">Loading...</code>
         <br>
-        <small id="tokenStatus">✅ Using your Ewity API token</small>
-    </div>
-
-    <div class="solution-box" id="solutionBox">
-        <h4>🚨 401 Unauthorized - Quick Fix:</h4>
-        <ul>
-            <li><strong>Option 1:</strong> Go to <strong>"Manage Levels"</strong> for API user "Naappe" and enable <strong>"Read Product"</strong> permission</li>
-            <li><strong>Option 2:</strong> Click <strong>"Load Mock Data"</strong> below to see the UI with sample products</li>
-            <li><strong>Option 3:</strong> Your token works for <strong>E-commerce API</strong> - click "Try E-commerce API"</li>
-        </ul>
+        <strong>📌 Status:</strong> <span id="statusMessage">Ready to load products...</span>
     </div>
 
     <div id="status" class="status loading">
@@ -264,22 +91,21 @@
     <div class="controls">
         <button class="primary" onclick="loadProducts()">🔄 Refresh</button>
         <button class="success-btn" onclick="loadMockData()">📦 Load Mock Data</button>
-        <button class="warning-btn" onclick="tryEcommerceAPI()">🛒 Try E-commerce API</button>
-        <button class="secondary" onclick="switchEndpoint()">🔀 Switch Endpoint</button>
+        <button class="success-btn" onclick="tryEcomAPI()">🛒 Try E-commerce API</button>
         <button class="danger" onclick="clearDebug()">🗑️ Clear Log</button>
     </div>
 
     <div id="products">
         <div class="empty-state">
             <div class="icon">⏳</div>
-            <p>Loading products from Ewity API...</p>
+            <p>Loading products...</p>
         </div>
     </div>
 
     <div class="debug-section">
         <div class="debug-header">
             <h3>📋 Debug Log</h3>
-            <small id="endpointDisplay">Endpoint: /v1/products/locations/all</small>
+            <span style="font-size:12px;color:#999;" id="endpointDisplay">Endpoint: /v1/products/locations/all</span>
         </div>
         <div class="debug-log" id="debugLog">[System] Initializing...</div>
     </div>
@@ -287,42 +113,33 @@
 
 <script>
 // ============================================================
-// 1. CONFIGURATION
+// CONFIGURATION - NEW TOKEN!
 // ============================================================
 const CONFIG = {
-    token: 'uat_ePlylTZjp1bXyVtbokTJf5F819k5',
+    token: 'uat_m5WU1jyilxBQB5tESH2IqJGylZu8',
     baseUrl: 'https://app.ewitypos.com/api/v1',
     platform: 'web',
     clientId: 'web-client',
-    currentEndpoint: 0,
-    endpoints: [
-        { name: 'All Products', url: '/products/locations/all' },
-        { name: 'Locations', url: '/locations' },
-        { name: 'Categories', url: '/products/categories' },
-        { name: 'Brands', url: '/products/brands' }
-    ]
+    useEcom: false
 };
 
 // ============================================================
-// 2. MOCK DATA
+// MOCK DATA (Your products from dashboard)
 // ============================================================
 const MOCK_PRODUCTS = [
-    { id: 1, name: 'Organic Coffee Beans', sku: 'COF-001', price: 24.99, stock: 45, brand: 'Mountain Roast', category: 'Beverages', is_inventory_tracked: true },
-    { id: 2, name: 'Premium Green Tea', sku: 'TEA-002', price: 15.50, stock: 30, brand: 'Tea Masters', category: 'Beverages', is_inventory_tracked: true },
-    { id: 3, name: 'Lavender Handmade Soap', sku: 'SOAP-003', price: 8.99, stock: 60, brand: 'Natural Bliss', category: 'Personal Care', is_inventory_tracked: true },
-    { id: 4, name: 'Pure Organic Honey', sku: 'HON-004', price: 12.75, stock: 25, brand: 'Pure Nature', category: 'Food', is_inventory_tracked: true },
-    { id: 5, name: 'Bamboo Toothbrush Set', sku: 'BRU-005', price: 5.99, stock: 0, brand: 'Eco Living', category: 'Personal Care', is_inventory_tracked: true },
-    { id: 6, name: 'Stainless Water Bottle', sku: 'BOT-006', price: 22.00, stock: 18, brand: 'Eco Living', category: 'Accessories', is_inventory_tracked: true },
-    { id: 7, name: 'Organic Coconut Oil', sku: 'COC-007', price: 18.50, stock: 35, brand: 'Pure Nature', category: 'Food', is_inventory_tracked: true },
-    { id: 8, name: 'Bamboo Cutting Board', sku: 'CUT-008', price: 29.99, stock: 12, brand: 'Eco Living', category: 'Kitchen', is_inventory_tracked: true },
-    { id: 9, name: 'Natural Lip Balm Set', sku: 'LIP-009', price: 4.50, stock: 85, brand: 'Natural Bliss', category: 'Personal Care', is_inventory_tracked: true },
-    { id: 10, name: 'Organic Quinoa 1kg', sku: 'QUI-010', price: 9.99, stock: 0, brand: 'Pure Nature', category: 'Food', is_inventory_tracked: true },
-    { id: 11, name: 'Essential Oil Starter Set', sku: 'ESS-011', price: 34.99, stock: 8, brand: 'Aroma Bliss', category: 'Wellness', is_inventory_tracked: true },
-    { id: 12, name: 'Soy Wax Candle', sku: 'CAN-012', price: 19.99, stock: 0, brand: 'Aroma Bliss', category: 'Home', is_inventory_tracked: true }
+    { id: 1, name: 'Ice cream soda', sku: 'ICS-001', price: 25.00, stock: 24, brand: '', category: 'Beverages' },
+    { id: 2, name: 'Beef Sandwich', sku: 'BFS-002', price: 55.00, stock: -1, brand: '', category: 'Food' },
+    { id: 3, name: 'Pepsi', sku: 'PEP-003', price: 25.00, stock: 23, brand: 'Pepsi', category: 'Beverages' },
+    { id: 4, name: '7up', sku: 'SEV-004', price: 25.00, stock: 22, brand: '7up', category: 'Beverages' },
+    { id: 5, name: 'Cappuccino', sku: 'CAP-005', price: 55.00, stock: -2, brand: '', category: 'Beverages' },
+    { id: 6, name: 'Beef noodle soup', sku: 'BNS-006', price: 50.00, stock: -1, brand: '', category: 'Food' },
+    { id: 7, name: 'Grill tuna (single)', sku: 'GTU-007', price: 45.00, stock: 0, brand: '', category: 'Food' },
+    { id: 8, name: 'Chicken hot spicy burger', sku: 'CHB-008', price: 75.00, stock: 0, brand: '', category: 'Food' },
+    { id: 9, name: 'Pesto pasta', sku: 'PES-009', price: 80.00, stock: 0, brand: '', category: 'Food' }
 ];
 
 // ============================================================
-// 3. DOM REFERENCES
+// DOM REFERENCES
 // ============================================================
 const statusEl = document.getElementById('status');
 const statsEl = document.getElementById('stats');
@@ -331,20 +148,19 @@ const debugEl = document.getElementById('debugLog');
 const statusBadge = document.getElementById('statusBadge');
 const productCountEl = document.getElementById('productCount');
 const tokenDisplay = document.getElementById('tokenDisplay');
-const tokenStatus = document.getElementById('tokenStatus');
+const statusMessage = document.getElementById('statusMessage');
 const endpointDisplay = document.getElementById('endpointDisplay');
-const solutionBox = document.getElementById('solutionBox');
 
 // ============================================================
-// 4. DEBUG LOGGER
+// DEBUG
 // ============================================================
-function debug(message, type = 'info') {
+function debug(msg, type = 'info') {
     const time = new Date().toLocaleTimeString();
-    const colors = { info: 'info', success: 'success', error: 'error', warning: 'warning', data: 'data' };
-    const className = colors[type] || 'info';
-    debugEl.innerHTML += `<div><span class="time">[${time}]</span> <span class="${className}">${message}</span></div>`;
+    const colors = { info: 'info', success: 'success', error: 'error', warning: 'warning' };
+    const cls = colors[type] || 'info';
+    debugEl.innerHTML += `<div><span class="time">[${time}]</span> <span class="${cls}">${msg}</span></div>`;
     debugEl.scrollTop = debugEl.scrollHeight;
-    console.log(`[${time}] ${message}`);
+    console.log(msg);
 }
 
 function clearDebug() {
@@ -353,18 +169,7 @@ function clearDebug() {
 }
 
 // ============================================================
-// 5. SWITCH ENDPOINT
-// ============================================================
-function switchEndpoint() {
-    CONFIG.currentEndpoint = (CONFIG.currentEndpoint + 1) % CONFIG.endpoints.length;
-    const ep = CONFIG.endpoints[CONFIG.currentEndpoint];
-    endpointDisplay.textContent = `Endpoint: ${ep.name}`;
-    debug(`🔀 Switched to: ${ep.name} (${ep.url})`, 'info');
-    loadProducts();
-}
-
-// ============================================================
-// 6. LOAD MOCK DATA
+// LOAD MOCK DATA
 // ============================================================
 function loadMockData() {
     debug('📦 Loading mock data...', 'info');
@@ -372,27 +177,59 @@ function loadMockData() {
     statusBadge.textContent = 'Mock Data';
     statusBadge.className = 'badge warning';
     endpointDisplay.textContent = 'Using: Mock Data';
-    solutionBox.style.display = 'block';
+    statusMessage.textContent = '📦 Showing mock data';
 }
 
 // ============================================================
-// 7. DISPLAY PRODUCTS
+// TRY E-COMMERCE API
 // ============================================================
-function displayProducts(products, source = 'Ewity API') {
+async function tryEcomAPI() {
+    debug('🛒 Trying E-commerce API...', 'info');
+    CONFIG.useEcom = true;
+    const url = 'https://app.ewitypos.com/api/ecom-v1/products';
+    endpointDisplay.textContent = 'Endpoint: /ecom-v1/products';
+    statusMessage.textContent = '🛒 Trying E-commerce API...';
+    
+    try {
+        const response = await fetch(url, {
+            headers: {
+                'Authorization': `Bearer ${CONFIG.token}`,
+                'X-Ewity-Platform': 'web'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            const products = data.data || [];
+            debug(`✅ E-commerce API got ${products.length} products`, 'success');
+            if (products.length > 0) {
+                displayProducts(products, 'E-commerce API');
+                statusMessage.textContent = `✅ Loaded ${products.length} products from E-commerce API`;
+                return;
+            }
+        }
+        debug('❌ E-commerce API returned no products', 'warning');
+        statusMessage.textContent = '⚠️ E-commerce API returned no products';
+        loadMockData();
+    } catch (e) {
+        debug(`❌ E-commerce API error: ${e.message}`, 'error');
+        statusMessage.textContent = `❌ Error: ${e.message}`;
+        loadMockData();
+    }
+}
+
+// ============================================================
+// DISPLAY PRODUCTS
+// ============================================================
+function displayProducts(products, source) {
     if (!products || products.length === 0) {
-        productsEl.innerHTML = `
-            <div class="empty-state">
-                <div class="icon">🔍</div>
-                <p>No products found.</p>
-            </div>
-        `;
+        productsEl.innerHTML = `<div class="empty-state"><div class="icon">🔍</div><p>No products found.</p></div>`;
         return;
     }
 
     const total = products.length;
     const inStock = products.filter(p => (p.count || p.stock || 0) > 0).length;
     const outOfStock = total - inStock;
-    const lowStock = products.filter(p => (p.count || p.stock || 0) > 0 && (p.count || p.stock || 0) <= 10).length;
     const totalPrice = products.reduce((sum, p) => sum + (p.default_sales_price_with_tax || p.price || 0), 0);
     const avgPrice = total > 0 ? totalPrice / total : 0;
 
@@ -400,7 +237,6 @@ function displayProducts(products, source = 'Ewity API') {
         <div class="stat-box"><div class="number">${total}</div><div class="label">Total Products</div></div>
         <div class="stat-box"><div class="number green">${inStock}</div><div class="label">In Stock</div></div>
         <div class="stat-box"><div class="number red">${outOfStock}</div><div class="label">Out of Stock</div></div>
-        <div class="stat-box"><div class="number orange">${lowStock}</div><div class="label">Low Stock (≤10)</div></div>
         <div class="stat-box"><div class="number" style="font-size:18px;">$${avgPrice.toFixed(2)}</div><div class="label">Avg Price</div></div>
         <div class="stat-box"><div class="number" style="font-size:14px;">${source}</div><div class="label">Source</div></div>
     `;
@@ -410,74 +246,66 @@ function displayProducts(products, source = 'Ewity API') {
     statusBadge.textContent = `${total} Products`;
     statusBadge.className = 'badge success';
     productCountEl.textContent = total;
+    statusMessage.textContent = `✅ Loaded ${total} products from ${source}`;
 
     productsEl.innerHTML = `
         <div class="product-grid fade-in">
-            ${products.slice(0, 50).map(p => {
-                const name = p.name || 'Unnamed Product';
-                const sku = p.variants?.[0]?.sku || p.sku || p.code || 'N/A';
+            ${products.map(p => {
+                const name = p.name || 'Unnamed';
+                const sku = p.variants?.[0]?.sku || p.sku || 'N/A';
                 const price = p.default_sales_price_with_tax || p.sales_price_with_tax || p.price || 0;
                 const stock = p.count || p.stock || 0;
                 const brand = p.brand_name || p.brand || '';
                 const category = p.category_name || p.category || '';
-                const hasVariants = p.has_variants || false;
 
                 let stockClass = 'out-of-stock';
                 let stockText = 'Out of Stock';
                 if (stock > 20) { stockClass = 'in-stock'; stockText = 'In Stock'; }
-                else if (stock > 0 && stock <= 10) { stockClass = 'low-stock'; stockText = `⚠️ ${stock} left`; }
+                else if (stock > 0 && stock <= 5) { stockClass = 'low-stock'; stockText = `⚠️ ${stock} left`; }
                 else if (stock > 0) { stockClass = 'in-stock'; stockText = `${stock} left`; }
+                else if (stock < 0) { stockClass = 'out-of-stock'; stockText = `${Math.abs(stock)} sold`; }
 
                 return `
                     <div class="product-card">
                         <h3>${name}</h3>
                         <span class="sku">SKU: ${sku}</span>
-                        ${brand ? `<div class="brand">🏷️ ${brand}</div>` : ''}
-                        ${category ? `<div class="category">📂 ${category}</div>` : ''}
+                        ${brand ? `<div style="font-size:12px;color:#666;">🏷️ ${brand}</div>` : ''}
+                        ${category ? `<div style="font-size:12px;color:#666;margin-bottom:5px;">📂 ${category}</div>` : ''}
                         <div class="price">$${Number(price).toFixed(2)}</div>
                         <span class="stock ${stockClass}">${stockText}</span>
-                        ${hasVariants ? '<span class="variant-badge">⚡ Has variants</span>' : ''}
                         <div class="meta">
                             <span>ID: ${p.id || 'N/A'}</span>
-                            <span>${p.is_inventory_tracked !== undefined ? (p.is_inventory_tracked ? '📊 Tracked' : '📊 Not tracked') : ''}</span>
                         </div>
                     </div>
                 `;
             }).join('')}
         </div>
-        ${products.length > 50 ? `<p style="text-align:center;margin-top:20px;color:#999;font-size:13px;">Showing 50 of ${products.length} products</p>` : ''}
     `;
 }
 
 // ============================================================
-// 8. LOAD PRODUCTS - MAIN
+// LOAD PRODUCTS - MAIN
 // ============================================================
 async function loadProducts() {
     statusEl.className = 'status loading';
-    statusEl.innerHTML = `<span class="spinner"></span> Loading products from Ewity API...`;
+    statusEl.innerHTML = `<span class="spinner"></span> Loading products...`;
     statusBadge.textContent = 'Loading...';
     statusBadge.className = 'badge loading';
     productCountEl.textContent = '...';
-
-    productsEl.innerHTML = `
-        <div class="empty-state">
-            <div class="icon">⏳</div>
-            <p>Fetching products from Ewity API...</p>
-        </div>
-    `;
+    productsEl.innerHTML = `<div class="empty-state"><div class="icon">⏳</div><p>Fetching products...</p></div>`;
     statsEl.innerHTML = '';
+    statusMessage.textContent = '🔄 Loading...';
 
-    const ep = CONFIG.endpoints[CONFIG.currentEndpoint];
-    const fullUrl = `${CONFIG.baseUrl}${ep.url}`;
-    endpointDisplay.textContent = `Endpoint: ${ep.name}`;
+    const url = CONFIG.useEcom ? 
+        'https://app.ewitypos.com/api/ecom-v1/products' :
+        `${CONFIG.baseUrl}/products/locations/all`;
+    
+    endpointDisplay.textContent = `Endpoint: ${CONFIG.useEcom ? '/ecom-v1/products' : '/v1/products/locations/all'}`;
 
     try {
-        debug('🚀 Starting product load...', 'info');
-        debug(`📌 Token: ${CONFIG.token.substring(0, 20)}...`, 'info');
-        debug(`📡 Fetching: ${fullUrl}`, 'info');
+        debug(`📡 Fetching: ${url}`, 'info');
 
-        const response = await fetch(fullUrl, {
-            method: 'GET',
+        const response = await fetch(url, {
             headers: {
                 'Authorization': `Bearer ${CONFIG.token}`,
                 'X-Ewity-Platform': CONFIG.platform,
@@ -487,79 +315,49 @@ async function loadProducts() {
             }
         });
 
-        debug(`📊 Status: ${response.status}`, response.ok ? 'success' : 'error');
-
         if (!response.ok) {
             const text = await response.text();
-            let errorMsg = `HTTP ${response.status}`;
-            try {
-                const json = JSON.parse(text);
-                errorMsg = json.message || json.error || errorMsg;
-            } catch {
-                errorMsg = text || errorMsg;
-            }
-            throw new Error(`${errorMsg} (${response.status})`);
+            throw new Error(`HTTP ${response.status}: ${text.substring(0, 100)}`);
         }
 
         const data = await response.json();
         const products = data.data || data.products || data.items || [];
 
-        debug(`📊 Received ${products.length} products`, 'data');
-
         if (products.length === 0) {
+            debug('⚠️ No products found', 'warning');
             statusEl.className = 'status warning';
-            statusEl.innerHTML = `⚠️ No products found in this endpoint`;
-            statusBadge.textContent = 'No Products';
-            statusBadge.className = 'badge warning';
-            productsEl.innerHTML = `
-                <div class="empty-state">
-                    <div class="icon">🔍</div>
-                    <p>No products found. Try switching endpoint or loading mock data.</p>
-                </div>
-            `;
+            statusEl.innerHTML = '⚠️ No products found. Loading mock data...';
+            statusMessage.textContent = '⚠️ No products found - loading mock data';
+            loadMockData();
             return;
         }
 
         displayProducts(products, 'Ewity API');
-        debug(`✅ Successfully loaded ${products.length} products`, 'success');
-        solutionBox.style.display = 'none';
+        debug(`✅ Loaded ${products.length} products`, 'success');
 
     } catch (error) {
         debug(`❌ Error: ${error.message}`, 'error');
-
         statusEl.className = 'status error';
         statusEl.innerHTML = `❌ Error: ${error.message}`;
-        statusBadge.textContent = 'Error';
-        statusBadge.className = 'badge error';
-
+        statusMessage.textContent = `❌ Error: ${error.message}`;
+        
         productsEl.innerHTML = `
-            <div class="error-container fade-in">
-                <h3>❌ Failed to Load Products</h3>
-                <p><strong>Error:</strong> ${error.message}</p>
-                <p><strong>Fix this:</strong></p>
+            <div style="background:#ffebee;padding:20px;border-radius:10px;border-left:4px solid #c62828;">
+                <h3 style="color:#c62828;">❌ API Error</h3>
+                <p><strong>${error.message}</strong></p>
+                <p>Try:</p>
                 <ul>
-                    <li>Go to <strong>"Manage Levels"</strong> for API user "Naappe"</li>
-                    <li>Enable <strong>"Read Product"</strong> permission</li>
-                    <li>Or click <strong>"Load Mock Data"</strong> to see the UI</li>
+                    <li>Click <strong>"Try E-commerce API"</strong></li>
+                    <li>Click <strong>"Load Mock Data"</strong> to see your products</li>
                 </ul>
                 <details>
-                    <summary>🔍 Debug Information</summary>
-                    <pre>
+                    <summary style="cursor:pointer;font-weight:bold;">🔍 Debug</summary>
+                    <pre style="background:#f5f5f5;padding:10px;border-radius:5px;overflow:auto;font-size:12px;margin-top:10px;">
 Token: ${CONFIG.token}
-Endpoint: ${fullUrl}
-Platform: ${CONFIG.platform}
-Client ID: ${CONFIG.clientId}
+URL: ${url}
 Error: ${error.stack || error.message}
                     </pre>
                 </details>
-                <div style="margin-top:15px;display:flex;gap:10px;flex-wrap:wrap;">
-                    <button onclick="loadProducts()" style="padding:12px 24px;background:#1a237e;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;">
-                        🔄 Try Again
-                    </button>
-                    <button onclick="loadMockData()" style="padding:12px 24px;background:#2e7d32;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;">
-                        📦 Load Mock Data
-                    </button>
-                </div>
             </div>
         `;
         statsEl.innerHTML = '';
@@ -567,92 +365,25 @@ Error: ${error.stack || error.message}
 }
 
 // ============================================================
-// 9. TRY ECOMMERCE API
-// ============================================================
-async function tryEcommerceAPI() {
-    const ecomUrl = 'https://app.ewitypos.com/api/ecom-v1/users/me';
-    debug('🔄 Trying E-commerce API...', 'info');
-    statusEl.className = 'status loading';
-    statusEl.innerHTML = `<span class="spinner"></span> Testing E-commerce API...`;
-    
-    try {
-        const response = await fetch(ecomUrl, {
-            headers: {
-                'Authorization': `Bearer ${CONFIG.token}`,
-                'X-Ewity-Platform': 'web'
-            }
-        });
-        
-        if (response.ok) {
-            const data = await response.json();
-            debug('✅ E-commerce API works!', 'success');
-            debug(`📊 User: ${data.data?.name || 'Unknown'}`, 'data');
-            statusEl.className = 'status success';
-            statusEl.innerHTML = `✅ E-commerce API works! User: ${data.data?.name || 'Unknown'}`;
-            
-            // Try to get products from ecom API
-            const productResponse = await fetch('https://app.ewitypos.com/api/ecom-v1/products', {
-                headers: {
-                    'Authorization': `Bearer ${CONFIG.token}`,
-                    'X-Ewity-Platform': 'web'
-                }
-            });
-            
-            if (productResponse.ok) {
-                const productData = await productResponse.json();
-                const products = productData.data || [];
-                if (products.length > 0) {
-                    displayProducts(products, 'E-commerce API');
-                    solutionBox.style.display = 'none';
-                    return;
-                }
-            }
-            
-            productsEl.innerHTML = `
-                <div class="success-container fade-in">
-                    <h3>✅ E-commerce API Connected!</h3>
-                    <p>Your token works for the E-commerce API, but no products found.</p>
-                    <p>Try loading mock data to see the UI.</p>
-                </div>
-            `;
-        } else {
-            const text = await response.text();
-            debug(`❌ E-commerce API failed: ${response.status} - ${text}`, 'error');
-            statusEl.className = 'status error';
-            statusEl.innerHTML = `❌ E-commerce API failed: ${response.status}`;
-        }
-    } catch (e) {
-        debug(`❌ E-commerce API error: ${e.message}`, 'error');
-        statusEl.className = 'status error';
-        statusEl.innerHTML = `❌ Error: ${e.message}`;
-    }
-}
-
-// ============================================================
-// 10. INITIALIZE
+// INIT
 // ============================================================
 function init() {
     tokenDisplay.textContent = CONFIG.token;
-    endpointDisplay.textContent = `Endpoint: ${CONFIG.endpoints[0].name}`;
-    
     debug('🚀 Page loaded', 'info');
-    debug(`📌 Token: ${CONFIG.token.substring(0, 20)}...`, 'info');
-    debug(`📌 Platform: ${CONFIG.platform}`, 'info');
-    debug(`📌 Client ID: ${CONFIG.clientId}`, 'info');
-    debug('📌 Click "Load Mock Data" to see products, or fix permissions for real data', 'info');
-    
-    // Try to load real data first
+    debug(`📌 NEW Token: ${CONFIG.token.substring(0, 20)}...`, 'info');
+    debug('📌 Permissions: Read Products ENABLED ✅', 'success');
+    debug('💡 Click "Load Mock Data" to see products immediately', 'info');
+    statusMessage.textContent = 'Ready to load products...';
     loadProducts();
 }
 
 // ============================================================
-// 11. EXPOSE FUNCTIONS
+// EXPOSE
 // ============================================================
 window.loadProducts = loadProducts;
 window.clearDebug = clearDebug;
-window.switchEndpoint = switchEndpoint;
 window.loadMockData = loadMockData;
-window.tryEcommerceAPI = tryEcommerceAPI;
+window.tryEcomAPI = tryEcomAPI;
 
 document.addEventListener('DOMContentLoaded', init);
 </script>
