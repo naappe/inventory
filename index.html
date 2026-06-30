@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🛍️ Ewity Products - FINAL WORKING</title>
+    <title>🛍️ Ewity Products</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Arial, sans-serif; background: #f0f2f5; padding: 20px; }
@@ -36,8 +36,6 @@
         .controls button.success-btn:hover { background: #c8e6c9; }
         .controls button.danger { background: #ffebee; color: #c62828; }
         .controls button.danger:hover { background: #ffcdd2; }
-        .controls button.info-btn { background: #e3f2fd; color: #0d47a1; }
-        .controls button.info-btn:hover { background: #bbdefb; }
         .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 20px; margin-top: 20px; }
         .product-card { background: #fff; border: 1px solid #e9ecef; border-radius: 12px; padding: 18px; transition: all 0.2s; }
         .product-card:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.08); border-color: #1a237e; }
@@ -65,8 +63,6 @@
         .debug-log .warning { color: #ffb74d; }
         .fade-in { animation: fadeIn 0.3s ease-in; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .solution-box { background: #e3f2fd; padding: 20px; border-radius: 10px; margin: 15px 0; border-left: 4px solid #1976d2; }
-        .solution-box code { background: #f5f5f5; padding: 2px 6px; border-radius: 3px; font-size: 13px; }
     </style>
 </head>
 <body>
@@ -82,12 +78,12 @@
         </div>
     </div>
 
-    <div class="info-box" id="apiInfo">
-        <strong>✅ CORRECT API URL:</strong> <code id="apiUrlDisplay">https://api.ewity.com/products</code>
-        <br>
+    <div class="info-box" id="infoBox">
         <strong>🔑 Token:</strong> <code id="tokenDisplay">Loading...</code>
         <br>
-        <strong>📌 Status:</strong> <span id="statusMessage">Ready...</span>
+        <strong>📌 Status:</strong> <span id="statusMessage">Loading products...</span>
+        <br>
+        <strong>🌐 Using CORS Proxy:</strong> <code>api.allorigins.win</code>
     </div>
 
     <div id="status" class="status loading">
@@ -98,38 +94,40 @@
     <div id="stats" class="stats"></div>
 
     <div class="controls">
-        <button class="primary" onclick="fetchProducts()">🚀 Fetch Products</button>
+        <button class="primary" onclick="fetchProducts()">🔄 Fetch Products</button>
         <button class="success-btn" onclick="loadMockData()">📦 Load Mock Data</button>
-        <button class="info-btn" onclick="tryProxy()">🌐 Try Proxy</button>
         <button class="danger" onclick="clearDebug()">🗑️ Clear Log</button>
     </div>
 
     <div id="products">
         <div class="empty-state">
-            <div class="icon">👆</div>
-            <p>Click "Fetch Products" to get real data from Ewity API</p>
+            <div class="icon">⏳</div>
+            <p>Loading products from Ewity API via CORS proxy...</p>
         </div>
     </div>
 
     <div class="debug-section">
         <div class="debug-header">
             <h3>📋 Debug Log</h3>
-            <span style="font-size:12px;color:#999;" id="endpointDisplay">Endpoint: https://api.ewity.com/products</span>
+            <span style="font-size:12px;color:#999;" id="endpointDisplay">Auto-loading...</span>
         </div>
-        <div class="debug-log" id="debugLog">[System] Ready - Click "Fetch Products"</div>
+        <div class="debug-log" id="debugLog">[System] Initializing...</div>
     </div>
 </div>
 
 <script>
 // ============================================================
-// CONFIGURATION - CORRECT API URL!
+// CONFIGURATION - WITH CORS PROXY
 // ============================================================
 const CONFIG = {
-    token: 'uat_m5WU1jyilxBQB5tESH2IqJGylZu8',
-    apiUrl: 'https://api.ewity.com/products',
-    platform: 'web',
-    clientId: 'web-client',
-    proxy: 'https://api.allorigins.win/raw?url='
+    token: 'uat_hMwqvHc8F8VxlUPT0aBPsPy9uijb',
+    proxy: 'https://api.allorigins.win/raw?url=',
+    endpoints: [
+        'https://app.ewitypos.com/api/ecom-v1/products',
+        'https://app.ewitypos.com/api/ecom-v1/locations',
+        'https://api.ewity.com/products'
+    ],
+    platform: 'web'
 };
 
 // ============================================================
@@ -159,7 +157,7 @@ const productCountEl = document.getElementById('productCount');
 const tokenDisplay = document.getElementById('tokenDisplay');
 const statusMessage = document.getElementById('statusMessage');
 const endpointDisplay = document.getElementById('endpointDisplay');
-const apiUrlDisplay = document.getElementById('apiUrlDisplay');
+const infoBox = document.getElementById('infoBox');
 
 // ============================================================
 // DEBUG
@@ -207,6 +205,7 @@ function displayProducts(products, source) {
     statusBadge.className = 'badge success';
     productCountEl.textContent = total;
     statusMessage.textContent = `✅ ${total} products from ${source}`;
+    infoBox.className = 'info-box';
 
     productsEl.innerHTML = `
         <div class="product-grid fade-in">
@@ -250,159 +249,85 @@ function loadMockData() {
     debug('📦 Loading mock data...', 'info');
     displayProducts(MOCK_PRODUCTS, 'Mock Data');
     endpointDisplay.textContent = 'Using Mock Data';
+    infoBox.className = 'info-box';
 }
 
 // ============================================================
-// FETCH PRODUCTS - CORRECT API URL!
+// FETCH PRODUCTS - WITH CORS PROXY
 // ============================================================
 async function fetchProducts() {
     statusEl.className = 'status loading';
-    statusEl.innerHTML = `<span class="spinner"></span> Fetching products from Ewity API...`;
+    statusEl.innerHTML = `<span class="spinner"></span> Fetching via CORS proxy...`;
     statusBadge.textContent = 'Fetching...';
     statusBadge.className = 'badge loading';
-    statusMessage.textContent = '🔄 Fetching from API...';
-    endpointDisplay.textContent = `Endpoint: ${CONFIG.apiUrl}`;
-
-    productsEl.innerHTML = `<div class="empty-state"><div class="icon">⏳</div><p>Fetching products from Ewity API...</p></div>`;
+    statusMessage.textContent = '🔄 Fetching via proxy...';
+    endpointDisplay.textContent = 'Using CORS proxy...';
+    
+    productsEl.innerHTML = `<div class="empty-state"><div class="icon">⏳</div><p>Fetching via CORS proxy...</p></div>`;
     statsEl.innerHTML = '';
 
-    try {
-        debug(`🌐 Fetching: ${CONFIG.apiUrl}`, 'info');
-        debug(`🔑 Token: ${CONFIG.token.substring(0, 20)}...`, 'info');
+    let foundProducts = null;
+    let workingEndpoint = '';
 
-        const response = await fetch(CONFIG.apiUrl, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${CONFIG.token}`,
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
+    for (const url of CONFIG.endpoints) {
+        try {
+            const proxyUrl = CONFIG.proxy + encodeURIComponent(url);
+            debug(`🌐 Fetching via proxy: ${proxyUrl}`, 'info');
+            
+            const response = await fetch(proxyUrl, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${CONFIG.token}`,
+                    'X-Ewity-Platform': CONFIG.platform,
+                    'Accept': 'application/json'
+                }
+            });
+
+            debug(`📊 ${url} → Status: ${response.status}`, response.ok ? 'success' : 'error');
+
+            if (response.ok) {
+                const data = await response.json();
+                const products = data.data || data.products || data.items || [];
+                if (products.length > 0) {
+                    foundProducts = products;
+                    workingEndpoint = url;
+                    debug(`✅ Found ${products.length} products at ${url}`, 'success');
+                    break;
+                }
             }
-        });
-
-        debug(`📊 Status: ${response.status}`, response.ok ? 'success' : 'error');
-
-        if (!response.ok) {
-            const text = await response.text();
-            let errorMsg = `HTTP ${response.status}`;
-            try {
-                const json = JSON.parse(text);
-                errorMsg = json.message || json.error || errorMsg;
-            } catch {
-                errorMsg = text || errorMsg;
-            }
-            throw new Error(`${errorMsg} (${response.status})`);
+        } catch (e) {
+            debug(`❌ ${url} failed: ${e.message}`, 'error');
         }
-
-        const data = await response.json();
-        const products = data.data || data.products || data.items || [];
-
-        debug(`📊 Received ${products.length} products`, 'info');
-
-        if (products.length === 0) {
-            debug('⚠️ No products found', 'warning');
-            statusEl.className = 'status warning';
-            statusEl.innerHTML = '⚠️ No products found. Loading mock data...';
-            statusMessage.textContent = '⚠️ No products found';
-            loadMockData();
-            return;
-        }
-
-        displayProducts(products, 'Ewity API (Real)');
-        debug(`✅ Successfully loaded ${products.length} real products!`, 'success');
-
-    } catch (error) {
-        debug(`❌ Error: ${error.message}`, 'error');
-        statusEl.className = 'status error';
-        statusEl.innerHTML = `❌ Error: ${error.message}`;
-        statusMessage.textContent = `❌ Error: ${error.message}`;
-
-        // Auto-fallback to mock data
-        setTimeout(() => {
-            debug('🔄 Falling back to mock data...', 'warning');
-            loadMockData();
-        }, 1500);
-
-        productsEl.innerHTML = `
-            <div style="background:#ffebee;padding:20px;border-radius:10px;border-left:4px solid #c62828;">
-                <h3 style="color:#c62828;">❌ Failed to Fetch Products</h3>
-                <p><strong>${error.message}</strong></p>
-                <p><strong>Try these:</strong></p>
-                <ul>
-                    <li>Click <strong>"Load Mock Data"</strong> to see your products</li>
-                    <li>Click <strong>"Try Proxy"</strong> to use a CORS proxy</li>
-                    <li>Check the API URL: <code>${CONFIG.apiUrl}</code></li>
-                </ul>
-                <details>
-                    <summary style="cursor:pointer;font-weight:bold;">🔍 Debug</summary>
-                    <pre style="background:#f5f5f5;padding:10px;border-radius:5px;overflow:auto;font-size:12px;margin-top:10px;">
-Token: ${CONFIG.token}
-API URL: ${CONFIG.apiUrl}
-Error: ${error.stack || error.message}
-                    </pre>
-                </details>
-            </div>
-        `;
-        statsEl.innerHTML = '';
     }
-}
 
-// ============================================================
-// TRY WITH CORS PROXY
-// ============================================================
-async function tryProxy() {
-    debug('🌐 Trying with CORS proxy...', 'info');
-    statusEl.className = 'status loading';
-    statusEl.innerHTML = `<span class="spinner"></span> Trying with proxy...`;
-    statusMessage.textContent = '🔄 Trying proxy...';
-    endpointDisplay.textContent = 'Using CORS Proxy';
-
-    try {
-        const proxyUrl = CONFIG.proxy + encodeURIComponent(CONFIG.apiUrl);
-        debug(`🌐 Proxy URL: ${proxyUrl}`, 'info');
-
-        const response = await fetch(proxyUrl, {
-            method: 'GET',
-            headers: {
-                'Accept': 'application/json'
-            }
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
-        }
-
-        const data = await response.json();
-        const products = data.data || data.products || data.items || [];
-
-        if (products.length > 0) {
-            displayProducts(products, 'Ewity API (via Proxy)');
-            debug(`✅ Loaded ${products.length} products via proxy!`, 'success');
-        } else {
-            debug('⚠️ Proxy returned no products', 'warning');
-            loadMockData();
-        }
-    } catch (error) {
-        debug(`❌ Proxy error: ${error.message}`, 'error');
+    if (foundProducts && foundProducts.length > 0) {
+        displayProducts(foundProducts, `Ewity API (${workingEndpoint})`);
+        endpointDisplay.textContent = `✅ Working: ${workingEndpoint}`;
+        infoBox.className = 'info-box';
+    } else {
+        debug('❌ All endpoints failed. Loading mock data...', 'error');
         statusEl.className = 'status error';
-        statusEl.innerHTML = `❌ Proxy failed: ${error.message}`;
-        statusMessage.textContent = `❌ Proxy failed`;
+        statusEl.innerHTML = '❌ All endpoints failed. Loading mock data...';
+        statusMessage.textContent = '❌ All endpoints failed - showing mock data';
+        infoBox.className = 'info-box error';
         loadMockData();
     }
 }
 
 // ============================================================
-// INIT
+// INIT - AUTO LOAD
 // ============================================================
 function init() {
     tokenDisplay.textContent = CONFIG.token;
-    apiUrlDisplay.textContent = CONFIG.apiUrl;
-    endpointDisplay.textContent = `Endpoint: ${CONFIG.apiUrl}`;
-    debug('🚀 Page loaded', 'info');
+    debug('🚀 Page loaded - auto-fetching products via CORS proxy...', 'info');
     debug(`📌 Token: ${CONFIG.token.substring(0, 20)}...`, 'info');
-    debug(`📌 API URL: ${CONFIG.apiUrl}`, 'info');
-    debug('📌 Click "Fetch Products" to get real data!', 'success');
-    debug('📌 Click "Load Mock Data" to see your products', 'info');
-    statusMessage.textContent = 'Click "Fetch Products" to get real data';
+    debug(`📌 Proxy: ${CONFIG.proxy}`, 'info');
+    debug('📌 Trying 3 endpoints with CORS proxy...', 'info');
+    statusMessage.textContent = 'Auto-fetching via proxy...';
+    endpointDisplay.textContent = 'Auto-loading with proxy...';
+    
+    // Auto-fetch products on load
+    fetchProducts();
 }
 
 // ============================================================
@@ -411,7 +336,6 @@ function init() {
 window.fetchProducts = fetchProducts;
 window.loadMockData = loadMockData;
 window.clearDebug = clearDebug;
-window.tryProxy = tryProxy;
 
 document.addEventListener('DOMContentLoaded', init);
 </script>
