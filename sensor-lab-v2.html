@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sensor Lab v2</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,-apple-system,Segoe UI,sans-serif}*{box-sizing:border-box}
+body{margin:0;background:#08101d;color:#eef5ff}header{padding:16px;background:#101b2d;border-bottom:1px solid #253751}
+h1{margin:0 0 5px;font-size:1.3rem}header p{margin:0;color:#a9b9cf;font-size:.9rem}
+main{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(300px,.75fr);gap:14px;padding:14px}
+.card{background:#101b2d;border:1px solid #253751;border-radius:14px;padding:13px}
+.videoBox{position:relative;aspect-ratio:16/9;background:#02060c;border-radius:12px;overflow:hidden}
+video,.overlay{width:100%;height:100%;object-fit:cover;display:block}.overlay{position:absolute;inset:0;pointer-events:none}
+.controls{display:flex;flex-wrap:wrap;gap:8px;margin-top:11px}
+button{border:0;border-radius:9px;padding:10px 13px;font-weight:700;background:#2a3b58;color:white}
+button.primary{background:#3478f6}button.danger{background:#8c3147}button:disabled{opacity:.45}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:11px}
+.metric{background:#0a1424;border-radius:10px;padding:10px}.metric span{display:block;font-size:.75rem;color:#9eb0c7}.metric strong{font-size:1.05rem}
+canvas.chart{width:100%;height:170px;background:#07101c;border-radius:10px;margin-top:10px}
+.note{font-size:.83rem;line-height:1.4;color:#c7d4e6;background:#182338;border-radius:10px;padding:10px;margin-top:10px}
+.log{height:220px;overflow:auto;background:#040912;border-radius:10px;padding:9px;font:12px/1.4 ui-monospace,monospace;white-space:pre-wrap}
+label.toggle{display:flex;gap:8px;align-items:center;font-size:.9rem}
+@media(max-width:850px){main{grid-template-columns:1fr;padding:9px}.grid{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<header><h1>Sensor Lab v2</h1><p>Camera motion, sound level, orientation, light support, network latency and live history.</p></header>
+<main>
+<section class="card">
+<div class="videoBox"><video id="video" autoplay muted playsinline></video><canvas id="overlay" class="overlay"></canvas></div>
+<div class="controls">
+<button id="startCam" class="primary">Start camera</button>
+<button id="switchCam" disabled>Switch camera</button>
+<button id="stopCam" class="danger" disabled>Stop camera</button>
+<button id="startMic">Start microphone</button>
+<button id="motionPerm">Enable orientation</button>
+<button id="sampleNow">Sample now</button>
+</div>
+<div class="grid">
+<div class="metric"><span>Camera motion</span><strong id="motionVal">0.0%</strong></div>
+<div class="metric"><span>Sound level</span><strong id="soundVal">Unavailable</strong></div>
+<div class="metric"><span>Orientation β / γ</span><strong id="orientVal">Unavailable</strong></div>
+<div class="metric"><span>Network latency</span><strong id="latencyVal">—</strong></div>
+<div class="metric"><span>Network type</span><strong id="networkVal">Unavailable</strong></div>
+<div class="metric"><span>Pattern confidence</span><strong id="patternVal">Collecting…</strong></div>
+</div>
+<div class="note">This page does not access raw Wi-Fi reflections, RSSI or CSI. A repeatable pattern must appear across several controlled trials before it means anything.</div>
+</section>
+<aside class="card">
+<label class="toggle"><input id="autoSample" type="checkbox" checked> Auto sample every 5 seconds</label>
+<canvas id="chart" class="chart" width="800" height="260"></canvas>
+<h3>Experiment log</h3>
+<div id="log" class="log">Ready.</div>
+</aside>
+</main>
+<canvas id="sample" width="160" height="90" hidden></canvas>
+<script>
+(()=>{
+const $=id=>document.getElementById(id);
+const video=$('video'),overlay=$('overlay'),octx=overlay.getContext('2d'),sample=$('sample'),sctx=sample.getContext('2d',{willReadFrequently:true});
+const chart=$('chart'),cctx=chart.getContext('2d');
+let stream=null,facing='environment',raf=null,prev=null,motion=0,micStream=null,audioCtx=null,analyser=null,micRaf=null,sound=0,beta=null,gamma=null;
+const rows=[],MAX=60;
+function log(t){$('log').textContent=`[${new Date().toLocaleTimeString()}] ${t}\n`+$('log').textContent}
+function resize(){const r=video.getBoundingClientRect();overlay.width=Math.max(1,r.width);overlay.height=Math.max(1,r.height)}
+async function startCamera(){
+ stopCamera();
+ try{
+  stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:facing}},audio:false});
+  video.srcObject=stream;await video.play();resize();prev=null;
+  $('startCam').disabled=true;$('switchCam').disabled=false;$('stopCam').disabled=false;
+  log(`Camera started: ${facing}`);analyseVideo();
+ }catch(e){log(`Camera error: ${e.message}`)}
+}
+function stopCamera(){
+ if(raf)cancelAnimationFrame(raf);raf=null;
+ if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}
+ video.srcObject=null;prev=null;$('startCam').disabled=false;$('switchCam').disabled=true;$('stopCam').disabled=true;octx.clearRect(0,0,overlay.width,overlay.height)
+}
+function analyseVideo(){
+ if(!stream||video.readyState<2){raf=requestAnimationFrame(analyseVideo);return}
+ sctx.drawImage(video,0,0,sample.width,sample.height);
+ const d=sctx.getImageData(0,0,sample.width,sample.height).data;
+ if(prev){
+  let changed=0,total=0,n=0;
+  for(let i=0;i<d.length;i+=16){const diff=(Math.abs(d[i]-prev[i])+Math.abs(d[i+1]-prev[i+1])+Math.abs(d[i+2]-prev[i+2]))/3;total+=diff;if(diff>32)changed++;n++}
+  motion=((changed/n)*75)+Math.min(25,(total/n)/10.2);$('motionVal').textContent=motion.toFixed(1)+'%';
+  octx.clearRect(0,0,overlay.width,overlay.height);
+  if(motion>4){octx.strokeStyle='white';octx.lineWidth=4;octx.strokeRect(5,5,overlay.width-10,overlay.height-10)}
+ }
+ prev=new Uint8ClampedArray(d);raf=requestAnimationFrame(analyseVideo)
+}
+async function startMic(){
+ try{
+  micStream=await navigator.mediaDevices.getUserMedia({audio:true,video:false});
+  audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+  analyser=audioCtx.createAnalyser();analyser.fftSize=512;
+  audioCtx.createMediaStreamSource(micStream).connect(analyser);
+  const buf=new Uint8Array(analyser.fftSize);
+  function loop(){analyser.getByteTimeDomainData(buf);let sum=0;for(const v of buf){const x=(v-128)/128;sum+=x*x}sound=Math.min(100,Math.sqrt(sum/buf.length)*220);$('soundVal').textContent=sound.toFixed(1)+'%';micRaf=requestAnimationFrame(loop)}loop();log('Microphone started.')
+ }catch(e){log(`Microphone error: ${e.message}`)}
+}
+async function enableOrientation(){
+ try{
+  if(typeof DeviceOrientationEvent?.requestPermission==='function'){const p=await DeviceOrientationEvent.requestPermission();if(p!=='granted')throw new Error('Permission denied')}
+  addEventListener('deviceorientation',e=>{beta=e.beta;gamma=e.gamma;$('orientVal').textContent=(beta==null?'—':beta.toFixed(1))+' / '+(gamma==null?'—':gamma.toFixed(1))});log('Orientation enabled.')
+ }catch(e){log(`Orientation error: ${e.message}`)}
+}
+function networkInfo(){const n=navigator.connection||navigator.mozConnection||navigator.webkitConnection;$('networkVal').textContent=n?(n.effectiveType||n.type||'Unknown'):'Not exposed'}
+async function latency(){
+ const vals=[];
+ for(let i=0;i<3;i++){const t=performance.now();try{const u=new URL(location.href);u.searchParams.set('_t',Date.now()+Math.random());await fetch(u,{cache:'no-store'});vals.push(performance.now()-t)}catch{}}
+ return vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null
+}
+function corr(a,b){const n=Math.min(a.length,b.length);if(n<5)return NaN;const ma=a.reduce((x,y)=>x+y,0)/n,mb=b.reduce((x,y)=>x+y,0)/n;let num=0,da=0,db=0;for(let i=0;i<n;i++){const x=a[i]-ma,y=b[i]-mb;num+=x*y;da+=x*x;db+=y*y}return num/Math.sqrt(da*db)}
+async function sampleNow(){
+ const l=await latency();$('latencyVal').textContent=l==null?'Failed':l.toFixed(0)+' ms';
+ const row={t:Date.now(),motion,sound,latency:l||0,beta:beta||0,gamma:gamma||0};rows.push(row);if(rows.length>MAX)rows.shift();
+ const cm=corr(rows.map(x=>x.motion),rows.map(x=>x.latency)),cs=corr(rows.map(x=>x.sound),rows.map(x=>x.latency));
+ let text='Need 5+ samples';
+ if(Number.isFinite(cm)||Number.isFinite(cs)){const best=Math.max(Math.abs(cm||0),Math.abs(cs||0));text=best<.3?'Weak':best<.7?'Moderate':'Strong';text+=` (M:${Number.isFinite(cm)?cm.toFixed(2):'—'} S:${Number.isFinite(cs)?cs.toFixed(2):'—'})`}
+ $('patternVal').textContent=text;draw();log(`Motion ${motion.toFixed(1)}% | Sound ${sound.toFixed(1)}% | Latency ${l==null?'failed':l.toFixed(0)+' ms'}`)
+}
+function draw(){
+ const w=chart.width,h=chart.height;cctx.clearRect(0,0,w,h);cctx.strokeStyle='#304561';cctx.lineWidth=1;
+ for(let i=1;i<5;i++){const y=i*h/5;cctx.beginPath();cctx.moveTo(0,y);cctx.lineTo(w,y);cctx.stroke()}
+ if(rows.length<2)return;
+ const maxLat=Math.max(100,...rows.map(r=>r.latency));
+ const series=[
+  {k:'motion',scale:100,stroke:'#58a6ff'},
+  {k:'sound',scale:100,stroke:'#7ee787'},
+  {k:'latency',scale:maxLat,stroke:'#ff9b71'}
+ ];
+ for(const s of series){cctx.strokeStyle=s.stroke;cctx.lineWidth=2;cctx.beginPath();rows.forEach((r,i)=>{const x=i*(w/(MAX-1)),y=h-(Math.min(s.scale,r[s.k])/s.scale)*h;i?cctx.lineTo(x,y):cctx.moveTo(x,y)});cctx.stroke()}
+ cctx.fillStyle='#b9c7dc';cctx.font='18px system-ui';cctx.fillText('Blue motion   Green sound   Orange latency',15,24)
+}
+$('startCam').onclick=startCamera;$('stopCam').onclick=stopCamera;$('switchCam').onclick=()=>{facing=facing==='environment'?'user':'environment';startCamera()};$('startMic').onclick=startMic;$('motionPerm').onclick=enableOrientation;$('sampleNow').onclick=sampleNow;
+addEventListener('resize',resize);networkInfo();setInterval(()=>{if($('autoSample').checked)sampleNow()},5000);
+})();
+</script>
+</body>
+</html>
