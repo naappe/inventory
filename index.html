@@ -3,64 +3,48 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#eef2f7">
-<title>Naappe Publisher Studio v3</title>
+<meta name="theme-color" content="#101820">
+<title>Publisher Studio v3</title>
 <link rel="stylesheet" href="./src/v3-styles.css">
 </head>
 <body>
 <div class="app">
 <header class="topbar">
-  <div class="brand"><span class="mark">n</span><div><strong>Naappe Publisher Studio</strong><small>Visual publishing workspace · v3</small></div></div>
+  <div class="brand"><span class="mark">PS</span><div><strong>Publisher Studio v3</strong><small>Free element editor</small></div></div>
   <div class="actions">
-    <div class="mode-switch"><button class="active" data-mode="quick">Quick</button><button data-mode="studio">Studio</button><button data-mode="developer">Developer</button></div>
-    <button id="newProject">New</button><button id="saveProject">Save</button><label class="button">Load<input id="loadProject" type="file" accept=".json,application/json"></label>
-    <select id="exportFormat" aria-label="Export format"><option value="png">PNG</option><option value="jpeg">JPEG</option><option value="webp">WebP</option></select>
-    <button id="exportImage" class="primary">Download</button>
+    <button id="undo">Undo</button><button id="redo">Redo</button>
+    <button id="saveProject">Save</button><label class="button">Load<input id="loadProject" type="file" accept=".json,application/json"></label>
+    <select id="exportFormat"><option value="png">PNG</option><option value="jpeg">JPEG</option><option value="webp">WebP</option></select>
+    <button id="exportImage" class="primary">Export</button>
   </div>
 </header>
 <div class="shell">
 <aside class="panel left">
-  <section>
-    <h2>What do you want to publish?</h2><p class="muted">Choose a newsroom workflow. The layout adapts automatically.</p>
-    <div class="template-grid">
-      <button class="template active" data-template="nationchat"><strong>NationChat</strong><span>Quote · 1080 × 1350</span></button>
-      <button class="template" data-template="interview"><strong>Editorial Interview</strong><span>Portrait · 1080 × 1350</span></button>
-      <button class="template" data-template="breaking"><strong>Breaking News</strong><span>News card · 1080 × 1350</span></button>
-      <button class="template" data-template="statement"><strong>Statement</strong><span>Minimal · 1080 × 1080</span></button>
-    </div>
-  </section>
-  <section class="editor-section">
-    <label class="button primary full">Upload photo<input id="imageUpload" type="file" accept="image/*"></label>
-    <label class="field">Headline<input id="headline" value="BREAKING NEWS"></label>
-    <label class="field">Quote / statement<textarea id="quote" dir="rtl">މިއީ ނައްޕެ ޕަބްލިޝަރ ސްޓޫޑިއޯގެ ކުއިކް މޯޑެވެ.</textarea></label>
-    <label class="field">Speaker / author<input id="speaker" dir="rtl" value="ނޭޝަން ޗެޓް"></label>
-    <label class="field">Role / category<input id="role" value="EDITORIAL"></label>
-    <label class="field">Source<input id="source" value="NAAPPE"></label>
-    <div class="toolbar"><button id="fitImage">Fit</button><button id="fillImage">Fill</button><button id="resetImage">Reset</button></div>
-  </section>
-  <section><h2>Recent projects</h2><div id="recentProjects" class="recent-list"><p class="muted">Saved browser projects appear here.</p></div></section>
+  <section><h2>Elements</h2><div class="element-grid">
+    <button data-add="heading">Heading</button><button data-add="subheading">Subheading</button><button data-add="body">Body text</button><button data-add="quote">Quote</button><button data-add="caption">Caption</button><button data-add="thaana">Thaana text</button><button data-add="rectangle">Rectangle</button><button data-add="circle">Circle</button><button data-add="line">Line</button><button data-add="arrow">Arrow</button>
+  </div></section>
+  <section><h2>Media</h2><label class="button primary full">Upload image<input id="imageUpload" type="file" accept="image/*"></label></section>
+  <section><h2>Layers</h2><div id="layerList" class="layer-list"></div></section>
 </aside>
 <main class="workspace">
-  <div class="workspace-bar"><strong id="canvasInfo">1080 × 1350 · NationChat</strong><span class="muted" id="workspaceHint">Drag photo · wheel or pinch to zoom · double-click to fill</span></div>
-  <div class="stage"><div class="canvas-wrap" id="canvasWrap"><canvas id="publisherCanvas" aria-label="Publisher canvas"></canvas><span class="hint" id="canvasHint">Move and zoom the photo directly</span></div></div>
+  <div class="workspace-bar"><strong>1080 × 1350</strong><span class="muted">Click an element, then drag, resize, rotate or edit it</span></div>
+  <div class="stage"><div class="canvas-wrap" id="canvasWrap"><canvas id="publisherCanvas"></canvas></div></div>
 </main>
 <aside class="panel right">
-  <div class="quick-only"><h2>Ready to publish</h2><p class="muted">Quick Mode exposes only the fields needed for fast production.</p><div class="stat"><strong>Template</strong><span id="templateStatus">NationChat</span></div><div class="stat"><strong>Output</strong><span id="outputStatus">PNG · 1080 × 1350</span></div><div class="stat"><strong>Photo zoom</strong><span id="zoomValue">100%</span></div><div class="stat"><strong>Auto layout</strong><span id="layoutStatus">Standard quote</span></div></div>
-  <div class="studio-only">
-    <h2>Studio controls</h2>
-    <label class="field">Brand pack<select id="brandPack"><option value="naappe">Naappe</option><option value="nationchat">NationChat</option><option value="neutral">Neutral Editorial</option></select></label>
-    <label class="field">Brand name<input id="brandName" value="naappe"></label>
-    <label class="field">Accent<input id="accent" type="color" value="#168f87"></label>
-    <label class="field">Canvas background<input id="background" type="color" value="#ffffff"></label>
-    <label class="field">Text alignment<select id="textAlign"><option value="center">Center</option><option value="right">Right</option><option value="left">Left</option></select></label>
-    <label class="field">Font size bias<div class="range-row"><input id="fontBias" type="range" min="0.75" max="1.25" step="0.01" value="1"><output id="fontBiasValue">100%</output></div></label>
-    <label class="field">Overlay start<div class="range-row"><input id="overlayStart" type="range" min="0.2" max="0.8" step="0.01" value="0.43"><output id="overlayStartValue">43%</output></div></label>
-    <label class="field">Overlay opacity<div class="range-row"><input id="overlayOpacity" type="range" min="0" max="1" step="0.01" value="0.96"><output id="overlayOpacityValue">96%</output></div></label>
-    <label class="field">Image brightness<div class="range-row"><input id="brightness" type="range" min="0.5" max="1.5" step="0.01" value="1"><output id="brightnessValue">100%</output></div></label>
-    <label class="field">Image contrast<div class="range-row"><input id="contrast" type="range" min="0.5" max="1.8" step="0.01" value="1"><output id="contrastValue">100%</output></div></label>
-    <label class="check"><input id="showSafeArea" type="checkbox"> Show safe area</label>
+  <div id="emptyInspector"><h2>Properties</h2><p class="muted">Select an element on the canvas.</p></div>
+  <div id="inspector" hidden>
+    <h2>Properties</h2>
+    <label class="field">Name<input id="propName"></label>
+    <label class="field text-only">Text<textarea id="propText" dir="auto"></textarea></label>
+    <label class="field text-only">Font<select id="propFont"><option>Arial</option><option>Noto Sans Thaana</option><option>Faruma</option><option>MV Waheed</option><option>Georgia</option></select></label>
+    <div class="field-grid text-only"><label class="field">Size<input id="propFontSize" type="number" min="8" max="240"></label><label class="field">Weight<select id="propWeight"><option>400</option><option>500</option><option>600</option><option>700</option><option>800</option></select></label></div>
+    <div class="field-grid"><label class="field">X<input id="propX" type="number"></label><label class="field">Y<input id="propY" type="number"></label></div>
+    <div class="field-grid"><label class="field">Width<input id="propW" type="number" min="1"></label><label class="field">Height<input id="propH" type="number" min="1"></label></div>
+    <div class="field-grid"><label class="field">Rotation<input id="propR" type="number"></label><label class="field">Opacity<input id="propOpacity" type="number" min="0" max="1" step="0.05"></label></div>
+    <label class="field">Color<input id="propColor" type="color"></label>
+    <div class="toolbar"><button id="duplicate">Duplicate</button><button id="bringForward">Forward</button><button id="sendBackward">Backward</button></div>
+    <div class="toolbar"><button id="toggleLock">Lock</button><button id="toggleVisibility">Hide</button><button id="deleteElement" class="danger">Delete</button></div>
   </div>
-  <div class="developer-only"><h2>Developer mode</h2><p class="muted">Live document state and renderer diagnostics.</p><pre id="debugState"></pre></div>
 </aside>
 </div>
 </div>
