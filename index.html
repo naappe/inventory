@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Naappe Publisher Studio</title>
+<link rel="stylesheet" href="./src/styles.css">
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div>
+      <h1>Naappe Publisher Studio</h1>
+      <p>Corrected scene-graph starter</p>
+    </div>
+
+    <section>
+      <h2>Document</h2>
+      <button id="newDocument">New document</button>
+      <button id="saveProject">Save JSON</button>
+      <label class="file-button">
+        Load JSON
+        <input id="loadProject" type="file" accept=".json,application/json">
+      </label>
+      <button id="exportPng" class="primary">Export PNG</button>
+    </section>
+
+    <section>
+      <h2>Templates</h2>
+      <select id="templateSelect">
+        <option value="photo-left-text-right">Photo left / text right</option>
+        <option value="photo-right-text-left">Photo right / text left</option>
+        <option value="portrait-text-below">Portrait / text below</option>
+        <option value="soft-editorial">Soft editorial</option>
+      </select>
+      <button id="applyTemplate">Apply template</button>
+    </section>
+
+    <section>
+      <h2>Assets</h2>
+      <label class="file-button">
+        Upload photo
+        <input id="imageUpload" type="file" accept="image/*">
+      </label>
+    </section>
+
+    <section>
+      <h2>Selection</h2>
+      <button id="duplicateNode">Duplicate</button>
+      <button id="deleteNode">Delete</button>
+      <button id="bringForward">Bring forward</button>
+      <button id="sendBackward">Send backward</button>
+      <button id="toggleLock">Lock / unlock</button>
+      <button id="toggleVisibility">Show / hide</button>
+    </section>
+
+    <section>
+      <h2>History</h2>
+      <button id="undo">Undo</button>
+      <button id="redo">Redo</button>
+    </section>
+
+    <section>
+      <h2>Canvas</h2>
+      <select id="formatSelect">
+        <option value="1200x675">X landscape — 1200 × 675</option>
+        <option value="1080x1080">Square — 1080 × 1080</option>
+        <option value="1080x1350">Portrait — 1080 × 1350</option>
+      </select>
+    </section>
+  </aside>
+
+  <main class="workspace">
+    <div class="toolbar">
+      <span id="status">Ready</span>
+      <span class="hint">Drag nodes • handles resize • top handle rotates • Ctrl/Cmd+Z undo</span>
+    </div>
+    <div class="canvas-wrap">
+      <canvas id="studioCanvas"></canvas>
+    </div>
+  </main>
+
+  <aside class="inspector">
+    <h2>Inspector</h2>
+    <div id="emptyInspector">Select a node.</div>
+    <div id="nodeInspector" hidden>
+      <label>Name<input id="nodeName" type="text"></label>
+      <label>X<input id="nodeX" type="number" step="1"></label>
+      <label>Y<input id="nodeY" type="number" step="1"></label>
+      <label>Width<input id="nodeWidth" type="number" min="1" step="1"></label>
+      <label>Height<input id="nodeHeight" type="number" min="1" step="1"></label>
+      <label>Rotation<input id="nodeRotation" type="number" step="1"></label>
+      <label>Opacity<input id="nodeOpacity" type="range" min="0" max="1" step="0.01"></label>
+
+      <div id="textControls" hidden>
+        <label>Text<textarea id="nodeText" rows="6"></textarea></label>
+        <label>Font size<input id="fontSize" type="number" min="8" max="200"></label>
+        <label>Alignment
+          <select id="textAlign">
+            <option value="left">Left</option>
+            <option value="center">Center</option>
+            <option value="right">Right</option>
+          </select>
+        </label>
+      </div>
+    </div>
+
+    <h2>Layers</h2>
+    <div id="layerList"></div>
+  </aside>
+</div>
+
+<script type="module" src="./src/app.js"></script>
+</body>
+</html>
