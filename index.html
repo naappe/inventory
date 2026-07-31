@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#102f49">
 <title>Shift Operations — August 2026</title>
-<link rel="stylesheet" href="./src/shift-operations.css?v=1.0.0">
+<link rel="stylesheet" href="./src/shift-operations.css?v=1.0.1">
 </head>
 <body>
 <div class="app">
@@ -20,12 +20,12 @@
 </aside>
 
 <main class="main">
- <div class="topbar"><div><h1 id="pageTitle">August 2026 Schedule</h1><div class="subtitle" id="pageSubtitle">Each date is organised into Morning, Evening, Night, Maintenance and Rest</div></div></div>
+ <div class="topbar"><div><h1 id="pageTitle">August 2026 Schedule</h1><div class="subtitle" id="pageSubtitle">Each duty day starts with Night, followed by Morning, Evening, Maintenance and Rest</div></div></div>
 
  <section id="schedule" class="panel active">
   <div id="monthView" class="card section">
    <div class="toolbar">
-    <div><strong>Full Month Duty Board</strong><div class="subtitle">Read each date from left to right: Morning, Evening, Night, Maintenance and Rest.</div></div>
+    <div><strong>Full Month Duty Board</strong><div class="subtitle">Read each date from left to right: Night, Morning, Evening, Maintenance and Rest.</div></div>
     <div class="legend"><span class="pill night">Night</span><span class="pill morning">Morning</span><span class="pill evening">Evening</span><span class="pill maintenance">Maintenance</span><span class="pill rest">Rest</span></div>
    </div>
    <div class="calendar" id="calendar"></div>
@@ -72,5 +72,40 @@
 </nav>
 <script src="./src/roster-data.js?v=1.0.0"></script>
 <script src="./src/shift-operations.js?v=1.0.0"></script>
+<script>
+(function(){
+ const dutyOrder=["A","B","C","M","OFF","LEAVE"];
+ window.renderCalendar=function(){
+  const cal=document.getElementById("calendar");
+  let html=DAY_NAMES.map(x=>`<div class="weekday">${x}</div>`).join("");
+  for(let day=1;day<=31;day++){
+   const dt=new Date(2026,7,day);
+   html+=`<article class="day-card ${day===14?"focus-date":""}" data-day="${day}">
+    <div class="day-head"><div><div class="day-number">${day}</div><div class="day-name">${dt.toLocaleDateString("en-US",{weekday:"long"})}</div></div><span class="day-name">AUG</span></div>
+    <div class="day-body">
+     ${shiftLine("A",peopleFor(day,"A"))}
+     ${shiftLine("B",peopleFor(day,"B"))}
+     ${shiftLine("C",peopleFor(day,"C"))}
+     ${shiftLine("M",peopleFor(day,"M"))}
+     ${shiftLine("OFF",peopleFor(day,"OFF"))}
+    </div>
+   </article>`;
+  }
+  cal.innerHTML=html;
+  cal.querySelectorAll("[data-day]").forEach(x=>x.onclick=()=>openDay(Number(x.dataset.day)));
+ };
+ window.openDay=function(day){
+  document.getElementById("monthView").hidden=true;
+  document.getElementById("dayView").hidden=false;
+  const dt=new Date(2026,7,day);
+  document.getElementById("detailTitle").textContent=`${dt.toLocaleDateString("en-US",{weekday:"long"})}, ${day} August 2026`;
+  document.getElementById("detailGrid").innerHTML=dutyOrder.map(key=>{
+   const s=SHIFTS[key],codes=peopleFor(day,key);
+   return `<section class="shift-panel"><h3><span>${s.title}</span><span class="pill ${s.className}">${s.time}</span></h3>${codes.length?codes.map(code=>`<div class="employee"><div class="avatar">${code}</div><div><b>${DATA.staff[code].name}</b><small>Employee ID ${DATA.staff[code].id}</small></div></div>`).join(""):`<div class="empty">No staff assigned</div>`}</section>`;
+  }).join("");
+ };
+ renderCalendar();
+})();
+</script>
 </body>
 </html>
