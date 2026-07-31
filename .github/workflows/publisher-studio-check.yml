@@ -1,0 +1,40 @@
+name: Verify Publisher Studio
+
+on:
+  push:
+    branches:
+      - fix/all-template-text-movable
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check JavaScript syntax
+        run: |
+          node --check src/v3-app.js
+          node --check src/v3-elements.js
+          node --check src/v3-text-bridge.js
+      - name: Verify required editor controls
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const html = fs.readFileSync('index.html', 'utf8');
+          const required = [
+            'publisherCanvas','elementCanvas','templateSelect','layerList',
+            'elementInspector','elementText','elementFont','elementFontSize',
+            'elementWeight','elementColor','elementAlign','elementLineHeight',
+            'elementLetterSpacing','elementBackground','elementRotation',
+            'elementOpacity','exportImage'
+          ];
+          const missing = required.filter(id => !html.includes(`id="${id}"`));
+          if (missing.length) throw new Error(`Missing controls: ${missing.join(', ')}`);
+          console.log(`Verified ${required.length} required controls.`);
+          NODE
