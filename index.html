@@ -5,7 +5,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#102f49">
 <title>Shift Operations — August 2026</title>
-<link rel="stylesheet" href="./src/shift-operations.css?v=1.0.1">
+<link rel="stylesheet" href="./src/shift-operations.css?v=1.0.2">
+<style>
+.filter-bar{display:flex;align-items:end;gap:10px;flex-wrap:wrap;padding:12px;margin:14px 0;background:#f5f8fb;border:1px solid #d8e2eb;border-radius:12px}.filter-group{min-width:150px}.filter-group label{display:block;font-size:11px;font-weight:800;color:#6b7e8f;margin-bottom:5px}.filter-group select{width:100%;border:1px solid #d8e2eb;border-radius:9px;padding:9px 10px;background:#fff}.filter-actions{display:flex;gap:7px}.filter-btn{border:1px solid #d8e2eb;background:#fff;color:#17324a;border-radius:9px;padding:9px 13px;font-weight:800;cursor:pointer}.filter-btn.active{background:#1769aa;border-color:#1769aa;color:#fff}.filter-summary{margin-left:auto;color:#6b7e8f;font-size:12px;font-weight:700}.no-results{padding:30px;text-align:center;color:#6b7e8f;border:1px dashed #c6d4df;border-radius:12px;background:#fff}@media(max-width:760px){.filter-group{min-width:100%;}.filter-actions{width:100%}.filter-btn{flex:1}.filter-summary{width:100%;margin-left:0}}
+</style>
 </head>
 <body>
 <div class="app">
@@ -18,94 +21,47 @@
   <button data-panel="settings">Settings</button>
  </nav>
 </aside>
-
 <main class="main">
  <div class="topbar"><div><h1 id="pageTitle">August 2026 Schedule</h1><div class="subtitle" id="pageSubtitle">Each duty day starts with Night, followed by Morning, Evening, Maintenance and Rest</div></div></div>
-
  <section id="schedule" class="panel active">
   <div id="monthView" class="card section">
-   <div class="toolbar">
-    <div><strong>Full Month Duty Board</strong><div class="subtitle">Read each date from left to right: Night, Morning, Evening, Maintenance and Rest.</div></div>
-    <div class="legend"><span class="pill night">Night</span><span class="pill morning">Morning</span><span class="pill evening">Evening</span><span class="pill maintenance">Maintenance</span><span class="pill rest">Rest</span></div>
+   <div class="toolbar"><div><strong>Duty Schedule</strong><div class="subtitle">Use Day, Week or Month to quickly find the required duty.</div></div><div class="legend"><span class="pill night">Night</span><span class="pill morning">Morning</span><span class="pill evening">Evening</span><span class="pill maintenance">Maintenance</span><span class="pill rest">Rest</span></div></div>
+   <div class="filter-bar">
+    <div class="filter-actions"><button class="filter-btn" data-range="day">Day</button><button class="filter-btn" data-range="week">Week</button><button class="filter-btn active" data-range="month">Month</button></div>
+    <div class="filter-group" id="dayFilterGroup" hidden><label>Select day</label><select id="dayFilter"></select></div>
+    <div class="filter-group" id="weekFilterGroup" hidden><label>Select week</label><select id="weekFilter"></select></div>
+    <div class="filter-summary" id="filterSummary">Showing all 31 days</div>
    </div>
    <div class="calendar" id="calendar"></div>
   </div>
-
-  <div id="dayView" class="card section" hidden>
-   <div class="toolbar">
-    <div><button class="back" id="backToMonth">← Full month</button><h2 id="detailTitle" style="margin:14px 0 0"></h2><div class="subtitle">Complete staff allocation for this day</div></div>
-   </div>
-   <div class="detail-grid" id="detailGrid"></div>
-  </div>
+  <div id="dayView" class="card section" hidden><div class="toolbar"><div><button class="back" id="backToMonth">← Back to schedule</button><h2 id="detailTitle" style="margin:14px 0 0"></h2><div class="subtitle">Complete staff allocation for this day</div></div></div><div class="detail-grid" id="detailGrid"></div></div>
  </section>
-
- <section id="overtime" class="panel">
-  <div class="card section">
-   <h2 style="margin-top:0">OT Entry</h2>
-   <div class="form-grid">
-    <div><label>Staff</label><select id="otStaff"></select></div>
-    <div><label>Date</label><input id="otDate" type="date"></div>
-    <div><label>Start</label><input id="otStart" type="time"></div>
-    <div><label>End</label><input id="otEnd" type="time"></div>
-    <div><label>Hours</label><input id="otHours" type="number" min="0" step=".25"></div>
-    <div class="wide"><label>Remarks</label><textarea id="otRemarks" placeholder="Work details"></textarea></div>
-   </div>
-   <div class="actions"><button class="btn secondary" id="clearOt">Clear</button><button class="btn" id="saveOt">Save OT</button></div>
-  </div>
-  <div class="metrics">
-   <div class="card metric"><span>Today</span><strong id="mToday">0.00</strong></div>
-   <div class="card metric"><span>This week</span><strong id="mWeek">0.00</strong></div>
-   <div class="card metric"><span>This month</span><strong id="mMonth">0.00</strong></div>
-   <div class="card metric"><span>This year</span><strong id="mYear">0.00</strong></div>
-  </div>
-  <div class="card section"><div class="table-wrap"><table><thead><tr><th>Staff</th><th>Date</th><th>Start</th><th>End</th><th>Hours</th><th>Remarks</th></tr></thead><tbody id="otRows"></tbody></table></div></div>
- </section>
-
+ <section id="overtime" class="panel"><div class="card section"><h2 style="margin-top:0">OT Entry</h2><div class="form-grid"><div><label>Staff</label><select id="otStaff"></select></div><div><label>Date</label><input id="otDate" type="date"></div><div><label>Start</label><input id="otStart" type="time"></div><div><label>End</label><input id="otEnd" type="time"></div><div><label>Hours</label><input id="otHours" type="number" min="0" step=".25"></div><div class="wide"><label>Remarks</label><textarea id="otRemarks" placeholder="Work details"></textarea></div></div><div class="actions"><button class="btn secondary" id="clearOt">Clear</button><button class="btn" id="saveOt">Save OT</button></div></div><div class="metrics"><div class="card metric"><span>Today</span><strong id="mToday">0.00</strong></div><div class="card metric"><span>This week</span><strong id="mWeek">0.00</strong></div><div class="card metric"><span>This month</span><strong id="mMonth">0.00</strong></div><div class="card metric"><span>This year</span><strong id="mYear">0.00</strong></div></div><div class="card section"><div class="table-wrap"><table><thead><tr><th>Staff</th><th>Date</th><th>Start</th><th>End</th><th>Hours</th><th>Remarks</th></tr></thead><tbody id="otRows"></tbody></table></div></div></section>
  <section id="archive" class="panel"><div class="card section"><h2 style="margin-top:0">Weekly Archive</h2><div class="subtitle" id="archiveInfo"></div><div id="archiveList" class="archive-list" style="margin-top:14px"></div></div></section>
-
  <section id="settings" class="panel"><div class="card section"><h2 style="margin-top:0">Settings</h2><div style="max-width:330px"><label>Weekly archive day</label><select id="archiveDay"><option value="0">Sunday</option><option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option></select><div class="subtitle" id="savedText" style="margin-top:8px">This does not remove days from the monthly roster.</div></div></div></section>
-</main>
-</div>
-
-<nav class="mobile-nav">
- <button class="active" data-panel="schedule">Schedule</button><button data-panel="overtime">OT</button><button data-panel="archive">Archive</button><button data-panel="settings">Settings</button>
-</nav>
+</main></div>
+<nav class="mobile-nav"><button class="active" data-panel="schedule">Schedule</button><button data-panel="overtime">OT</button><button data-panel="archive">Archive</button><button data-panel="settings">Settings</button></nav>
 <script src="./src/roster-data.js?v=1.0.0"></script>
-<script src="./src/shift-operations.js?v=1.0.0"></script>
+<script src="./src/shift-operations.js?v=1.0.1"></script>
 <script>
 (function(){
  const dutyOrder=["A","B","C","M","OFF","LEAVE"];
+ let range="month";
+ const daySelect=document.getElementById("dayFilter"),weekSelect=document.getElementById("weekFilter");
+ daySelect.innerHTML=Array.from({length:31},(_,i)=>{const d=i+1,dt=new Date(2026,7,d);return `<option value="${d}">${dt.toLocaleDateString("en-US",{weekday:"long"})}, ${d} August</option>`}).join("");
+ weekSelect.innerHTML=[
+  [1,7,"1–7 August"],[8,14,"8–14 August"],[15,21,"15–21 August"],[22,28,"22–28 August"],[29,31,"29–31 August"]
+ ].map((w,i)=>`<option value="${i}">Week ${i+1} · ${w[2]}</option>`).join("");
+ function selectedDays(){if(range==="day")return [Number(daySelect.value||1)];if(range==="week"){const weeks=[[1,7],[8,14],[15,21],[22,28],[29,31]],w=weeks[Number(weekSelect.value||0)];return Array.from({length:w[1]-w[0]+1},(_,i)=>w[0]+i)}return Array.from({length:31},(_,i)=>i+1)}
  window.renderCalendar=function(){
-  const cal=document.getElementById("calendar");
-  let html=DAY_NAMES.map(x=>`<div class="weekday">${x}</div>`).join("");
-  for(let day=1;day<=31;day++){
-   const dt=new Date(2026,7,day);
-   html+=`<article class="day-card ${day===14?"focus-date":""}" data-day="${day}">
-    <div class="day-head"><div><div class="day-number">${day}</div><div class="day-name">${dt.toLocaleDateString("en-US",{weekday:"long"})}</div></div><span class="day-name">AUG</span></div>
-    <div class="day-body">
-     ${shiftLine("A",peopleFor(day,"A"))}
-     ${shiftLine("B",peopleFor(day,"B"))}
-     ${shiftLine("C",peopleFor(day,"C"))}
-     ${shiftLine("M",peopleFor(day,"M"))}
-     ${shiftLine("OFF",peopleFor(day,"OFF"))}
-    </div>
-   </article>`;
-  }
-  cal.innerHTML=html;
-  cal.querySelectorAll("[data-day]").forEach(x=>x.onclick=()=>openDay(Number(x.dataset.day)));
+  const days=selectedDays(),cal=document.getElementById("calendar");let html="";
+  for(const day of days){const dt=new Date(2026,7,day);html+=`<article class="day-card ${day===14?"focus-date":""}" data-day="${day}"><div class="day-head"><div><div class="day-number">${day}</div><div class="day-name">${dt.toLocaleDateString("en-US",{weekday:"long"})}</div></div><span class="day-name">AUG</span></div><div class="day-body">${shiftLine("A",peopleFor(day,"A"))}${shiftLine("B",peopleFor(day,"B"))}${shiftLine("C",peopleFor(day,"C"))}${shiftLine("M",peopleFor(day,"M"))}${shiftLine("OFF",peopleFor(day,"OFF"))}</div></article>`}
+  cal.innerHTML=html||'<div class="no-results">No schedule found.</div>';cal.querySelectorAll("[data-day]").forEach(x=>x.onclick=()=>openDay(Number(x.dataset.day)));
+  document.getElementById("filterSummary").textContent=range==="day"?`Showing ${days[0]} August`:range==="week"?`Showing ${days[0]}–${days[days.length-1]} August`:`Showing all 31 days`;
  };
- window.openDay=function(day){
-  document.getElementById("monthView").hidden=true;
-  document.getElementById("dayView").hidden=false;
-  const dt=new Date(2026,7,day);
-  document.getElementById("detailTitle").textContent=`${dt.toLocaleDateString("en-US",{weekday:"long"})}, ${day} August 2026`;
-  document.getElementById("detailGrid").innerHTML=dutyOrder.map(key=>{
-   const s=SHIFTS[key],codes=peopleFor(day,key);
-   return `<section class="shift-panel"><h3><span>${s.title}</span><span class="pill ${s.className}">${s.time}</span></h3>${codes.length?codes.map(code=>`<div class="employee"><div class="avatar">${code}</div><div><b>${DATA.staff[code].name}</b><small>Employee ID ${DATA.staff[code].id}</small></div></div>`).join(""):`<div class="empty">No staff assigned</div>`}</section>`;
-  }).join("");
- };
- renderCalendar();
+ window.openDay=function(day){document.getElementById("monthView").hidden=true;document.getElementById("dayView").hidden=false;const dt=new Date(2026,7,day);document.getElementById("detailTitle").textContent=`${dt.toLocaleDateString("en-US",{weekday:"long"})}, ${day} August 2026`;document.getElementById("detailGrid").innerHTML=dutyOrder.map(key=>{const s=SHIFTS[key],codes=peopleFor(day,key);return `<section class="shift-panel"><h3><span>${s.title}</span><span class="pill ${s.className}">${s.time}</span></h3>${codes.length?codes.map(code=>`<div class="employee"><div class="avatar">${code}</div><div><b>${DATA.staff[code].name}</b><small>Employee ID ${DATA.staff[code].id}</small></div></div>`).join(""):`<div class="empty">No staff assigned</div>`}</section>`}).join("")};
+ document.querySelectorAll("[data-range]").forEach(btn=>btn.onclick=()=>{range=btn.dataset.range;document.querySelectorAll("[data-range]").forEach(b=>b.classList.toggle("active",b===btn));document.getElementById("dayFilterGroup").hidden=range!=="day";document.getElementById("weekFilterGroup").hidden=range!=="week";renderCalendar()});
+ daySelect.onchange=renderCalendar;weekSelect.onchange=renderCalendar;renderCalendar();
 })();
 </script>
-</body>
-</html>
+</body></html>
