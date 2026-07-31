@@ -3,79 +3,79 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#102f49">
-<title>Shift Operations — August 2026</title>
-<link rel="stylesheet" href="./src/shift-operations.css?v=1.0.4">
-<style>
-/* Filtered view focus: selected day/week always starts at the top and remains readable. */
-.calendar{scroll-margin-top:16px}
-.calendar.week-view,.calendar.day-view{display:grid!important;grid-template-columns:1fr!important;gap:12px!important;overflow:visible!important}
-.calendar.week-view .day-card,.calendar.day-view .day-card{width:100%!important;min-width:0!important}
-.calendar.week-view .day-body,.calendar.day-view .day-body{grid-template-columns:repeat(5,minmax(150px,1fr))!important;overflow-x:auto!important}
-.filter-result{position:sticky;top:0;z-index:8;background:#eef3f7;padding:7px 2px}
-@media(max-width:760px){.calendar.week-view .day-body,.calendar.day-view .day-body{grid-template-columns:1fr!important;overflow:visible!important}}
-</style>
+<meta name="theme-color" content="#0f2f47">
+<title>Shift Operations Board — August 2026</title>
+<link rel="stylesheet" href="./src/shift-operations.css?v=2.0.0">
 </head>
 <body>
-<div class="app">
-<aside class="sidebar">
- <div class="brand"><strong>Shift Operations</strong><span>K. Gulhifalhu Injeenuge</span></div>
- <nav class="nav">
-  <button class="active" data-panel="schedule">Schedule</button>
-  <button data-panel="overtime">OT Tally</button>
-  <button data-panel="archive">Archive</button>
-  <button data-panel="settings">Settings</button>
- </nav>
-</aside>
-<main class="main">
- <div class="topbar"><div><h1 id="pageTitle">August 2026 Schedule</h1><div class="subtitle" id="pageSubtitle">Each duty day starts with Night, followed by Morning, Evening, Maintenance and Rest</div></div></div>
- <section id="schedule" class="panel active">
-  <div id="monthView" class="card section">
-   <div class="toolbar">
-    <div><strong>Duty Schedule</strong><div class="subtitle">Search and filter the roster, or record a duty change.</div></div>
-    <div class="legend"><span class="pill night">Night</span><span class="pill morning">Morning</span><span class="pill evening">Evening</span><span class="pill maintenance">Maintenance</span><span class="pill rest">Rest</span></div>
-   </div>
-   <div class="calendar" id="calendar"></div>
-  </div>
-  <div id="dayView" class="card section" hidden>
-   <div class="toolbar"><div><button class="back" id="backToMonth">← Back to schedule</button><h2 id="detailTitle" style="margin:14px 0 0"></h2><div class="subtitle">Complete staff allocation for this day</div></div></div>
-   <div class="detail-grid" id="detailGrid"></div>
-  </div>
- </section>
- <section id="overtime" class="panel">
-  <div class="card section"><h2 style="margin-top:0">OT Entry</h2><div class="form-grid"><div><label>Staff</label><select id="otStaff"></select></div><div><label>Date</label><input id="otDate" type="date"></div><div><label>Start</label><input id="otStart" type="time"></div><div><label>End</label><input id="otEnd" type="time"></div><div><label>Hours</label><input id="otHours" type="number" min="0" step=".25"></div><div class="wide"><label>Remarks</label><textarea id="otRemarks" placeholder="Work details"></textarea></div></div><div class="actions"><button class="btn secondary" id="clearOt">Clear</button><button class="btn" id="saveOt">Save OT</button></div></div>
-  <div class="metrics"><div class="card metric"><span>Today</span><strong id="mToday">0.00</strong></div><div class="card metric"><span>This week</span><strong id="mWeek">0.00</strong></div><div class="card metric"><span>This month</span><strong id="mMonth">0.00</strong></div><div class="card metric"><span>This year</span><strong id="mYear">0.00</strong></div></div>
-  <div class="card section"><div class="table-wrap"><table><thead><tr><th>Staff</th><th>Date</th><th>Start</th><th>End</th><th>Hours</th><th>Remarks</th></tr></thead><tbody id="otRows"></tbody></table></div></div>
- </section>
- <section id="archive" class="panel"><div class="card section"><h2 style="margin-top:0">Weekly Archive</h2><div class="subtitle" id="archiveInfo"></div><div id="archiveList" class="archive-list" style="margin-top:14px"></div></div></section>
- <section id="settings" class="panel"><div class="card section"><h2 style="margin-top:0">Settings</h2><div style="max-width:330px"><label>Weekly archive day</label><select id="archiveDay"><option value="0">Sunday</option><option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option></select><div class="subtitle" id="savedText" style="margin-top:8px">This does not remove days from the monthly roster.</div></div></div></section>
-</main>
+<div class="app-shell">
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">K. Gulhifalhu Injeenuge</p>
+      <h1>Shift Operations Board</h1>
+      <p class="subtitle">Night starts the duty day. First names are shown for faster scanning.</p>
+    </div>
+    <div class="live-chip"><span></span> August 2026 live roster</div>
+  </header>
+
+  <section class="summary-grid" aria-label="Operations summary">
+    <article><span>Working now</span><strong id="workingNow">0</strong><small id="activeShift">Current shift</small></article>
+    <article><span>Next shift</span><strong id="countdown">--:--</strong><small id="nextShiftLabel">Loading</small></article>
+    <article><span>Maintenance today</span><strong id="maintenanceCount">0</strong><small>Assigned staff</small></article>
+    <article><span>Rest today</span><strong id="restCount">0</strong><small>Available / off duty</small></article>
+  </section>
+
+  <main class="workspace">
+    <section class="board-card">
+      <div class="board-header">
+        <div>
+          <p class="eyebrow">Operations</p>
+          <h2 id="boardTitle">Today</h2>
+        </div>
+        <div class="board-actions">
+          <button id="prevDay" class="icon-btn" aria-label="Previous day">←</button>
+          <input id="datePicker" type="date" min="2026-08-01" max="2026-08-31" value="2026-08-01">
+          <button id="nextDay" class="icon-btn" aria-label="Next day">→</button>
+          <button id="todayBtn" class="secondary-btn">Today</button>
+          <button id="openChange" class="primary-btn">Change duty</button>
+        </div>
+      </div>
+
+      <div class="compact-filters">
+        <input id="staffSearch" type="search" placeholder="Search staff by first name">
+        <select id="viewMode">
+          <option value="day">Day view</option>
+          <option value="week">Week view</option>
+          <option value="month">Month view</option>
+        </select>
+        <select id="shiftFilter">
+          <option value="all">All duties</option>
+          <option value="A">Night</option>
+          <option value="B">Morning</option>
+          <option value="C">Evening</option>
+          <option value="M">Maintenance</option>
+          <option value="OFF">Rest</option>
+        </select>
+      </div>
+
+      <div id="operationsBoard" class="operations-board"></div>
+    </section>
+  </main>
 </div>
-<nav class="mobile-nav"><button class="active" data-panel="schedule">Schedule</button><button data-panel="overtime">OT</button><button data-panel="archive">Archive</button><button data-panel="settings">Settings</button></nav>
+
+<div id="overlay" class="overlay" hidden></div>
+<aside id="drawer" class="drawer" aria-hidden="true">
+  <div class="drawer-head">
+    <div>
+      <p class="eyebrow">Workflow</p>
+      <h2 id="drawerTitle">Change duty</h2>
+    </div>
+    <button id="closeDrawer" class="icon-btn" aria-label="Close">×</button>
+  </div>
+  <div id="drawerContent"></div>
+</aside>
+
 <script src="./src/roster-data.js?v=1.0.0"></script>
-<script src="./src/shift-operations.js?v=1.0.3"></script>
-<script>
-window.addEventListener('load',()=>{
- const calendar=document.getElementById('calendar');
- function syncFilteredView(){
-  const mode=document.getElementById('rangeFilter')?.value||'month';
-  calendar.classList.toggle('week-view',mode==='week');
-  calendar.classList.toggle('day-view',mode==='day');
-  if(mode==='week'||mode==='day'){
-   requestAnimationFrame(()=>{
-    const first=calendar.querySelector('.day-card:not(.filtered-out)');
-    (first||calendar).scrollIntoView({behavior:'smooth',block:'start'});
-   });
-  }
- }
- document.addEventListener('change',e=>{
-  if(e.target?.id==='rangeFilter'||e.target?.id==='dateFilter')setTimeout(syncFilteredView,30);
- });
- document.addEventListener('click',e=>{
-  if(e.target?.id==='clearFilters')setTimeout(syncFilteredView,30);
- });
- syncFilteredView();
-});
-</script>
+<script src="./src/shift-operations.js?v=2.0.0"></script>
 </body>
 </html>
