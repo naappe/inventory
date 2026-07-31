@@ -3,35 +3,58 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#eef2f7">
-<meta name="app-version" content="3.2.0">
-<title>Naappe Publisher Studio v3.2</title>
-<link rel="stylesheet" href="./src/v3-styles.css?v=3.2.0">
+<meta name="theme-color" content="#0b1d31">
+<meta name="app-version" content="4.0.0">
+<title>Naappe Publisher Studio v4</title>
+<link rel="stylesheet" href="./src/v3-styles.css?v=4.0.0">
 </head>
 <body>
-<div class="app">
+<div class="app-shell">
 <header class="topbar">
-  <div class="brand"><span class="mark">n</span><div><strong>Naappe Publisher Studio</strong><small>Visual publishing workspace · v3.2</small></div></div>
-  <div class="actions"><div class="mode-switch"><button class="active" data-mode="quick">Quick</button><button data-mode="studio">Studio</button><button data-mode="developer">Developer</button></div><button id="undo" disabled>Undo</button><button id="redo" disabled>Redo</button><button id="newProject">New</button><button id="saveProject">Save</button><label class="button">Load<input id="loadProject" type="file" accept=".json,application/json"></label><select id="exportFormat" aria-label="Export format"><option value="png">PNG</option><option value="jpeg">JPEG</option><option value="webp">WebP</option></select><button id="exportImage" class="primary">Download</button></div>
-</header>
-<div class="shell">
-<aside class="panel left">
-  <section><h2>What do you want to publish?</h2><p class="muted">Choose a newsroom workflow. Every template text remains independently movable.</p><div class="template-grid"><button class="template active" data-template="nationchat"><strong>NationChat</strong><span>Quote · 1080 × 1350</span></button><button class="template" data-template="interview"><strong>Editorial Interview</strong><span>Portrait · 1080 × 1350</span></button><button class="template" data-template="breaking"><strong>Breaking News</strong><span>News card · 1080 × 1350</span></button><button class="template" data-template="statement"><strong>Statement</strong><span>Minimal · 1080 × 1080</span></button></div></section>
-  <section class="editor-section"><label class="button primary full">Upload photo<input id="imageUpload" type="file" accept="image/*"></label><label class="field">Headline<input id="headline" value="BREAKING NEWS"></label><label class="field">Quote / statement<textarea id="quote" dir="rtl">މިއީ ނައްޕެ ޕަބްލިޝަރ ސްޓޫޑިއޯގެ ކުއިކް މޯޑެވެ.</textarea></label><label class="field">Speaker / author<input id="speaker" dir="rtl" value="ނޭޝަން ޗެޓް"></label><label class="field">Role / category<input id="role" value="EDITORIAL"></label><label class="field">Source<input id="source" value="NAAPPE"></label><div class="toolbar"><button id="fitImage">Fit</button><button id="fillImage">Fill</button><button id="resetImage">Reset</button></div></section>
-  <section><h2>All canvas elements</h2><p class="muted">Select the headline, quote, speaker, source, logo, or any added element and drag it freely.</p><div class="element-grid"><button data-add="text">Add text</button><button data-add="circle">Circle</button><button data-add="cross">Cross</button></div><div id="layerList" class="layer-list"></div></section>
-  <section><h2>Recent projects</h2><div id="recentProjects" class="recent-list"><p class="muted">Saved browser projects appear here.</p></div></section>
-</aside>
-<main class="workspace"><div class="workspace-bar"><strong id="canvasInfo">1080 × 1350 · NationChat</strong><span class="muted">Click any text to select it, then drag it independently</span></div><div class="stage"><div class="canvas-wrap" id="canvasWrap"><canvas id="publisherCanvas" aria-label="Publisher canvas"></canvas><canvas id="elementCanvas" aria-label="Independent movable text and element overlay"></canvas><span class="hint">Every text is a separate movable object</span></div></div></main>
-<aside class="panel right">
-  <div class="quick-only"><h2>Ready to publish</h2><p class="muted">Click any text directly on the design to move it independently.</p><div class="stat"><strong>Template</strong><span id="templateStatus">NationChat</span></div><div class="stat"><strong>Output</strong><span id="outputStatus">PNG · 1080 × 1350</span></div><div class="stat"><strong>Photo zoom</strong><span id="zoomValue">100%</span></div><div class="stat"><strong>Auto layout</strong><span id="layoutStatus">Standard</span></div></div>
-  <div class="studio-only"><h2>Studio controls</h2><label class="field">Accent<input id="accent" type="color" value="#168f87"></label><label class="field">Canvas background<input id="background" type="color" value="#ffffff"></label><label class="field">Text alignment<select id="textAlign"><option value="center">Center</option><option value="right">Right</option><option value="left">Left</option></select></label><label class="field">Font size bias<div class="range-row"><input id="fontBias" type="range" min="0.75" max="1.25" step="0.01" value="1"><output id="fontBiasValue">100%</output></div></label><label class="field">Overlay start<div class="range-row"><input id="overlayStart" type="range" min="0.2" max="0.8" step="0.01" value="0.43"><output id="overlayStartValue">43%</output></div></label><label class="field">Overlay opacity<div class="range-row"><input id="overlayOpacity" type="range" min="0" max="1" step="0.01" value="0.96"><output id="overlayOpacityValue">96%</output></div></label><label class="field">Image brightness<div class="range-row"><input id="brightness" type="range" min="0.5" max="1.5" step="0.01" value="1"><output id="brightnessValue">100%</output></div></label><label class="field">Image contrast<div class="range-row"><input id="contrast" type="range" min="0.5" max="1.8" step="0.01" value="1"><output id="contrastValue">100%</output></div></label><label class="check"><input id="showSafeArea" type="checkbox"> Show safe area</label>
-    <div id="elementInspector" hidden><h2>Selected element</h2><label class="field text-prop">Text<textarea id="elementText" dir="auto"></textarea></label><div class="field-grid text-prop"><label class="field">Font size<input id="elementFontSize" type="number" min="16" max="220"></label><label class="field">Weight<select id="elementWeight"><option>400</option><option>600</option><option>700</option><option>800</option></select></label></div><div class="field-grid"><label class="field">Width / size<input id="elementSize" type="number" min="30" max="900"></label><label class="field">Rotation<input id="elementRotation" type="number" min="-360" max="360"></label></div><label class="field">Color<input id="elementColor" type="color"></label><div class="toolbar"><button id="duplicateElement">Duplicate</button><button id="deleteElement" class="danger">Delete</button></div></div>
+  <div class="brand"><span class="brand-word">naappe</span><strong>Publisher Studio</strong><small>v4.0</small></div>
+  <div class="top-actions">
+    <button id="undo" disabled>↶ Undo</button><button id="redo" disabled>↷ Redo</button>
+    <button id="duplicateElement">⧉ Duplicate</button><button id="deleteElement">⌫ Delete</button>
+    <button id="bringForward">Bring Forward</button><button id="sendBackward">Send Backward</button>
+    <button id="toggleLock">Lock</button><button id="toggleVisibility">Hide</button>
   </div>
-  <div class="developer-only"><h2>Developer mode</h2><p class="muted">Live document state and renderer diagnostics.</p><pre id="debugState"></pre></div>
+  <div class="publish-actions"><button id="newProject">New</button><button id="saveProject">Save</button><label class="button">Load<input id="loadProject" type="file" accept=".json,application/json"></label><select id="exportFormat"><option value="png">PNG</option><option value="jpeg">JPEG</option><option value="webp">WebP</option></select><button id="exportImage" class="export">Export</button></div>
+</header>
+
+<div class="editor-grid">
+<aside class="left-panel">
+  <section><label class="section-label">Template</label><select id="templateSelect"><option value="nationchat">NationChat</option><option value="interview">Editorial Interview</option><option value="breaking">Breaking News</option><option value="statement">Statement</option></select><div class="template-buttons" hidden><button data-template="nationchat"></button><button data-template="interview"></button><button data-template="breaking"></button><button data-template="statement"></button></div></section>
+  <section><label class="section-label">Background image</label><label class="image-drop"><span>Change image</span><input id="imageUpload" type="file" accept="image/*"></label><div class="tool-row"><button id="fitImage">Fit</button><button id="fillImage">Fill</button><button id="resetImage">Reset</button></div></section>
+  <section><label class="section-label">Image adjust</label><label class="range-field">Brightness<input id="brightness" type="range" min="0.5" max="1.5" step="0.01" value="1"><output id="brightnessValue">100%</output></label><label class="range-field">Contrast<input id="contrast" type="range" min="0.5" max="1.8" step="0.01" value="1"><output id="contrastValue">100%</output></label><label class="range-field">Overlay<input id="overlayOpacity" type="range" min="0" max="1" step="0.01" value="0.96"><output id="overlayOpacityValue">96%</output></label></section>
+  <section class="layers-section"><div class="section-head"><label class="section-label">Layers</label><span id="layerCount">0</span></div><div id="layerList" class="layer-list"></div><button class="add-wide" data-add="text">＋ Add element</button></section>
+  <section class="hidden-compat"><input id="headline" value="BREAKING NEWS"><textarea id="quote" dir="rtl">މިއީ ނައްޕެ ޕަބްލިޝަރ ސްޓޫޑިއޯގެ ކުއިކް މޯޑެވެ.</textarea><input id="speaker" dir="rtl" value="ނޭޝަން ޗެޓް"><input id="role" value="EDITORIAL"><input id="source" value="NAAPPE"><input id="accent" type="color" value="#16a36f"><input id="background" type="color" value="#ffffff"><select id="textAlign"><option value="center">Center</option></select><input id="fontBias" type="range" min=".75" max="1.25" value="1"><output id="fontBiasValue">100%</output><input id="overlayStart" type="range" min=".2" max=".8" value=".43"><output id="overlayStartValue">43%</output><input id="showSafeArea" type="checkbox"><select id="brandPack"><option value="naappe">Naappe</option></select><input id="brandName" value="naappe"><span id="templateStatus"></span><span id="outputStatus"></span><span id="zoomValue"></span><span id="layoutStatus"></span><pre id="debugState"></pre><div id="recentProjects"></div></section>
 </aside>
-</div></div>
-<div hidden><select id="brandPack"><option value="naappe">Naappe</option></select><input id="brandName" value="naappe"></div>
-<script src="./src/v3-text-bridge.js?v=3.2.0"></script>
-<script type="module" src="./src/v3-app.js?v=3.2.0"></script>
-<script type="module" src="./src/v3-elements.js?v=3.2.0"></script>
-</body></html>
+
+<main class="workspace">
+  <div class="add-toolbar"><span>Add element</span><button data-add="text">T Text</button><button data-add="circle">○ Circle</button><button data-add="cross">× Cross</button><button data-add="rectangle">▭ Rectangle</button><button data-add="line">— Line</button></div>
+  <div class="stage"><div class="canvas-wrap" id="canvasWrap"><canvas id="publisherCanvas"></canvas><canvas id="elementCanvas"></canvas></div></div>
+  <div class="workspace-footer"><div class="tip">Click any text or element on the canvas to select and edit it freely.</div><div class="zoom-controls"><button id="zoomOut">−</button><span id="canvasInfo">1080 × 1350</span><button id="zoomIn">＋</button></div></div>
+</main>
+
+<aside class="right-panel">
+  <div id="emptyInspector" class="empty-state"><strong>Select an element</strong><p>Click text, a shape, or a layer to edit its properties.</p></div>
+  <div id="elementInspector" hidden>
+    <h2 id="inspectorTitle">Text properties</h2>
+    <label class="field text-prop">Content<textarea id="elementText" dir="auto"></textarea></label>
+    <label class="field text-prop">Font family<select id="elementFont"><option value="Noto Sans Thaana">Noto Sans Thaana</option><option value="Faruma">Faruma</option><option value="MV Waheed">MV Waheed</option><option value="Arial">Arial</option><option value="Georgia">Georgia</option><option value="Inter">Inter</option></select></label>
+    <div class="two-col text-prop"><label class="field">Weight<select id="elementWeight"><option value="400">Regular</option><option value="500">Medium</option><option value="600">Semi Bold</option><option value="700">Bold</option><option value="800">Extra Bold</option></select></label><label class="field">Size<input id="elementFontSize" type="number" min="12" max="240"></label></div>
+    <label class="field">Color<input id="elementColor" type="color"></label>
+    <div class="text-prop"><label class="field">Alignment<select id="elementAlign"><option value="left">Left</option><option value="center">Center</option><option value="right">Right</option></select></label><label class="range-field">Line height<input id="elementLineHeight" type="range" min="0.8" max="2" step="0.05"><output id="lineHeightValue"></output></label><label class="range-field">Letter spacing<input id="elementLetterSpacing" type="range" min="-5" max="20" step="1"><output id="letterSpacingValue"></output></label></div>
+    <label class="field">Background<select id="elementBackground"><option value="transparent">Transparent</option><option value="#ffffff">White</option><option value="#0b1d31">Navy</option><option value="#16a36f">Green</option></select></label>
+    <div class="two-col"><label class="field">Width / size<input id="elementSize" type="number" min="20" max="1000"></label><label class="field">Rotation<input id="elementRotation" type="number" min="-360" max="360"></label></div>
+    <label class="range-field">Opacity<input id="elementOpacity" type="range" min="0" max="1" step="0.05"><output id="opacityValue"></output></label>
+    <div class="action-grid"><button id="duplicateElement2">Duplicate</button><button id="deleteElement2" class="danger">Delete</button></div>
+  </div>
+</aside>
+</div>
+</div>
+<script src="./src/v3-text-bridge.js?v=4.0.0"></script>
+<script type="module" src="./src/v3-app.js?v=4.0.0"></script>
+<script type="module" src="./src/v3-elements.js?v=4.0.0"></script>
+</body>
+</html>
