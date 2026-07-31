@@ -1,37 +1,76 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#eef2f7">
-<meta name="app-version" content="3.2.0">
-<title>Naappe Publisher Studio v3.2</title>
-<link rel="stylesheet" href="./src/v3-styles.css?v=3.2.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#102f49">
+<title>Shift Operations — August 2026</title>
+<link rel="stylesheet" href="./src/shift-operations.css?v=1.0.0">
 </head>
 <body>
 <div class="app">
-<header class="topbar">
-  <div class="brand"><span class="mark">n</span><div><strong>Naappe Publisher Studio</strong><small>Visual publishing workspace · v3.2</small></div></div>
-  <div class="actions"><div class="mode-switch"><button class="active" data-mode="quick">Quick</button><button data-mode="studio">Studio</button><button data-mode="developer">Developer</button></div><button id="undo" disabled>Undo</button><button id="redo" disabled>Redo</button><button id="newProject">New</button><button id="saveProject">Save</button><label class="button">Load<input id="loadProject" type="file" accept=".json,application/json"></label><select id="exportFormat" aria-label="Export format"><option value="png">PNG</option><option value="jpeg">JPEG</option><option value="webp">WebP</option></select><button id="exportImage" class="primary">Download</button></div>
-</header>
-<div class="shell">
-<aside class="panel left">
-  <section><h2>What do you want to publish?</h2><p class="muted">Choose a newsroom workflow. Every template text remains independently movable.</p><div class="template-grid"><button class="template active" data-template="nationchat"><strong>NationChat</strong><span>Quote · 1080 × 1350</span></button><button class="template" data-template="interview"><strong>Editorial Interview</strong><span>Portrait · 1080 × 1350</span></button><button class="template" data-template="breaking"><strong>Breaking News</strong><span>News card · 1080 × 1350</span></button><button class="template" data-template="statement"><strong>Statement</strong><span>Minimal · 1080 × 1080</span></button></div></section>
-  <section class="editor-section"><label class="button primary full">Upload photo<input id="imageUpload" type="file" accept="image/*"></label><label class="field">Headline<input id="headline" value="BREAKING NEWS"></label><label class="field">Quote / statement<textarea id="quote" dir="rtl">މިއީ ނައްޕެ ޕަބްލިޝަރ ސްޓޫޑިއޯގެ ކުއިކް މޯޑެވެ.</textarea></label><label class="field">Speaker / author<input id="speaker" dir="rtl" value="ނޭޝަން ޗެޓް"></label><label class="field">Role / category<input id="role" value="EDITORIAL"></label><label class="field">Source<input id="source" value="NAAPPE"></label><div class="toolbar"><button id="fitImage">Fit</button><button id="fillImage">Fill</button><button id="resetImage">Reset</button></div></section>
-  <section><h2>All canvas elements</h2><p class="muted">Select the headline, quote, speaker, source, logo, or any added element and drag it freely.</p><div class="element-grid"><button data-add="text">Add text</button><button data-add="circle">Circle</button><button data-add="cross">Cross</button></div><div id="layerList" class="layer-list"></div></section>
-  <section><h2>Recent projects</h2><div id="recentProjects" class="recent-list"><p class="muted">Saved browser projects appear here.</p></div></section>
+<aside class="sidebar">
+ <div class="brand"><strong>Shift Operations</strong><span>K. Gulhifalhu Injeenuge</span></div>
+ <nav class="nav">
+  <button class="active" data-panel="schedule">Monthly Schedule</button>
+  <button data-panel="overtime">OT Tally</button>
+  <button data-panel="archive">Archive</button>
+  <button data-panel="settings">Settings</button>
+ </nav>
 </aside>
-<main class="workspace"><div class="workspace-bar"><strong id="canvasInfo">1080 × 1350 · NationChat</strong><span class="muted">Click any text to select it, then drag it independently</span></div><div class="stage"><div class="canvas-wrap" id="canvasWrap"><canvas id="publisherCanvas" aria-label="Publisher canvas"></canvas><canvas id="elementCanvas" aria-label="Independent movable text and element overlay"></canvas><span class="hint">Every text is a separate movable object</span></div></div></main>
-<aside class="panel right">
-  <div class="quick-only"><h2>Ready to publish</h2><p class="muted">Click any text directly on the design to move it independently.</p><div class="stat"><strong>Template</strong><span id="templateStatus">NationChat</span></div><div class="stat"><strong>Output</strong><span id="outputStatus">PNG · 1080 × 1350</span></div><div class="stat"><strong>Photo zoom</strong><span id="zoomValue">100%</span></div><div class="stat"><strong>Auto layout</strong><span id="layoutStatus">Standard</span></div></div>
-  <div class="studio-only"><h2>Studio controls</h2><label class="field">Accent<input id="accent" type="color" value="#168f87"></label><label class="field">Canvas background<input id="background" type="color" value="#ffffff"></label><label class="field">Text alignment<select id="textAlign"><option value="center">Center</option><option value="right">Right</option><option value="left">Left</option></select></label><label class="field">Font size bias<div class="range-row"><input id="fontBias" type="range" min="0.75" max="1.25" step="0.01" value="1"><output id="fontBiasValue">100%</output></div></label><label class="field">Overlay start<div class="range-row"><input id="overlayStart" type="range" min="0.2" max="0.8" step="0.01" value="0.43"><output id="overlayStartValue">43%</output></div></label><label class="field">Overlay opacity<div class="range-row"><input id="overlayOpacity" type="range" min="0" max="1" step="0.01" value="0.96"><output id="overlayOpacityValue">96%</output></div></label><label class="field">Image brightness<div class="range-row"><input id="brightness" type="range" min="0.5" max="1.5" step="0.01" value="1"><output id="brightnessValue">100%</output></div></label><label class="field">Image contrast<div class="range-row"><input id="contrast" type="range" min="0.5" max="1.8" step="0.01" value="1"><output id="contrastValue">100%</output></div></label><label class="check"><input id="showSafeArea" type="checkbox"> Show safe area</label>
-    <div id="elementInspector" hidden><h2>Selected element</h2><label class="field text-prop">Text<textarea id="elementText" dir="auto"></textarea></label><div class="field-grid text-prop"><label class="field">Font size<input id="elementFontSize" type="number" min="16" max="220"></label><label class="field">Weight<select id="elementWeight"><option>400</option><option>600</option><option>700</option><option>800</option></select></label></div><div class="field-grid"><label class="field">Width / size<input id="elementSize" type="number" min="30" max="900"></label><label class="field">Rotation<input id="elementRotation" type="number" min="-360" max="360"></label></div><label class="field">Color<input id="elementColor" type="color"></label><div class="toolbar"><button id="duplicateElement">Duplicate</button><button id="deleteElement" class="danger">Delete</button></div></div>
+
+<main class="main">
+ <div class="topbar"><div><h1 id="pageTitle">August 2026 Schedule</h1><div class="subtitle" id="pageSubtitle">Each date is organised into Morning, Evening, Night, Maintenance and Rest</div></div></div>
+
+ <section id="schedule" class="panel active">
+  <div id="monthView" class="card section">
+   <div class="toolbar">
+    <div><strong>Full Month Duty Board</strong><div class="subtitle">Read each date from left to right: Morning, Evening, Night, Maintenance and Rest.</div></div>
+    <div class="legend"><span class="pill night">Night</span><span class="pill morning">Morning</span><span class="pill evening">Evening</span><span class="pill maintenance">Maintenance</span><span class="pill rest">Rest</span></div>
+   </div>
+   <div class="calendar" id="calendar"></div>
   </div>
-  <div class="developer-only"><h2>Developer mode</h2><p class="muted">Live document state and renderer diagnostics.</p><pre id="debugState"></pre></div>
-</aside>
-</div></div>
-<div hidden><select id="brandPack"><option value="naappe">Naappe</option></select><input id="brandName" value="naappe"></div>
-<script src="./src/v3-text-bridge.js?v=3.2.0"></script>
-<script type="module" src="./src/v3-app.js?v=3.2.0"></script>
-<script type="module" src="./src/v3-elements.js?v=3.2.0"></script>
-</body></html>
+
+  <div id="dayView" class="card section" hidden>
+   <div class="toolbar">
+    <div><button class="back" id="backToMonth">← Full month</button><h2 id="detailTitle" style="margin:14px 0 0"></h2><div class="subtitle">Complete staff allocation for this day</div></div>
+   </div>
+   <div class="detail-grid" id="detailGrid"></div>
+  </div>
+ </section>
+
+ <section id="overtime" class="panel">
+  <div class="card section">
+   <h2 style="margin-top:0">OT Entry</h2>
+   <div class="form-grid">
+    <div><label>Staff</label><select id="otStaff"></select></div>
+    <div><label>Date</label><input id="otDate" type="date"></div>
+    <div><label>Start</label><input id="otStart" type="time"></div>
+    <div><label>End</label><input id="otEnd" type="time"></div>
+    <div><label>Hours</label><input id="otHours" type="number" min="0" step=".25"></div>
+    <div class="wide"><label>Remarks</label><textarea id="otRemarks" placeholder="Work details"></textarea></div>
+   </div>
+   <div class="actions"><button class="btn secondary" id="clearOt">Clear</button><button class="btn" id="saveOt">Save OT</button></div>
+  </div>
+  <div class="metrics">
+   <div class="card metric"><span>Today</span><strong id="mToday">0.00</strong></div>
+   <div class="card metric"><span>This week</span><strong id="mWeek">0.00</strong></div>
+   <div class="card metric"><span>This month</span><strong id="mMonth">0.00</strong></div>
+   <div class="card metric"><span>This year</span><strong id="mYear">0.00</strong></div>
+  </div>
+  <div class="card section"><div class="table-wrap"><table><thead><tr><th>Staff</th><th>Date</th><th>Start</th><th>End</th><th>Hours</th><th>Remarks</th></tr></thead><tbody id="otRows"></tbody></table></div></div>
+ </section>
+
+ <section id="archive" class="panel"><div class="card section"><h2 style="margin-top:0">Weekly Archive</h2><div class="subtitle" id="archiveInfo"></div><div id="archiveList" class="archive-list" style="margin-top:14px"></div></div></section>
+
+ <section id="settings" class="panel"><div class="card section"><h2 style="margin-top:0">Settings</h2><div style="max-width:330px"><label>Weekly archive day</label><select id="archiveDay"><option value="0">Sunday</option><option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option></select><div class="subtitle" id="savedText" style="margin-top:8px">This does not remove days from the monthly roster.</div></div></div></section>
+</main>
+</div>
+
+<nav class="mobile-nav">
+ <button class="active" data-panel="schedule">Schedule</button><button data-panel="overtime">OT</button><button data-panel="archive">Archive</button><button data-panel="settings">Settings</button>
+</nav>
+<script src="./src/roster-data.js?v=1.0.0"></script>
+<script src="./src/shift-operations.js?v=1.0.0"></script>
+</body>
+</html>
