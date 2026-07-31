@@ -5,7 +5,16 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#102f49">
 <title>Shift Operations — August 2026</title>
-<link rel="stylesheet" href="./src/shift-operations.css?v=1.0.3">
+<link rel="stylesheet" href="./src/shift-operations.css?v=1.0.4">
+<style>
+/* Filtered view focus: selected day/week always starts at the top and remains readable. */
+.calendar{scroll-margin-top:16px}
+.calendar.week-view,.calendar.day-view{display:grid!important;grid-template-columns:1fr!important;gap:12px!important;overflow:visible!important}
+.calendar.week-view .day-card,.calendar.day-view .day-card{width:100%!important;min-width:0!important}
+.calendar.week-view .day-body,.calendar.day-view .day-body{grid-template-columns:repeat(5,minmax(150px,1fr))!important;overflow-x:auto!important}
+.filter-result{position:sticky;top:0;z-index:8;background:#eef3f7;padding:7px 2px}
+@media(max-width:760px){.calendar.week-view .day-body,.calendar.day-view .day-body{grid-template-columns:1fr!important;overflow:visible!important}}
+</style>
 </head>
 <body>
 <div class="app">
@@ -44,6 +53,29 @@
 </div>
 <nav class="mobile-nav"><button class="active" data-panel="schedule">Schedule</button><button data-panel="overtime">OT</button><button data-panel="archive">Archive</button><button data-panel="settings">Settings</button></nav>
 <script src="./src/roster-data.js?v=1.0.0"></script>
-<script src="./src/shift-operations.js?v=1.0.2"></script>
+<script src="./src/shift-operations.js?v=1.0.3"></script>
+<script>
+window.addEventListener('load',()=>{
+ const calendar=document.getElementById('calendar');
+ function syncFilteredView(){
+  const mode=document.getElementById('rangeFilter')?.value||'month';
+  calendar.classList.toggle('week-view',mode==='week');
+  calendar.classList.toggle('day-view',mode==='day');
+  if(mode==='week'||mode==='day'){
+   requestAnimationFrame(()=>{
+    const first=calendar.querySelector('.day-card:not(.filtered-out)');
+    (first||calendar).scrollIntoView({behavior:'smooth',block:'start'});
+   });
+  }
+ }
+ document.addEventListener('change',e=>{
+  if(e.target?.id==='rangeFilter'||e.target?.id==='dateFilter')setTimeout(syncFilteredView,30);
+ });
+ document.addEventListener('click',e=>{
+  if(e.target?.id==='clearFilters')setTimeout(syncFilteredView,30);
+ });
+ syncFilteredView();
+});
+</script>
 </body>
 </html>
