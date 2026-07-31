@@ -1,48 +1,40 @@
-# Naappe Publisher Studio — Corrected Starter
+# Naappe Publisher Studio v2
 
-A minimal browser-based scene-graph editor focused on Dhivehi news graphics.
+A rebuilt, static browser editor focused on high-fidelity Dhivehi editorial quote graphics.
 
-## Included
+## What changed
 
-- Local recursive transforms
-- World-matrix hit testing
-- Transformed-corner bounds
-- Scene selection
-- Move, resize, rotate
-- Layer order
-- Lock and visibility
-- Command-based undo/redo
-- Central asset manager
-- Dhivehi/RTL canvas text
-- Four JSON-style templates
-- Constraint-aware canvas resizing
-- Project JSON save/load
-- Preview-matched PNG export
+- Reference-inspired editorial quote template
+- Landscape, square, and portrait variants
+- Custom `.ttf`, `.otf`, `.woff`, and `.woff2` font upload
+- Custom fonts embedded in saved project JSON
+- RTL/Thaana text controls: family, weight, line height, alignment, and color
+- Portrait upload, crop zoom, brightness, contrast, rounded corners, and soft shadow
+- Browser-based white/light background removal with threshold and feather controls
+- Original/cutout switching
+- Transparent canvas export
+- Lockable brand and date layers
+- Layer selection, move, resize, rotate, visibility, ordering, undo, and redo
+- PNG export and versioned project save/load
 
 ## Run
 
-ES modules require a local web server.
-
-### Python
+This project uses ES modules and must be served over HTTP.
 
 ```bash
 python -m http.server 8080
 ```
 
-Then open:
+Open `http://localhost:8080`.
 
-```text
-http://localhost:8080
-```
+## Important font note
 
-### VS Code
+No proprietary font file is bundled. Upload the exact font used by your publication through the Typography panel. The uploaded font is stored in project JSON so it can reload with the project.
 
-Use the Live Server extension and open `index.html`.
+## Background removal scope
 
-## Important scope notes
+The included remover works locally in the browser and targets white/light backgrounds. It is not a full AI person segmentation model. The code is intentionally isolated in `src/image/BackgroundRemover.js` so an external AI provider can replace it later.
 
-This is a v1 core, not a complete Canva replacement.
+## GitHub Pages
 
-The resize handles currently resize the axis-aligned node dimensions. Precise rotated-handle geometry and group editing are suitable next steps.
-
-Custom Dhivehi fonts are not bundled. The browser will use locally available fonts and then fall back to Arial/sans-serif.
+Copy the contents of this folder to the root of your GitHub Pages repository. `index.html` must remain at the repository root.

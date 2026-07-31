@@ -83,8 +83,10 @@ export class Scene {
   }
 
   render(ctx, assetManager) {
-    ctx.fillStyle = this.backgroundColor;
-    ctx.fillRect(0, 0, this.width, this.height);
+    if (this.backgroundColor && this.backgroundColor !== 'transparent') {
+      ctx.fillStyle = this.backgroundColor;
+      ctx.fillRect(0, 0, this.width, this.height);
+    }
     this.root.sortChildren();
     for (const child of this.root.children) child.render(ctx, assetManager);
   }

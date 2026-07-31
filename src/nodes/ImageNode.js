@@ -1,67 +1,7 @@
 import { Node, NodeTypes } from '../core/Node.js';
-
-export class ImageNode extends Node {
-  constructor(options = {}) {
-    super(options);
-    this.type = 'image';
-    this.assetId = options.assetId ?? null;
-    this.objectFit = options.objectFit ?? 'cover';
-    this.brightness = options.brightness ?? 1;
-    this.contrast = options.contrast ?? 1;
-  }
-
-  draw(ctx, assetManager) {
-    const asset = this.assetId ? assetManager.get(this.assetId) : null;
-    const image = asset?.data;
-    if (!image) {
-      ctx.fillStyle = '#dfe8e8';
-      ctx.fillRect(0, 0, this.width, this.height);
-      return;
-    }
-
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(0, 0, this.width, this.height);
-    ctx.clip();
-    ctx.filter = `brightness(${this.brightness}) contrast(${this.contrast})`;
-
-    const imageRatio = image.width / image.height;
-    const nodeRatio = this.width / this.height;
-
-    let sx = 0, sy = 0, sw = image.width, sh = image.height;
-    let dx = 0, dy = 0, dw = this.width, dh = this.height;
-
-    if (this.objectFit === 'cover') {
-      if (imageRatio > nodeRatio) {
-        sw = image.height * nodeRatio;
-        sx = (image.width - sw) / 2;
-      } else {
-        sh = image.width / nodeRatio;
-        sy = (image.height - sh) / 2;
-      }
-    } else {
-      if (imageRatio > nodeRatio) {
-        dh = this.width / imageRatio;
-        dy = (this.height - dh) / 2;
-      } else {
-        dw = this.height * imageRatio;
-        dx = (this.width - dw) / 2;
-      }
-    }
-
-    ctx.drawImage(image, sx, sy, sw, sh, dx, dy, dw, dh);
-    ctx.restore();
-  }
-
-  toJSON() {
-    return {
-      ...super.toJSON(),
-      assetId: this.assetId,
-      objectFit: this.objectFit,
-      brightness: this.brightness,
-      contrast: this.contrast
-    };
-  }
+export class ImageNode extends Node{
+ constructor(o={}){super(o);this.type='image';this.assetId=o.assetId??null;this.originalAssetId=o.originalAssetId??o.assetId??null;this.objectFit=o.objectFit??'cover';this.brightness=o.brightness??1;this.contrast=o.contrast??1;this.zoom=o.zoom??1;this.offsetX=o.offsetX??0;this.offsetY=o.offsetY??0;this.radius=o.radius??0;this.shadow=o.shadow??false}
+ draw(ctx,assets){const image=this.assetId?assets.get(this.assetId)?.data:null;if(!image){ctx.fillStyle='#eef1f5';ctx.fillRect(0,0,this.width,this.height);ctx.fillStyle='#8b94a5';ctx.font='18px sans-serif';ctx.textAlign='center';ctx.fillText('Upload portrait',this.width/2,this.height/2);return}ctx.save();if(this.shadow){ctx.shadowColor='rgba(13,35,63,.18)';ctx.shadowBlur=24;ctx.shadowOffsetY=12}const r=Math.min(this.radius,this.width/2,this.height/2);ctx.beginPath();ctx.roundRect(0,0,this.width,this.height,r);ctx.clip();ctx.filter=`brightness(${this.brightness}) contrast(${this.contrast})`;const ir=image.width/image.height,nr=this.width/this.height;let sx=0,sy=0,sw=image.width,sh=image.height;if(ir>nr){sw=image.height*nr;sx=(image.width-sw)/2}else{sh=image.width/nr;sy=(image.height-sh)/2}sw/=this.zoom;sh/=this.zoom;sx+=(image.width-sw)/2+this.offsetX;sy+=(image.height-sh)/2+this.offsetY;ctx.drawImage(image,sx,sy,sw,sh,0,0,this.width,this.height);ctx.restore()}
+ toJSON(){return{...super.toJSON(),assetId:this.assetId,originalAssetId:this.originalAssetId,objectFit:this.objectFit,brightness:this.brightness,contrast:this.contrast,zoom:this.zoom,offsetX:this.offsetX,offsetY:this.offsetY,radius:this.radius,shadow:this.shadow}}
 }
-
-NodeTypes.set('image', ImageNode);
+NodeTypes.set('image',ImageNode);

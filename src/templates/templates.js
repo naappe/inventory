@@ -1,62 +1,19 @@
-export const templates = {
-  'photo-left-text-right': {
-    canvas: { width: 1200, height: 675, backgroundColor: '#ffffff' },
-    nodes: [
-      { id:'photo', type:'image', name:'Photo', x:0, y:0, width:660, height:675, originX:0, originY:0, zIndex:0,
-        constraints:{horizontal:'left',vertical:'stretch',margins:{left:0,top:0,bottom:0}} },
-      { id:'fade', type:'shape', name:'Fade', x:560, y:0, width:250, height:675, originX:0, originY:0, zIndex:1, fill:'rgba(255,255,255,.72)',
-        constraints:{horizontal:'left',vertical:'stretch',margins:{left:560,top:0,bottom:0}} },
-      { id:'headline', type:'text', name:'Headline', x:760, y:120, width:370, height:220, originX:0, originY:0, zIndex:2,
-        text:'ނައްޕެ އިވެންޓް އަޕްޑޭޓް', fontSize:58, textAlign:'right',
-        constraints:{horizontal:'right',vertical:'top',margins:{right:70,top:120}} },
-      { id:'details', type:'text', name:'Details', x:760, y:390, width:370, height:120, originX:0, originY:0, zIndex:3,
-        text:'މިއީ އިވެންޓްގެ ކުރު ތަޢާރަފެއް.', fontSize:24, fontWeight:500, color:'#334155', textAlign:'right',
-        constraints:{horizontal:'right',vertical:'top',margins:{right:70,top:390}} },
-      { id:'brand', type:'text', name:'Brand', x:900, y:590, width:230, height:50, originX:0, originY:0, zIndex:4,
-        text:'naappe', direction:'ltr', textAlign:'right', fontFamily:'Arial', fontSize:28, color:'#07363a',
-        constraints:{horizontal:'right',vertical:'bottom',margins:{right:70,bottom:35}} }
-    ]
-  },
-
-  'photo-right-text-left': {
-    canvas: { width: 1200, height: 675, backgroundColor: '#ffffff' },
-    nodes: [
-      { id:'headline', type:'text', name:'Headline', x:70, y:125, width:430, height:220, originX:0, originY:0, zIndex:2,
-        text:'ނައްޕެ އިވެންޓް އަޕްޑޭޓް', fontSize:58, textAlign:'right',
-        constraints:{horizontal:'left',vertical:'top',margins:{left:70,top:125}} },
-      { id:'details', type:'text', name:'Details', x:70, y:390, width:430, height:120, originX:0, originY:0, zIndex:3,
-        text:'މިއީ އިވެންޓްގެ ކުރު ތަޢާރަފެއް.', fontSize:24, fontWeight:500, color:'#334155', textAlign:'right',
-        constraints:{horizontal:'left',vertical:'top',margins:{left:70,top:390}} },
-      { id:'photo', type:'image', name:'Photo', x:560, y:0, width:640, height:675, originX:0, originY:0, zIndex:0,
-        constraints:{horizontal:'right',vertical:'stretch',margins:{right:0,top:0,bottom:0}} }
-    ]
-  },
-
-  'portrait-text-below': {
-    canvas: { width: 1080, height: 1350, backgroundColor: '#ffffff' },
-    nodes: [
-      { id:'photo', type:'image', name:'Photo', x:0, y:0, width:1080, height:760, originX:0, originY:0, zIndex:0,
-        constraints:{horizontal:'stretch',vertical:'top',margins:{left:0,right:0,top:0}} },
-      { id:'headline', type:'text', name:'Headline', x:90, y:835, width:900, height:260, originX:0, originY:0, zIndex:2,
-        text:'ނައްޕެ އިވެންޓް އަޕްޑޭޓް', fontSize:72, textAlign:'center',
-        constraints:{horizontal:'stretch',vertical:'top',margins:{left:90,right:90,top:835}} },
-      { id:'brand', type:'text', name:'Brand', x:790, y:1260, width:200, height:45, originX:0, originY:0, zIndex:3,
-        text:'naappe', direction:'ltr', textAlign:'right', fontFamily:'Arial', fontSize:28,
-        constraints:{horizontal:'right',vertical:'bottom',margins:{right:90,bottom:45}} }
-    ]
-  },
-
-  'soft-editorial': {
-    canvas: { width: 1080, height: 1080, backgroundColor: '#eefcfb' },
-    nodes: [
-      { id:'photo', type:'image', name:'Portrait', x:210, y:80, width:660, height:600, originX:0, originY:0, zIndex:0,
-        constraints:{horizontal:'center',vertical:'top',margins:{top:80}} },
-      { id:'headline', type:'text', name:'Headline', x:90, y:730, width:900, height:210, originX:0, originY:0, zIndex:2,
-        text:'ނައްޕެ އިވެންޓް އަޕްޑޭޓް', fontSize:64, textAlign:'center',
-        constraints:{horizontal:'stretch',vertical:'bottom',margins:{left:90,right:90,bottom:140}} },
-      { id:'brand', type:'text', name:'Brand', x:790, y:1010, width:200, height:40, originX:0, originY:0, zIndex:3,
-        text:'naappe', direction:'ltr', textAlign:'right', fontFamily:'Arial', fontSize:25,
-        constraints:{horizontal:'right',vertical:'bottom',margins:{right:90,bottom:30}} }
-    ]
-  }
+const quote='އެއްވެސް ފަރާތަކުން ބާރުފޯރުވުމެއް ނެތި، އަމިއްލައަށް ނިންމާނީ ކޮންމެ މަގަކަށް ކުރިއަށް ދާންކަމެވެ.';
+const common=[
+{id:'background',type:'shape',name:'Background',x:0,y:0,width:1200,height:675,originX:0,originY:0,zIndex:0,fill:'#ffffff',locked:true},
+{id:'quote-mark',type:'text',name:'Quote mark',x:80,y:55,width:150,height:130,originX:0,originY:0,zIndex:2,text:'“',fontFamily:'Georgia',fontSize:128,fontWeight:700,direction:'ltr',textAlign:'left',color:'#073b63'},
+{id:'quote',type:'text',name:'Quote',x:78,y:170,width:600,height:260,originX:0,originY:0,zIndex:3,text:quote,fontSize:38,fontWeight:400,lineHeight:1.55,textAlign:'center',color:'#073b63'},
+{id:'divider',type:'shape',name:'Divider',x:140,y:465,width:480,height:3,originX:0,originY:0,zIndex:3,fill:'#68517f'},
+{id:'speaker',type:'text',name:'Speaker',x:120,y:492,width:520,height:48,originX:0,originY:0,zIndex:4,text:'އަހުމަދު ނަސީރު',fontSize:25,fontWeight:500,textAlign:'center',color:'#68517f'},
+{id:'role',type:'text',name:'Role',x:120,y:535,width:520,height:40,originX:0,originY:0,zIndex:4,text:'ރައީސް، މަދަނީ ޖަމިއްޔާ',fontSize:17,fontWeight:400,textAlign:'center',color:'#68517f'},
+{id:'brand',type:'text',name:'Brand',x:92,y:590,width:160,height:42,originX:0,originY:0,zIndex:5,text:'naappe',fontFamily:'Arial',fontSize:25,fontWeight:700,direction:'ltr',textAlign:'left',color:'#073b63',locked:true},
+{id:'brand-line',type:'shape',name:'Brand divider',x:275,y:590,width:3,height:48,originX:0,originY:0,zIndex:5,fill:'#68517f',locked:true},
+{id:'date',type:'text',name:'Date',x:296,y:596,width:250,height:38,originX:0,originY:0,zIndex:5,text:'17 ޖުލައި 2026',fontSize:18,fontWeight:400,textAlign:'left',color:'#68517f',locked:true},
+{id:'portrait',type:'image',name:'Portrait',x:730,y:54,width:430,height:567,originX:0,originY:0,zIndex:2,assetId:null,originalAssetId:null,radius:42,shadow:true,zoom:1}
+];
+function scaled(w,h){const sx=w/1200,sy=h/675;return common.map(n=>({...n,x:n.x*sx,y:n.y*sy,width:n.width*sx,height:n.height*sy,fontSize:n.fontSize?Math.round(n.fontSize*Math.min(sx,sy)):n.fontSize,radius:n.radius?Math.round(n.radius*Math.min(sx,sy)):n.radius}))}
+export const templates={
+'editorial-quote-reference':{canvas:{width:1200,height:675,backgroundColor:'#ffffff'},nodes:common},
+'editorial-quote-square':{canvas:{width:1080,height:1080,backgroundColor:'#ffffff'},nodes:scaled(1080,1080)},
+'editorial-quote-portrait':{canvas:{width:1080,height:1350,backgroundColor:'#ffffff'},nodes:scaled(1080,1350)}
 };
