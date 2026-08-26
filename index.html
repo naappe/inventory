@@ -1,3 +1,1092 @@
-<!doctype html><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>Money Flow</title><style>:root{--n:#6C5CE7;--g:#00b894;--p:#f8f9fa;--c:#fff;--t:#2d3436;--m:#636e72;--l:#e9eaf0;--r:#ff6b6b;--o:#fdcb6e}*{box-sizing:border-box}body{margin:0;background:var(--p);font:15px system-ui;color:var(--t)}main{max-width:1050px;margin:auto;padding:25px 16px 55px}h1,h2{margin:0}p{color:var(--m)}.hero{background:linear-gradient(135deg,#6C5CE7,#a29bfe);color:white;border-radius:18px;padding:22px;display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin:18px 0}.hero small{color:#b9d6c8}.num{font-size:27px;font-weight:800;margin-top:6px}.income{width:100%;border:0;border-radius:8px;padding:9px;font:700 16px system-ui;margin-top:8px}.grid{display:grid;grid-template-columns:1.25fr .75fr;gap:16px}.card{background:var(--c);border:1px solid var(--l);border-radius:16px;padding:20px;margin-bottom:16px;box-shadow:0 10px 30px rgba(0,0,0,.08)}.bill{display:grid;grid-template-columns:1fr 110px 88px 72px 25px;gap:7px;align-items:center;border-bottom:1px solid var(--l);padding:9px 0}.bill input{border:0;background:transparent;min-width:0;font:600 15px system-ui}.bill input[type=number],select{background:#f3f4ef;border-radius:7px;padding:8px;width:100%;border:0;font:inherit}.paid{border:0;border-radius:7px;padding:8px;background:#fff0e9;color:#9d4b40;font-weight:700;cursor:pointer}.paid.y{background:#e2f3e9;color:#287151}.x{border:0;background:none;color:#aaa;font-size:20px;cursor:pointer}.form{display:grid;gap:9px;margin-top:12px}.form input,.form select{border:1px solid var(--l);background:#fff;padding:11px;border-radius:8px;font:inherit}.two{display:grid;grid-template-columns:1fr 100px;gap:8px}.add{border:0;background:var(--g);color:white;padding:11px;border-radius:8px;font-weight:750;cursor:pointer}.bar{height:12px;background:#e8eae4;border-radius:9px;overflow:hidden;margin:12px 0}.bar i{display:block;height:100%;background:var(--g)}.chart{height:20px;border-radius:9px;background:#e5e8e2;margin:12px 0}.chart i{display:block;height:100%;background:var(--g);border-radius:9px}.legend{font-size:13px;color:var(--m)}.goal input{width:100%;padding:10px;border:1px solid var(--l);border-radius:8px;font:inherit}.actions{display:flex;gap:8px;margin-top:12px}.plain{border:1px solid var(--l);background:#fff;padding:9px;border-radius:8px;cursor:pointer;font-weight:650}@media(max-width:760px){.grid{grid-template-columns:1fr}.hero{grid-template-columns:1fr}.bill{grid-template-columns:1fr 90px 65px 25px}.bill select{display:none}} .subtitle{margin:5px 0 0;color:var(--m)}body.dark{--p:#101816;--c:#18241f;--t:#f5f8f6;--m:#b5c0ba;--l:#304139}body.dark select,body.dark .form input,body.dark .income{color:#17241f}</style><main><h1>My Money Plan</h1><p class=subtitle>Monthly bills, actual payments and saving history.</p><p>A calm order for every rufiyaa: protect essentials first, then plan the rest.</p><section class=hero><div><small>MONTHLY INCOME</small><input class=income id=income type=number inputmode=decimal></div><div><small>PLANNED SAVING</small><div class=num id=left></div></div><div><small>PAID THIS MONTH</small><div class=num id=paid></div></div></section><div class=grid><section class=card><h2>1. Protect essentials</h2><p class=legend>Kids, home and food are protected before flexible spending.</p><p>Edit each bill. Press Paid only after you have paid it.</p><div id=list></div><div class=actions><button class=plain id=theme>Dark mode</button><button class=plain id=export>Export CSV</button><button class=plain id=close>Close month</button><button class=plain id=reset>Reset</button></div></section><aside><section class=card><h2>2. Add a planned expense</h2><form class=form id=form><input id=name placeholder="Example: Cosmetics" required><div class=two><select id=category><option>Family</option><option>Home</option><option>Food</option><option>Debt</option><option>Personal</option><option>Cosmetics</option><option>Transport</option></select><input id=amount type=number placeholder=MVR required></div><div class=two><input id=due type=number min=1 max=31 placeholder="Due day"><button class=add>Add bill</button></div></form></section><section class="card goal"><h2>3. See your money flow</h2><div class=bar><i id=use></i></div><p class=legend id=useText></p><h2>Category spending</h2><div id=cats></div></section><section class="card"><h2>Saved month history</h2><div id=history class=legend>No completed months yet.</div></section><section class="card goal"><h2>4. Build your safety fund</h2><p>Target amount</p><input id=goal type=number inputmode=decimal><div class=bar><i id=goalbar></i></div><p class=legend id=goalText></p></section></aside></div></main><script>
-const seed=[['Kids',5000,'Family'],['Credit / cigarettes',5000,'Debt'],['Coffee credit',2500,'Personal'],['Electricity',1000,'Home'],['Water',1000,'Home'],['Council',1500,'Home'],['Agro',1500,'Food'],['Food and other',5000,'Food']];let st=JSON.parse(localStorage.getItem('mm2')||'null')||{income:24893.72,goal:50000,bills:seed};if(!Array.isArray(st.bills))st={income:24893.72,goal:50000,bills:seed};const $=id=>document.getElementById(id),f=n=>'MVR '+(+n||0).toLocaleString();function save(){localStorage.setItem('mm2',JSON.stringify(st))}function total(){return st.bills.reduce((a,b)=>a+(+b[1]||0),0)}function stat(){let t=total(),l=st.income-t,p=Math.min(100,t/st.income*100);$('left').textContent=f(l);$('paid').textContent=f(0);$('use').style.width=p+'%';$('useText').textContent=Math.round(p)+'% planned • '+f(t);$('cats').innerHTML=st.bills.map(b=>'<p class=legend>'+b[2]+' — '+f(b[1])+'</p>').join('');$('goalText').textContent='Target: '+f(st.goal)}function render(){let el=$('list');el.innerHTML='';st.bills.forEach((b,i)=>{let d=document.createElement('div');d.className='bill';d.innerHTML='<input><input type=number><select><option>Family</option><option>Home</option><option>Food</option><option>Debt</option><option>Personal</option><option>Cosmetics</option><option>Transport</option></select><button class=x>×</button>';let q=d.querySelectorAll('input');q[0].value=b[0];q[1].value=b[1];d.querySelector('select').value=b[2];q[0].oninput=()=>{b[0]=q[0].value;save()};q[1].oninput=()=>{b[1]=+q[1].value||0;save();stat()};d.querySelector('select').onchange=e=>{b[2]=e.target.value;save();stat()};d.querySelector('.x').onclick=()=>{st.bills.splice(i,1);save();render()};el.append(d)});$('income').value=st.income;$('goal').value=st.goal;stat()}$('income').oninput=e=>{st.income=+e.target.value||0;save();stat()};$('goal').oninput=e=>{st.goal=+e.target.value||0;save();stat()};$('form').onsubmit=e=>{e.preventDefault();st.bills.push([$('name').value,+$('amount').value||0,$('category').value]);save();e.target.reset();render()};$('reset').onclick=()=>{st={income:24893.72,goal:50000,bills:seed.map(x=>[...x])};save();render()};$('theme').onclick=()=>document.body.classList.toggle('dark');$('close').onclick=()=>alert('Month closed. History will be added next.');$('export').onclick=()=>alert('Export ready next update.');render();
-</script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>💰 My Money Plan</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js">
+    </script>
+    
+    <style>
+        /* ===== CSS VARIABLES ===== */
+        :root {
+            --primary: #6C5CE7;
+            --primary-light: #a29bfe;
+            --success: #00b894;
+            --danger: #ff6b6b;
+            --warning: #fdcb6e;
+            --bg: #f8f9fa;
+            --card-bg: #ffffff;
+            --text: #2d3436;
+            --text-light: #636e72;
+            --shadow: 0 10px 30px rgba(0,0,0,0.08);
+            --radius: 16px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        [data-theme="dark"] {
+            --bg: #0a0a1a;
+            --card-bg: #1a1a2e;
+            --text: #ffffff;
+            --text-light: #b0b0c8;
+            --shadow: 0 10px 30px rgba(0,0,0,0.4);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            transition: var(--transition);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .app-container { max-width: 1200px; margin: 0 auto; }
+
+        /* ===== HEADER ===== */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-bottom: 30px;
+            padding: 20px 24px;
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+        }
+
+        .header h1 {
+            font-size: 28px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(108, 92, 231, 0.4); }
+        .btn-success { background: var(--success); color: white; }
+        .btn-success:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0, 184, 148, 0.4); }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-danger:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4); }
+        .btn-outline { background: transparent; border: 2px solid var(--primary); color: var(--primary); }
+        .btn-outline:hover { background: var(--primary); color: white; }
+        .btn-sm { padding: 6px 14px; font-size: 12px; }
+
+        /* ===== STATS GRID ===== */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+        }
+        .stat-card:hover { transform: translateY(-4px); }
+
+        .stat-card .label {
+            font-size: 13px;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-card .value {
+            font-size: 28px;
+            font-weight: 700;
+            margin-top: 4px;
+        }
+
+        .stat-card .sub {
+            font-size: 13px;
+            color: var(--text-light);
+            margin-top: 4px;
+        }
+
+        /* ===== MAIN GRID ===== */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .main-grid { grid-template-columns: 1fr; }
+        }
+
+        /* ===== CARDS ===== */
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 24px;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* ===== EXPENSE ITEMS ===== */
+        .expense-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            background: var(--bg);
+            transition: var(--transition);
+            animation: slideIn 0.3s ease;
+        }
+
+        .expense-item:hover { transform: translateX(6px); }
+
+        .expense-item .left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+        }
+
+        .expense-item .icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .expense-item .info {
+            flex: 1;
+        }
+
+        .expense-item .name {
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .expense-item .category {
+            font-size: 12px;
+            color: var(--text-light);
+            background: var(--card-bg);
+            padding: 2px 10px;
+            border-radius: 20px;
+            display: inline-block;
+        }
+
+        .expense-item .amount {
+            font-weight: 600;
+            font-size: 16px;
+            margin-right: 12px;
+        }
+
+        .expense-item .status-badge {
+            padding: 2px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-right: 8px;
+        }
+
+        .status-paid {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-unpaid {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status-partial {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .expense-item .actions {
+            display: flex;
+            gap: 4px;
+        }
+
+        .expense-item .actions button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: var(--transition);
+            font-size: 14px;
+        }
+
+        .expense-item .actions .edit-btn:hover { background: var(--primary); color: white; }
+        .expense-item .actions .delete-btn:hover { background: var(--danger); color: white; }
+        .expense-item .actions .toggle-btn:hover { background: var(--success); color: white; }
+
+        /* ===== ADD FORM ===== */
+        .add-expense-form {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 2px solid var(--bg);
+        }
+
+        .add-expense-form input,
+        .add-expense-form select {
+            padding: 10px 14px;
+            border: 2px solid #dfe6e9;
+            border-radius: 10px;
+            font-size: 14px;
+            background: var(--bg);
+            color: var(--text);
+            transition: var(--transition);
+            flex: 1;
+            min-width: 100px;
+        }
+
+        .add-expense-form input:focus,
+        .add-expense-form select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.2);
+        }
+
+        /* ===== CHART ===== */
+        .chart-wrapper {
+            position: relative;
+            height: 220px;
+        }
+
+        /* ===== CLOSE MONTH ===== */
+        .month-close-section {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 2px solid var(--bg);
+        }
+
+        .month-close-section .history-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--bg);
+            font-size: 14px;
+        }
+
+        /* ===== TOAST ===== */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .toast {
+            padding: 14px 24px;
+            border-radius: 12px;
+            color: white;
+            font-weight: 500;
+            box-shadow: 0 6px 24px rgba(0,0,0,0.2);
+            animation: slideInRight 0.4s ease;
+            max-width: 360px;
+        }
+
+        .toast.success { background: var(--success); }
+        .toast.error { background: var(--danger); }
+        .toast.info { background: var(--primary); }
+
+        /* ===== MODAL ===== */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9998;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal {
+            background: var(--card-bg);
+            padding: 32px;
+            border-radius: var(--radius);
+            max-width: 440px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .modal h2 { margin-bottom: 16px; }
+        .modal .form-group { margin-bottom: 14px; }
+        .modal .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: var(--text-light);
+        }
+        .modal .form-group input,
+        .modal .form-group select {
+            width: 100%;
+            padding: 10px 14px;
+            border: 2px solid #dfe6e9;
+            border-radius: 10px;
+            font-size: 14px;
+            background: var(--bg);
+            color: var(--text);
+        }
+        .modal .form-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        .modal .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+            justify-content: flex-end;
+        }
+
+        /* ===== ANIMATIONS ===== */
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(40px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-light);
+        }
+        .empty-state .emoji { font-size: 48px; margin-bottom: 12px; }
+
+        @media (max-width: 480px) {
+            .header h1 { font-size: 20px; }
+            .stat-card .value { font-size: 22px; }
+            .add-expense-form input,
+            .add-expense-form select { min-width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container" id="app">
+
+        <!-- ===== HEADER ===== -->
+        <header class="header">
+            <h1>💰 My Money Plan</h1>
+            <div class="header-actions">
+                <button class="btn btn-outline btn-sm" @click="toggleTheme">
+                    {{ isDark ? '☀️ Light' : '🌙 Dark' }}
+                </button>
+                <button class="btn btn-outline btn-sm" @click="exportData">📤 Export</button>
+                <button class="btn btn-outline btn-sm" @click="importData">📥 Import</button>
+                <button class="btn btn-primary btn-sm" @click="openAddModal">➕ Add</button>
+            </div>
+        </header>
+
+        <!-- ===== STATS ===== -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="label">💰 Monthly Income</div>
+                <div class="value">MVR {{ formatNumber(income) }}</div>
+                <div class="sub">Your current monthly income</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">📊 Total Expenses</div>
+                <div class="value" :style="{ color: totalExpenses > income ? 'var(--danger)' : 'var(--text)' }">
+                    MVR {{ formatNumber(totalExpenses) }}
+                </div>
+                <div class="sub">{{ totalExpenses > income ? '⚠️ Over budget!' : '✅ On track' }}</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">💵 Money Left</div>
+                <div class="value" :style="{ color: moneyLeft >= 0 ? 'var(--success)' : 'var(--danger)' }">
+                    MVR {{ formatNumber(moneyLeft) }}
+                </div>
+                <div class="sub">{{ moneyLeft >= 0 ? '🎉 You can save this' : '⚠️ Overspending!' }}</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">📅 Yearly Projection</div>
+                <div class="value">MVR {{ formatNumber(moneyLeft * 12) }}</div>
+                <div class="sub" v-if="moneyLeft > 0">
+                    → MVR {{ formatNumber(moneyLeft * 12 * 1.05) }} with 5% interest
+                </div>
+                <div class="sub" v-else>❌ No savings projected</div>
+            </div>
+        </div>
+
+        <!-- ===== MAIN GRID ===== -->
+        <div class="main-grid">
+
+            <!-- LEFT: Expense List -->
+            <div class="card">
+                <div class="card-title">
+                    <span>📋 Current Month Expenses</span>
+                    <span style="font-size:14px;font-weight:400;color:var(--text-light);">
+                        {{ expenses.length }} items
+                    </span>
+                </div>
+
+                <div v-if="expenses.length === 0" class="empty-state">
+                    <div class="emoji">🧘</div>
+                    <p>No expenses for this month</p>
+                </div>
+
+                <div v-else>
+                    <div v-for="(exp, index) in expenses" :key="index" class="expense-item">
+                        <div class="left">
+                            <div class="icon" :style="{ background: getCategoryColor(exp.category) + '22' }">
+                                {{ getCategoryIcon(exp.category) }}
+                            </div>
+                            <div class="info">
+                                <div class="name">{{ exp.name }}</div>
+                                <span class="category">{{ exp.category || 'Uncategorized' }}</span>
+                                <span v-if="exp.dueDate" style="font-size:11px;color:var(--text-light);margin-left:6px;">
+                                    📅 {{ exp.dueDate }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="amount">MVR {{ formatNumber(exp.amount) }}</div>
+                        <span class="status-badge" :class="getStatusClass(exp.status)">
+                            {{ exp.status || 'Unpaid' }}
+                        </span>
+                        <div class="actions">
+                            <button class="toggle-btn" @click="toggleStatus(index)" title="Toggle paid status">✅</button>
+                            <button class="edit-btn" @click="openEditModal(index)">✏️</button>
+                            <button class="delete-btn" @click="deleteExpense(index)">🗑️</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Add -->
+                <div class="add-expense-form">
+                    <input v-model="newExpense.name" placeholder="Expense name..." />
+                    <input v-model.number="newExpense.amount" type="number" placeholder="Amount" />
+                    <select v-model="newExpense.category">
+                        <option value="">Category</option>
+                        <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
+                    </select>
+                    <input v-model="newExpense.dueDate" type="date" style="flex:0.7;min-width:120px;" />
+                    <button class="btn btn-success" @click="addExpense">➕ Add</button>
+                </div>
+            </div>
+
+            <!-- RIGHT: Charts & Analytics -->
+            <div class="card">
+                <div class="card-title">
+                    <span>📊 Analytics</span>
+                </div>
+
+                <!-- Category Breakdown Chart (REAL DATA) -->
+                <div style="margin-bottom:20px;">
+                    <div style="font-size:14px;font-weight:500;margin-bottom:8px;">Category Breakdown</div>
+                    <div class="chart-wrapper">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Paid vs Unpaid -->
+                <div style="margin-bottom:20px;">
+                    <div style="font-size:14px;font-weight:500;margin-bottom:8px;">Payment Status</div>
+                    <div class="chart-wrapper" style="height:140px;">
+                        <canvas id="statusChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Insights (REAL DATA) -->
+                <div style="margin-top:12px;border-top:2px solid var(--bg);padding-top:14px;">
+                    <div style="font-size:14px;font-weight:500;margin-bottom:6px;">💡 Insights</div>
+                    <div v-for="insight in insights" :key="insight.text" class="insight-badge" :class="insight.type">
+                        {{ insight.text }}
+                    </div>
+                </div>
+
+                <!-- ===== CLOSE MONTH ===== -->
+                <div class="month-close-section">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                        <span style="font-weight:600;">📆 Monthly History</span>
+                        <button class="btn btn-sm btn-primary" @click="closeMonth" :disabled="expenses.length === 0">
+                            🔒 Close Month
+                        </button>
+                    </div>
+                    <div v-if="history.length === 0" style="color:var(--text-light);font-size:13px;">
+                        No closed months yet
+                    </div>
+                    <div v-else>
+                        <div v-for="(h, idx) in history.slice().reverse()" :key="idx" class="history-item">
+                            <span>{{ h.month }}</span>
+                            <span>Expenses: MVR {{ formatNumber(h.total) }}</span>
+                            <span style="color:var(--text-light);font-size:12px;">
+                                {{ h.expenseCount }} items
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== MODAL: Add/Edit ===== -->
+        <div v-if="showModal" class="modal-overlay" @click.self="showModal = false">
+            <div class="modal">
+                <h2>{{ editingIndex !== null ? '✏️ Edit Expense' : '➕ Add Expense' }}</h2>
+                <div class="form-group">
+                    <label>Name</label>
+                    <input v-model="modalExpense.name" placeholder="e.g. Electricity" />
+                </div>
+                <div class="form-group">
+                    <label>Amount (MVR)</label>
+                    <input v-model.number="modalExpense.amount" type="number" placeholder="0.00" />
+                </div>
+                <div class="form-group">
+                    <label>Category</label>
+                    <select v-model="modalExpense.category">
+                        <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Due Date</label>
+                    <input v-model="modalExpense.dueDate" type="date" />
+                </div>
+                <div class="form-group">
+                    <label>Status</label>
+                    <select v-model="modalExpense.status">
+                        <option value="Unpaid">Unpaid</option>
+                        <option value="Paid">Paid</option>
+                        <option value="Partial">Partial</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn btn-outline" @click="showModal = false">Cancel</button>
+                    <button class="btn btn-primary" @click="saveModalExpense">Save</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== TOAST ===== -->
+        <div class="toast-container">
+            <div v-for="(toast, idx) in toasts" :key="idx" class="toast" :class="toast.type">
+                {{ toast.message }}
+            </div>
+        </div>
+
+        <!-- ===== HIDDEN FILE INPUT ===== -->
+        <input type="file" ref="fileInput" accept=".json" style="display:none" @change="handleImport" />
+
+    </div>
+
+    <!-- ============================================================ -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js">
+    </script>
+
+    <script>
+        const { createApp, ref, computed, watch, onMounted, nextTick } = Vue;
+
+        const app = createApp({
+            setup() {
+                // ===== REAL DATA =====
+                const income = ref(24893.72);
+
+                // ===== YOUR ACTUAL BILLS =====
+                const expenses = ref([
+                    { name: 'Electricity', amount: 700, category: 'Utilities', status: 'Paid', dueDate: '2026-08-15' },
+                    { name: 'Water', amount: 700, category: 'Utilities', status: 'Unpaid', dueDate: '2026-08-20' },
+                    { name: 'Council', amount: 1500, category: 'Bills', status: 'Paid', dueDate: '2026-08-01' },
+                    { name: 'Agro', amount: 1500, category: 'Bills', status: 'Unpaid', dueDate: '2026-08-10' },
+                    { name: 'Food and other', amount: 1500, category: 'Food', status: 'Partial', dueDate: '2026-08-25' },
+                    { name: 'Loan BML', amount: 1500, category: 'Bills', status: 'Paid', dueDate: '2026-08-05' },
+                    { name: 'Credit Cigqitate', amount: 2000, category: 'Bills', status: 'Unpaid', dueDate: '2026-08-30' },
+                    { name: 'Thuhail Cigqitate', amount: 2500, category: 'Bills', status: 'Unpaid', dueDate: '2026-09-05' },
+                    { name: 'Farry', amount: 1500, category: 'Bills', status: 'Unpaid', dueDate: '2026-08-28' },
+                    { name: 'Kids', amount: 5000, category: 'Shopping', status: 'Paid', dueDate: '2026-08-12' },
+                    { name: 'Transport', amount: 700, category: 'Transport', status: 'Paid', dueDate: '2026-08-18' },
+                ]);
+
+                // ===== HISTORY (only when you close a month) =====
+                const history = ref([]);
+
+                // ===== STATE =====
+                const isDark = ref(false);
+                const showModal = ref(false);
+                const editingIndex = ref(null);
+                const toasts = ref([]);
+
+                const categories = [
+                    'Food', 'Transport', 'Utilities', 'Shopping',
+                    'Bills', 'Entertainment', 'Health', 'Education', 'Other'
+                ];
+
+                const categoryIcons = {
+                    Food: '🍔',
+                    Transport: '🚗',
+                    Utilities: '⚡',
+                    Shopping: '🛍️',
+                    Bills: '📄',
+                    Entertainment: '🎬',
+                    Health: '🏥',
+                    Education: '📚',
+                    Other: '📦'
+                };
+
+                const categoryColors = {
+                    Food: '#FF6B6B',
+                    Transport: '#4ECDC4',
+                    Utilities: '#FFD93D',
+                    Shopping: '#6C5CE7',
+                    Bills: '#A8E6CF',
+                    Entertainment: '#FF8A5C',
+                    Health: '#FF6B9D',
+                    Education: '#45B7D1',
+                    Other: '#95A5A6'
+                };
+
+                // ===== FORM MODELS =====
+                const newExpense = ref({ name: '', amount: '', category: '', dueDate: '' });
+                const modalExpense = ref({ name: '', amount: '', category: '', dueDate: '', status: 'Unpaid' });
+
+                // ===== COMPUTED =====
+                const totalExpenses = computed(() => {
+                    return expenses.value.reduce((sum, e) => sum + (e.amount || 0), 0);
+                });
+
+                const moneyLeft = computed(() => {
+                    return income.value - totalExpenses.value;
+                });
+
+                const insights = computed(() => {
+                    const tips = [];
+                    const total = totalExpenses.value;
+
+                    if (total > income.value) {
+                        tips.push({ text: '⚠️ You\'re spending more than you earn!', type: 'warning' });
+                    }
+
+                    const paidTotal = expenses.value.filter(e => e.status === 'Paid').reduce((s, e) => s + e.amount, 0);
+                    const unpaidTotal = expenses.value.filter(e => e.status === 'Unpaid').reduce((s, e) => s + e.amount, 0);
+
+                    if (unpaidTotal > 0) {
+                        tips.push({ text: `📌 You have MVR ${formatNumber(unpaidTotal)} in unpaid bills`, type: 'warning' });
+                    }
+
+                    if (paidTotal > 0 && total > 0) {
+                        const paidPct = Math.round(paidTotal / total * 100);
+                        tips.push({ text: `✅ ${paidPct}% of your expenses are paid`, type: 'success' });
+                    }
+
+                    if (moneyLeft.value > 0) {
+                        tips.push({ text: `💪 You can save MVR ${formatNumber(moneyLeft.value)} this month`, type: 'success' });
+                    }
+
+                    if (expenses.value.length === 0) {
+                        tips.push({ text: '📝 Start adding expenses to get insights!', type: 'info' });
+                    }
+
+                    return tips;
+                });
+
+                // ===== METHODS =====
+                function formatNumber(n) {
+                    return Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                }
+
+                function getCategoryIcon(cat) {
+                    return categoryIcons[cat] || '📦';
+                }
+
+                function getCategoryColor(cat) {
+                    return categoryColors[cat] || '#95A5A6';
+                }
+
+                function getStatusClass(status) {
+                    return {
+                        'Paid': 'status-paid',
+                        'Unpaid': 'status-unpaid',
+                        'Partial': 'status-partial'
+                    } [status] || 'status-unpaid';
+                }
+
+                function toggleStatus(index) {
+                    const exp = expenses.value[index];
+                    const statuses = ['Unpaid', 'Partial', 'Paid'];
+                    const currentIdx = statuses.indexOf(exp.status || 'Unpaid');
+                    exp.status = statuses[(currentIdx + 1) % statuses.length];
+                    saveToStorage();
+                    updateCharts();
+                    showToast(`✅ Status changed to ${exp.status}`, 'info');
+                }
+
+                function addExpense() {
+                    if (!newExpense.value.name || !newExpense.value.amount) {
+                        showToast('Please fill in name and amount', 'error');
+                        return;
+                    }
+                    expenses.value.push({
+                        name: newExpense.value.name,
+                        amount: Number(newExpense.value.amount),
+                        category: newExpense.value.category || 'Other',
+                        status: 'Unpaid',
+                        dueDate: newExpense.value.dueDate || ''
+                    });
+                    newExpense.value = { name: '', amount: '', category: '', dueDate: '' };
+                    showToast('✅ Expense added!', 'success');
+                    saveToStorage();
+                    updateCharts();
+                }
+
+                function deleteExpense(index) {
+                    if (confirm('Delete this expense?')) {
+                        expenses.value.splice(index, 1);
+                        showToast('🗑️ Expense deleted', 'info');
+                        saveToStorage();
+                        updateCharts();
+                    }
+                }
+
+                function openEditModal(index) {
+                    editingIndex.value = index;
+                    modalExpense.value = { ...expenses.value[index] };
+                    showModal.value = true;
+                }
+
+                function openAddModal() {
+                    editingIndex.value = null;
+                    modalExpense.value = { name: '', amount: '', category: '', dueDate: '', status: 'Unpaid' };
+                    showModal.value = true;
+                }
+
+                function saveModalExpense() {
+                    if (!modalExpense.value.name || !modalExpense.value.amount) {
+                        showToast('Please fill in all fields', 'error');
+                        return;
+                    }
+                    const data = {
+                        name: modalExpense.value.name,
+                        amount: Number(modalExpense.value.amount),
+                        category: modalExpense.value.category || 'Other',
+                        status: modalExpense.value.status || 'Unpaid',
+                        dueDate: modalExpense.value.dueDate || ''
+                    };
+                    if (editingIndex.value !== null) {
+                        expenses.value[editingIndex.value] = data;
+                        showToast('✏️ Expense updated', 'success');
+                    } else {
+                        expenses.value.push(data);
+                        showToast('✅ Expense added', 'success');
+                    }
+                    showModal.value = false;
+                    saveToStorage();
+                    updateCharts();
+                }
+
+                // ===== CLOSE MONTH =====
+                function closeMonth() {
+                    if (expenses.value.length === 0) {
+                        showToast('No expenses to close', 'error');
+                        return;
+                    }
+
+                    const monthName = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
+                    const total = totalExpenses.value;
+
+                    history.value.push({
+                        month: monthName,
+                        total: total,
+                        expenseCount: expenses.value.length,
+                        closedAt: new Date().toISOString()
+                    });
+
+                    // Clear current month's expenses
+                    expenses.value = [];
+                    saveToStorage();
+                    updateCharts();
+                    showToast(`🔒 ${monthName} closed with MVR ${formatNumber(total)} in expenses`, 'success');
+                }
+
+                // ===== STORAGE =====
+                function saveToStorage() {
+                    const data = {
+                        income: income.value,
+                        expenses: expenses.value,
+                        history: history.value
+                    };
+                    localStorage.setItem('moneyPlanData', JSON.stringify(data));
+                }
+
+                function loadFromStorage() {
+                    const raw = localStorage.getItem('moneyPlanData');
+                    if (raw) {
+                        try {
+                            const data = JSON.parse(raw);
+                            income.value = data.income || 24893.72;
+                            expenses.value = data.expenses || [];
+                            history.value = data.history || [];
+                        } catch (e) { console.error('Load error', e); }
+                    }
+                    const theme = localStorage.getItem('theme');
+                    if (theme) {
+                        isDark.value = theme === 'dark';
+                        document.documentElement.setAttribute('data-theme', isDark.value ? 'dark' : '');
+                    }
+                }
+
+                // ===== EXPORT / IMPORT =====
+                function exportData() {
+                    const data = {
+                        income: income.value,
+                        expenses: expenses.value,
+                        history: history.value,
+                        exportedAt: new Date().toISOString()
+                    };
+                    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'money_plan_backup.json';
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    showToast('📤 Data exported!', 'success');
+                }
+
+                function importData() {
+                    document.querySelector('[ref="fileInput"]').click();
+                }
+
+                function handleImport(event) {
+                    const file = event.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            const data = JSON.parse(e.target.result);
+                            if (data.expenses && data.income !== undefined) {
+                                income.value = data.income;
+                                expenses.value = data.expenses;
+                                history.value = data.history || [];
+                                saveToStorage();
+                                updateCharts();
+                                showToast('📥 Data imported successfully!', 'success');
+                            } else {
+                                showToast('❌ Invalid file format', 'error');
+                            }
+                        } catch (err) {
+                            showToast('❌ Error reading file', 'error');
+                        }
+                    };
+                    reader.readAsText(file);
+                    event.target.value = '';
+                }
+
+                // ===== TOAST =====
+                function showToast(message, type = 'info') {
+                    toasts.value.push({ message, type });
+                    setTimeout(() => {
+                        toasts.value.shift();
+                    }, 3000);
+                }
+
+                function toggleTheme() {
+                    isDark.value = !isDark.value;
+                    document.documentElement.setAttribute('data-theme', isDark.value ? 'dark' : '');
+                    localStorage.setItem('theme', isDark.value ? 'dark' : 'light');
+                }
+
+                // ===== CHARTS (REAL DATA ONLY) =====
+                let categoryChartInstance = null;
+                let statusChartInstance = null;
+
+                function updateCharts() {
+                    nextTick(() => {
+                        renderCategoryChart();
+                        renderStatusChart();
+                    });
+                }
+
+                function renderCategoryChart() {
+                    const ctx = document.getElementById('categoryChart');
+                    if (!ctx) return;
+
+                    const catMap = {};
+                    expenses.value.forEach(e => {
+                        const cat = e.category || 'Other';
+                        catMap[cat] = (catMap[cat] || 0) + e.amount;
+                    });
+
+                    const labels = Object.keys(catMap);
+                    const data = Object.values(catMap);
+                    const colors = labels.map(c => categoryColors[c] || '#95A5A6');
+
+                    if (categoryChartInstance) categoryChartInstance.destroy();
+
+                    if (labels.length === 0) {
+                        categoryChartInstance = new Chart(ctx, {
+                            type: 'doughnut',
+                            data: { labels: ['No Data'], datasets: [{ data: [1], backgroundColor: ['#dfe6e9'] }] },
+                            options: { plugins: { legend: { display: false } } }
+                        });
+                        return;
+                    }
+
+                    categoryChartInstance = new Chart(ctx, {
+                        type: 'doughnut',
+                        data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 2 }] },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } }
+                            },
+                            cutout: '65%'
+                        }
+                    });
+                }
+
+                function renderStatusChart() {
+                    const ctx = document.getElementById('statusChart');
+                    if (!ctx) return;
+
+                    const paid = expenses.value.filter(e => e.status === 'Paid').reduce((s, e) => s + e.amount, 0);
+                    const partial = expenses.value.filter(e => e.status === 'Partial').reduce((s, e) => s + e.amount, 0);
+                    const unpaid = expenses.value.filter(e => e.status === 'Unpaid').reduce((s, e) => s + e.amount, 0);
+
+                    const labels = [];
+                    const data = [];
+                    const colors = [];
+
+                    if (paid > 0) { labels.push('Paid');
+                        data.push(paid);
+                        colors.push('#00b894'); }
+                    if (partial > 0) { labels.push('Partial');
+                        data.push(partial);
+                        colors.push('#fdcb6e'); }
+                    if (unpaid > 0) { labels.push('Unpaid');
+                        data.push(unpaid);
+                        colors.push('#ff6b6b'); }
+
+                    if (statusChartInstance) statusChartInstance.destroy();
+
+                    if (data.length === 0) {
+                        statusChartInstance = new Chart(ctx, {
+                            type: 'doughnut',
+                            data: { labels: ['No Data'], datasets: [{ data: [1], backgroundColor: ['#dfe6e9'] }] },
+                            options: { plugins: { legend: { display: false } } }
+                        });
+                        return;
+                    }
+
+                    statusChartInstance = new Chart(ctx, {
+                        type: 'doughnut',
+                        data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 2 }] },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } }
+                            },
+                            cutout: '60%'
+                        }
+                    });
+                }
+
+                // ===== LIFECYCLE =====
+                onMounted(() => {
+                    loadFromStorage();
+                    setTimeout(() => updateCharts(), 300);
+
+                    watch(expenses, () => {
+                        saveToStorage();
+                        updateCharts();
+                    }, { deep: true });
+
+                    watch(income, () => { saveToStorage(); });
+                });
+
+                return {
+                    income,
+                    expenses,
+                    history,
+                    isDark,
+                    showModal,
+                    editingIndex,
+                    toasts,
+                    newExpense,
+                    modalExpense,
+                    categories,
+                    totalExpenses,
+                    moneyLeft,
+                    insights,
+                    formatNumber,
+                    getCategoryIcon,
+                    getCategoryColor,
+                    getStatusClass,
+                    toggleStatus,
+                    addExpense,
+                    deleteExpense,
+                    openEditModal,
+                    openAddModal,
+                    saveModalExpense,
+                    closeMonth,
+                    toggleTheme,
+                    exportData,
+                    importData,
+                    handleImport,
+                    showToast,
+                    updateCharts
+                };
+            }
+        });
+
+        app.mount('#app');
+    </script>
+
+</body>
+</html>
