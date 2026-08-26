@@ -1,1 +1,0 @@
-(()=>{const original=CanvasRenderingContext2D.prototype.fillText;CanvasRenderingContext2D.prototype.fillText=function(text,x,y,maxWidth){if(this.canvas?.id==='publisherCanvas'&&window.__publisherMovableTemplateText!==false)return;return arguments.length>3?original.call(this,text,x,y,maxWidth):original.call(this,text,x,y)};window.__publisherMovableTemplateText=true})();

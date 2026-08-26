@@ -1,81 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#0f2f47">
-<title>Shift Operations Board — August 2026</title>
-<link rel="stylesheet" href="./src/shift-operations.css?v=2.0.1">
-</head>
-<body>
-<div class="app-shell">
-  <header class="topbar">
-    <div>
-      <p class="eyebrow">K. Gulhifalhu Injeenuge</p>
-      <h1>Shift Operations Board</h1>
-      <p class="subtitle">A clear daily view of staffing, maintenance, rest and duty changes.</p>
-    </div>
-    <div class="live-chip"><span></span> August 2026 live roster</div>
-  </header>
-
-  <section class="summary-grid" aria-label="Operations summary">
-    <article><span>Working now</span><strong id="workingNow">0</strong><small id="activeShift">Current shift</small></article>
-    <article><span>Next shift</span><strong id="countdown">--:--</strong><small id="nextShiftLabel">Loading</small></article>
-    <article><span>Maintenance today</span><strong id="maintenanceCount">0</strong><small>Assigned staff</small></article>
-    <article><span>Rest today</span><strong id="restCount">0</strong><small>Available / off duty</small></article>
-  </section>
-
-  <main class="workspace">
-    <section class="board-card">
-      <div class="board-header">
-        <div>
-          <p class="eyebrow">Operations</p>
-          <h2 id="boardTitle">Today</h2>
-        </div>
-        <div class="board-actions">
-          <button id="prevDay" class="icon-btn" aria-label="Previous day">←</button>
-          <input id="datePicker" type="date" min="2026-08-01" max="2026-08-31" value="2026-08-01">
-          <button id="nextDay" class="icon-btn" aria-label="Next day">→</button>
-          <button id="todayBtn" class="secondary-btn">Today</button>
-          <button id="openChange" class="primary-btn">Change duty</button>
-        </div>
-      </div>
-
-      <div class="compact-filters">
-        <input id="staffSearch" type="search" placeholder="Search by first name">
-        <select id="viewMode">
-          <option value="day">Day view</option>
-          <option value="week">Week view</option>
-          <option value="month">Month view</option>
-        </select>
-        <select id="shiftFilter">
-          <option value="all">All duties</option>
-          <option value="A">Night</option>
-          <option value="B">Morning</option>
-          <option value="C">Evening</option>
-          <option value="M">Maintenance</option>
-          <option value="OFF">Rest</option>
-        </select>
-      </div>
-
-      <div id="operationsBoard" class="operations-board"></div>
-    </section>
-  </main>
-</div>
-
-<div id="overlay" class="overlay" hidden></div>
-<aside id="drawer" class="drawer" aria-hidden="true">
-  <div class="drawer-head">
-    <div>
-      <p class="eyebrow">Workflow</p>
-      <h2 id="drawerTitle">Change duty</h2>
-    </div>
-    <button id="closeDrawer" class="icon-btn" aria-label="Close">×</button>
-  </div>
-  <div id="drawerContent"></div>
-</aside>
-
-<script src="./src/roster-data.js?v=1.0.0"></script>
-<script src="./src/shift-operations.js?v=2.0.0"></script>
-</body>
-</html>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>My Money Plan</title><style>
+:root{--ink:#15211d;--muted:#627068;--bg:#f5f4ee;--card:#fff;--green:#17765b;--red:#b4433f;--line:#e1e3dc}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px system-ui,-apple-system,Segoe UI,sans-serif}.wrap{max-width:760px;margin:auto;padding:28px 18px 54px}h1{font-size:28px;margin:0 0 5px}.sub{color:var(--muted);margin:0 0 23px}.hero{background:var(--ink);color:#fff;border-radius:20px;padding:24px;display:grid;grid-template-columns:1fr 1fr;gap:20px}.hero small{opacity:.7}.hero strong{display:block;font-size:28px;margin-top:5px}.save{color:#9ce5b8}.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px;margin-top:18px}h2{font-size:18px;margin:0 0 16px}.row{display:grid;grid-template-columns:1fr 130px 34px;gap:10px;align-items:center;margin:10px 0}.row input{width:100%;border:1px solid var(--line);border-radius:10px;padding:11px;font:inherit}.row button{border:0;background:none;color:#a34a45;font-size:22px;cursor:pointer}.total{border-top:1px solid var(--line);margin-top:14px;padding-top:14px;display:flex;justify-content:space-between;font-weight:700}.bar{height:10px;background:#e5e8e1;border-radius:20px;overflow:hidden;margin-top:12px}.bar i{display:block;height:100%;background:var(--green);border-radius:20px}.actions{display:flex;gap:10px;margin-top:16px}button{font:inherit;font-weight:650;border-radius:10px;padding:11px 15px;cursor:pointer}.primary{background:var(--green);color:#fff;border:1px solid var(--green)}.secondary{background:#fff;color:var(--ink);border:1px solid var(--line)}.note{color:var(--muted);font-size:14px;margin:12px 0 0}@media(max-width:520px){.hero{grid-template-columns:1fr}.row{grid-template-columns:1fr 110px 32px}}
+</style></head><body><main class="wrap"><h1>My Money Plan</h1><p class="sub">A simple monthly budget - saved privately on this phone.</p><section class="hero"><div><small>Monthly income</small><strong id="incomeView">MVR 24,893.72</strong></div><div><small>Money left after bills</small><strong class="save" id="leftView">MVR 2,393.72</strong></div></section><section class="card"><h2>Income</h2><div class="row"><input value="Salary" aria-label="Income name"><input id="income" type="number" step="0.01" value="24893.72" aria-label="Income amount"><span></span></div></section><section class="card"><h2>Monthly bills</h2><div id="expenses"></div><div class="total"><span>Total bills</span><span id="total">MVR 22,500.00</span></div><div class="bar"><i id="bar"></i></div><p class="note" id="status"></p><div class="actions"><button class="primary" id="add">+ Add expense</button><button class="secondary" id="reset">Reset this plan</button></div></section><section class="card"><h2>Simple target</h2><p class="note">Put your saving aside on salary day. Even MVR 2,000 per month becomes MVR 24,000 in one year.</p></section></main><script>
+const initial=[['Kids',5000],['Credit / cigarettes',5000],['Coffee credit',2500],['Electricity',1000],['Water',1000],['Council',1500],['Agro',1500],['Food and other',5000]];
+let data=JSON.parse(localStorage.getItem('moneyPlan')||'null')||initial;
+const fmt=n=>'MVR '+Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+function render(){const box=document.querySelector('#expenses');box.innerHTML='';data.forEach((x,i)=>{const d=document.createElement('div');d.className='row';d.innerHTML='<input value="'+x[0]+'" aria-label="Expense name"><input type="number" step="0.01" value="'+x[1]+'" aria-label="Expense amount"><button aria-label="Remove expense">×</button>';const [name,amount,del]=d.querySelectorAll('input,button');name.oninput=()=>{data[i][0]=name.value;save()};amount.oninput=()=>{data[i][1]=+amount.value;save()};del.onclick=()=>{data.splice(i,1);save();render()};box.append(d)});const income=+document.querySelector('#income').value||0,total=data.reduce((s,x)=>s+(+x[1]||0),0),left=income-total;document.querySelector('#incomeView').textContent=fmt(income);document.querySelector('#total').textContent=fmt(total);document.querySelector('#leftView').textContent=fmt(left);document.querySelector('#bar').style.width=Math.min(100,total/income*100)+'%';document.querySelector('#status').textContent=left>=0?'You can save '+fmt(left)+' this month.':'Your plan is over budget by '+fmt(-left)+'.'}
+function save(){localStorage.setItem('moneyPlan',JSON.stringify(data));render()}document.querySelector('#income').oninput=render;document.querySelector('#add').onclick=()=>{data.push(['New expense',0]);save()};document.querySelector('#reset').onclick=()=>{data=initial.map(x=>[...x]);save()};render();
+</script></body></html>

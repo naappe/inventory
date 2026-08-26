@@ -1,2 +1,0 @@
-import { Scene } from '../core/Scene.js';import { templates } from './templates.js';
-export class TemplateManager{static createScene(id,assetId=null){const t=structuredClone(templates[id]??templates['editorial-quote-reference']);const portrait=t.nodes.find(n=>n.id==='portrait');if(portrait){portrait.assetId=assetId;portrait.originalAssetId=assetId}return Scene.fromJSON({width:t.canvas.width,height:t.canvas.height,backgroundColor:t.canvas.backgroundColor,root:{id:'root',type:'group',name:'Page',selectable:false,children:t.nodes}})}}
