@@ -271,6 +271,50 @@
     border-top: 1px solid var(--l);
     padding: 12px 0;
   }
+  .billGroup {
+    margin-top: 20px;
+    border: 1px solid var(--l);
+    border-radius: 14px;
+    overflow: hidden;
+    background: #fff;
+  }
+  .billGroup:first-child {
+    margin-top: 14px;
+  }
+  .billGroupHead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
+    background: #f8f7fc;
+    color: var(--i);
+    font-size: 13px;
+    font-weight: 800;
+  }
+  .billGroupHead small {
+    color: var(--m);
+    font-weight: 700;
+  }
+  .billGroup.creditGroup .billGroupHead {
+    background: #fff0f2;
+    color: #a93849;
+  }
+  .billGroup.utilityGroup .billGroupHead {
+    background: #edf6ff;
+    color: #256e9f;
+  }
+  .billGroup.foodGroup .billGroupHead {
+    background: #fff5e5;
+    color: #9a6015;
+  }
+  .billGroup.familyGroup .billGroupHead {
+    background: #eef3ff;
+    color: #315792;
+  }
+  .billGroup .bill {
+    margin: 0 12px;
+  }
   .bill small {
     display: inline-block;
     margin-top: 4px;
@@ -974,7 +1018,32 @@
           .join("")
       : "No debt balances added yet.";
     $("bills").innerHTML = "";
-    s.bills.forEach((b, i) => {
+    const billGroups = [
+      { key: "credit", title: "Credit & debt", className: "creditGroup" },
+      { key: "family", title: "Family", className: "familyGroup" },
+      { key: "utility", title: "Utilities", className: "utilityGroup" },
+      { key: "food", title: "Food", className: "foodGroup" },
+      { key: "other", title: "Other spending", className: "otherGroup" },
+    ];
+    const groupForBill = (bill) => {
+      const name = String(bill[0] || "").toLowerCase();
+      const category = String(bill[2] || "").toLowerCase();
+      if (isCreditCategory(category)) return "credit";
+      if (category === "food" || /food|agro|cafe|coffee/.test(name)) return "food";
+      if (category === "home" || /water|electric|council|utility/.test(name)) return "utility";
+      if (category === "family" || /kids|family/.test(name)) return "family";
+      return "other";
+    };
+    billGroups.forEach((group) => {
+      const entries = s.bills
+        .map((bill, index) => ({ bill, index }))
+        .filter(({ bill }) => groupForBill(bill) === group.key);
+      if (!entries.length) return;
+      const groupTotal = entries.reduce((sum, { bill }) => sum + Number(bill[1] || 0), 0);
+      const section = document.createElement("section");
+      section.className = "billGroup " + group.className;
+      section.innerHTML = '<div class="billGroupHead"><span>' + group.title + '</span><small>' + m(groupTotal) + ' planned</small></div>';
+      entries.forEach(({ bill: b, index: i }) => {
       let r = document.createElement("div");
       r.className = "bill";
       r.innerHTML =
@@ -1042,7 +1111,9 @@
         save();
         render();
       };
-      $("bills").append(r);
+      section.append(r);
+    });
+      $("bills").append(section);
     });
   }
   $("cat").onchange = () => {
