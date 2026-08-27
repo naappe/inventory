@@ -44,6 +44,26 @@
     gap: 7px;
     flex-wrap: wrap;
   }
+  .headTools {
+    display: flex;
+    align-items: end;
+    justify-content: flex-end;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .monthPicker {
+    display: grid;
+    gap: 4px;
+    color: var(--m);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+  }
+  .monthPicker input {
+    width: 154px;
+    padding: 8px 10px;
+    background: #fff;
+  }
   .nav button {
     background: #eeeafb;
     color: var(--p);
@@ -399,6 +419,14 @@
     .head {
       flex-direction: column;
     }
+    .headTools {
+      width: 100%;
+      align-items: stretch;
+    }
+    .monthPicker,
+    .monthPicker input {
+      width: 100%;
+    }
     .nav {
       width: 100%;
     }
@@ -444,11 +472,17 @@
       <h1>My Money Plan</h1>
       <p class="sub">Track money only when it is actually paid.</p>
     </div>
-    <nav class="nav">
-      <button class="active" data-page="dashboard">Dashboard</button
-      ><button data-page="payments">Payments</button
-      ><button data-page="categories">Categories</button>
-    </nav>
+    <div class="headTools">
+      <label class="monthPicker"
+        >VIEWING MONTH
+        <input id="monthSelect" type="month" aria-label="Viewing month" />
+      </label>
+      <nav class="nav">
+        <button class="active" data-page="dashboard">Dashboard</button
+        ><button data-page="payments">Payments</button
+        ><button data-page="categories">Categories</button>
+      </nav>
+    </div>
   </header>
   <section id="dashboardView">
     <section class="cards">
@@ -655,56 +689,65 @@
       "Transport",
     ],
   };
-  let s;
+  const thisMonth = new Date().toISOString().slice(0, 7);
+  let activeMonth = localStorage.getItem("moneyPlanActiveMonth") || thisMonth;
+  let months = {};
   try {
-    s =
-      JSON.parse(localStorage.getItem("moneyPlan")) ||
-      structuredClone(defaults);
-  } catch {
-    s = structuredClone(defaults);
+    months = JSON.parse(localStorage.getItem("moneyPlanMonths")) || {};
+  } catch {}
+  function preparePlan(plan) {
+    const clean = plan && typeof plan === "object" ? structuredClone(plan) : structuredClone(defaults);
+    if (!Array.isArray(clean.bills)) return structuredClone(defaults);
+    clean.bills = clean.bills.map((b) =>
+      Array.isArray(b)
+        ? [
+            b[0],
+            Number(b[1]) || 0,
+            b[2] || "Personal",
+            !!b[3],
+            Number(b[4]) || 0,
+            Number(b[5]) || Number(b[4]) || 0,
+            Number(b[6]) || 0,
+          ]
+        : b,
+    );
+    if (!Array.isArray(clean.loans)) clean.loans = [];
+    if (!Array.isArray(clean.categories)) clean.categories = [...defaults.categories];
+    if (!clean.categories.includes("Credit")) clean.categories.push("Credit");
+    clean.loans.forEach((loan) => {
+      const old = Array.isArray(loan)
+        ? { name: loan[0], balance: loan[1], monthly: loan[2], paid: false }
+        : loan;
+      clean.bills.push([
+        old.name || "Credit",
+        Number(old.monthly) || 0,
+        "Debt",
+        !!old.paid,
+        Number(old.balance) || 0,
+        Number(old.initial) || Number(old.balance) || 0,
+        0,
+      ]);
+    });
+    clean.loans = [];
+    return clean;
   }
-  if (!Array.isArray(s.bills)) s = structuredClone(defaults);
-  s.bills = s.bills.map((b) =>
-    Array.isArray(b)
-      ? [
-          b[0],
-          b[1],
-          b[2],
-          !!b[3],
-          Number(b[4]) || 0,
-          Number(b[5]) || Number(b[4]) || 0,
-          Number(b[6]) || 0,
-        ]
-      : b,
-  );
-  if (!Array.isArray(s.loans)) s.loans = [];
-  if (!Array.isArray(s.categories)) s.categories = [...defaults.categories];
-  if (!s.categories.includes("Credit")) s.categories.push("Credit");
-  s.loans = s.loans.map((l) =>
-    Array.isArray(l)
-      ? {
-          name: l[0],
-          balance: Number(l[1]) || 0,
-          monthly: Number(l[2]) || 0,
-          initial: Number(l[1]) || 0,
-          paid: false,
-        }
-      : Object.assign(
-          { name: "Loan", balance: 0, monthly: 0, initial: 0, paid: false },
-          l,
-        ),
-  );
-  s.loans.forEach((l) =>
-    s.bills.push([l.name, l.monthly, "Debt", l.paid, l.balance, l.initial]),
-  );
-  s.loans = [];
-  localStorage.setItem("moneyPlan", JSON.stringify(s));
+  let legacy;
+  try {
+    legacy = JSON.parse(localStorage.getItem("moneyPlan"));
+  } catch {}
+  if (!months[activeMonth]) months[activeMonth] = preparePlan(legacy || defaults);
+  let s = preparePlan(months[activeMonth]);
   let editingBillIndex = null;
   const $ = (x) => document.getElementById(x),
     m = (x) =>
       "MVR " +
       Number(x || 0).toLocaleString(undefined, { maximumFractionDigits: 2 }),
-    save = () => localStorage.setItem("moneyPlan", JSON.stringify(s)),
+    save = () => {
+      months[activeMonth] = structuredClone(s);
+      localStorage.setItem("moneyPlanMonths", JSON.stringify(months));
+      localStorage.setItem("moneyPlanActiveMonth", activeMonth);
+      localStorage.setItem("moneyPlan", JSON.stringify(s));
+    },
     total = () =>
       s.bills.reduce((a, b) => a + paidValue(b), 0) +
       s.loans.reduce((a, l) => a + (l.paid ? Number(l.monthly || 0) : 0), 0);
@@ -712,7 +755,28 @@
   const paidValue = (b) =>
     b[3] ? (isCreditCategory(b[2]) ? Number(b[6] || 0) : Number(b[1] || 0)) : 0;
   let paymentBillIndex = null;
+  function makeNewMonth(fromPlan) {
+    const next = preparePlan(fromPlan);
+    next.income = 0;
+    next.bills = next.bills.map((bill) => {
+      const copy = [...bill];
+      copy[3] = false;
+      copy[6] = 0;
+      return copy;
+    });
+    return next;
+  }
+  function selectMonth(month) {
+    if (!month) return;
+    save();
+    if (!months[month]) months[month] = makeNewMonth(s);
+    activeMonth = month;
+    s = preparePlan(months[activeMonth]);
+    save();
+    render();
+  }
   function render() {
+    $("monthSelect").value = activeMonth;
     $("cat").innerHTML =
       s.categories.map((x) => "<option>" + x + "</option>").join("") +
       '<option value="__new__">＋ Add new category</option>';
@@ -769,7 +833,7 @@
     $("expenseTotal").textContent = m(e);
     $("savingTotal").textContent = m(left);
     $("savingTotal").className = "big " + (left >= 0 ? "green" : "red");
-    $("percent").textContent = Math.round(p) + "%";
+    $("percent").textContent = s.income ? Math.round(p) + "%" : "Add income";
     let debtBills = s.bills.filter(
         (b) => isCreditCategory(b[2]) && Number(b[4]) > 0,
       ),
@@ -789,8 +853,9 @@
     $("bar").style.width = p + "%";
     $("bar").style.background =
       left < 0 ? "var(--r)" : p > 80 ? "#bd771c" : "var(--p)";
-    $("progress").textContent =
-      Math.round(p) + "% of income used · " + m(left) + " left";
+    $("progress").textContent = s.income
+      ? Math.round(p) + "% of income used · " + m(left) + " left"
+      : "Add this month's income to see your available balance.";
     let due = s.bills
       .filter((b) => isCreditCategory(b[2]) && !b[3])
       .reduce((a, b) => a + Number(b[1] || 0), 0);
@@ -1034,5 +1099,6 @@
     $("debtBalanceWrap").classList.add("hidden");
     render();
   };
+  $("monthSelect").onchange = (event) => selectMonth(event.target.value);
   render();
 </script>
