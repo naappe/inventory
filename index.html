@@ -899,7 +899,7 @@
         ? unpaidCount + " bill" + (unpaidCount === 1 ? " is" : "s are") + " still waiting for payment."
         : "All bills in this month are marked paid. Review what you can save.";
     $("dashboardAction").textContent = !s.income ? "Add this month's income" : unpaidCount ? "Open payments" : "Review payments";
-    $("dashboardAction").onclick = () => document.querySelector('[data-page="payments"]').click();
+    $("dashboardAction").onclick = () => openPage("payments");
     let debtBills = s.bills.filter(
         (b) => isCreditCategory(b[2]) && Number(b[4]) > 0,
       ),
@@ -1070,22 +1070,22 @@
       render();
     }
   };
+  function openPage(page) {
+    const safePage = ["dashboard", "payments", "categories"].includes(page)
+      ? page
+      : "dashboard";
+    document
+      .querySelectorAll(".nav button")
+      .forEach((button) =>
+        button.classList.toggle("active", button.dataset.page === safePage),
+      );
+    $("dashboardView").classList.remove("hidden");
+    $("paymentsView").classList.toggle("hidden", safePage !== "payments");
+    $("categoriesView").classList.toggle("hidden", safePage !== "categories");
+    localStorage.setItem("moneyPlanActivePage", safePage);
+  }
   document.querySelectorAll(".nav button").forEach(
-    (b) =>
-      (b.onclick = () => {
-        document
-          .querySelectorAll(".nav button")
-          .forEach((x) => x.classList.toggle("active", x === b));
-      $("dashboardView").classList.remove("hidden");
-        $("paymentsView").classList.toggle(
-          "hidden",
-          b.dataset.page !== "payments",
-        );
-        $("categoriesView").classList.toggle(
-          "hidden",
-          b.dataset.page !== "categories",
-        );
-      }),
+    (button) => (button.onclick = () => openPage(button.dataset.page)),
   );
   $("cancelPayment").onclick = () => {
     paymentBillIndex = null;
@@ -1166,5 +1166,6 @@
     render();
   };
   $("monthSelect").onchange = (event) => selectMonth(event.target.value);
+  openPage(localStorage.getItem("moneyPlanActivePage") || "dashboard");
   render();
 </script>
