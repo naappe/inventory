@@ -193,6 +193,32 @@
   .actionCard .primary {
     width: 100%;
   }
+  .summaryFooter {
+    position: sticky;
+    bottom: 12px;
+    z-index: 4;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-top: 22px;
+    padding: 12px;
+    border: 1px solid #dcd6f1;
+    border-radius: 16px;
+    background: #fffefd;
+    box-shadow: 0 10px 30px #31235b18;
+  }
+  .summaryFooter span {
+    display: block;
+    color: var(--m);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .05em;
+  }
+  .summaryFooter strong {
+    display: block;
+    margin-top: 3px;
+    font-size: 15px;
+  }
   .debtHead {
     display: flex;
     justify-content: space-between;
@@ -528,6 +554,9 @@
     .dashboardGrid {
       grid-template-columns: 1fr;
     }
+    .summaryFooter {
+      grid-template-columns: repeat(2, 1fr);
+    }
     .card {
       padding: 20px;
     }
@@ -699,6 +728,12 @@
       <button id="newCategory" class="primary">＋ Add category</button>
     </section>
   </section>
+  <footer class="summaryFooter" aria-label="Monthly summary">
+    <div><span>INCOME</span><strong id="footerIncome"></strong></div>
+    <div><span>PAID</span><strong id="footerPaid"></strong></div>
+    <div><span>LOANS / CREDIT LEFT</span><strong id="footerDebt"></strong></div>
+    <div><span>AVAILABLE NOW</span><strong id="footerAvailable"></strong></div>
+  </footer>
   <div id="paymentModal" class="modalBackdrop hidden">
     <section class="modal">
         <h2>Record loan / credit payment</h2>
@@ -966,6 +1001,11 @@
         : 0;
     $("debtBalanceTop").textContent = m(debtBalance);
     $("debtBarTop").style.width = debtPct + "%";
+    $("footerIncome").textContent = m(s.income);
+    $("footerPaid").textContent = m(e);
+    $("footerDebt").textContent = m(debtBalance);
+    $("footerAvailable").textContent = m(left);
+    $("footerAvailable").className = left < 0 ? "red" : "green";
     $("debtTextTop").textContent = debtBills.length
       ? Math.round(debtPct) +
         "% debt remaining · " +
@@ -1031,12 +1071,12 @@
       : "No debt balances added yet.";
     $("bills").innerHTML = "";
     const billGroups = [
-      { key: "loan", title: "Loans", className: "loanGroup" },
       { key: "credit", title: "Credit & debt", className: "creditGroup" },
       { key: "family", title: "Family", className: "familyGroup" },
       { key: "utility", title: "Utilities", className: "utilityGroup" },
       { key: "food", title: "Food", className: "foodGroup" },
       { key: "other", title: "Other spending", className: "otherGroup" },
+      { key: "loan", title: "Loans", className: "loanGroup" },
     ];
     const groupForBill = (bill) => {
       const name = String(bill[0] || "").toLowerCase();
@@ -1054,9 +1094,11 @@
         .filter(({ bill }) => groupForBill(bill) === group.key);
       if (!entries.length) return;
       const groupTotal = entries.reduce((sum, { bill }) => sum + Number(bill[1] || 0), 0);
+      const groupPaid = entries.reduce((sum, { bill }) => sum + paidValue(bill), 0);
+      const groupUnpaid = entries.filter(({ bill }) => !bill[3]).length;
       const section = document.createElement("section");
       section.className = "billGroup " + group.className;
-      section.innerHTML = '<div class="billGroupHead"><span>' + group.title + '</span><small>' + m(groupTotal) + ' planned</small></div>';
+      section.innerHTML = '<div class="billGroupHead"><span>' + group.title + '</span><small>' + m(groupTotal) + ' planned · ' + m(groupPaid) + ' paid · ' + groupUnpaid + ' unpaid</small></div>';
       entries.forEach(({ bill: b, index: i }) => {
       let r = document.createElement("div");
       r.className = "bill";
