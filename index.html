@@ -300,6 +300,10 @@
     background: #fff0f2;
     color: #a93849;
   }
+  .billGroup.loanGroup .billGroupHead {
+    background: #f9e8eb;
+    color: #963747;
+  }
   .billGroup.utilityGroup .billGroupHead {
     background: #edf6ff;
     color: #256e9f;
@@ -581,7 +585,7 @@
     <section class="card debtOverview">
       <div class="debtHead">
         <div>
-          <h2>Credit & debt balance</h2>
+          <h2>Loans, credit & debt balance</h2>
           <p class="sub">
             Your total credit and debt left, shown separately from normal
             expenses.
@@ -651,7 +655,7 @@
               ><input id="amount" type="number" required placeholder="MVR" />
             </div>
             <div id="debtBalanceWrap" class="hidden">
-              <label class="fieldLabel">Total credit / debt left</label
+              <label class="fieldLabel">Total loan / credit / debt left</label
               ><input
                 id="debtBalance"
                 type="number"
@@ -677,8 +681,8 @@
           <div id="expenseGraph"></div>
         </section>
         <section class="card">
-          <h2>Credit & debt balance graph</h2>
-          <p class="sub">Shows each credit or debt balance separately.</p>
+          <h2>Loans, credit & debt graph</h2>
+          <p class="sub">Shows each loan, credit or debt balance separately.</p>
           <div id="loanGraph"></div>
         </section>
       </aside>
@@ -697,7 +701,7 @@
   </section>
   <div id="paymentModal" class="modalBackdrop hidden">
     <section class="modal">
-      <h2>Record credit payment</h2>
+        <h2>Record loan / credit payment</h2>
       <p class="sub">
         Enter the actual amount you paid today. Only this amount reduces your
         salary and credit balance.
@@ -743,7 +747,7 @@
           </div>
         </div>
               <div id="editDebtWrap" class="hidden">
-                <label class="fieldLabel">Total credit / debt left</label>
+              <label class="fieldLabel">Total loan / credit / debt left</label>
                 <input
                   id="editDebtBalance"
                   type="number"
@@ -779,6 +783,7 @@
       "Food",
       "Debt",
       "Credit",
+      "Loan",
       "Personal",
       "Cosmetics",
       "Transport",
@@ -809,6 +814,13 @@
     if (!Array.isArray(clean.loans)) clean.loans = [];
     if (!Array.isArray(clean.categories)) clean.categories = [...defaults.categories];
     if (!clean.categories.includes("Credit")) clean.categories.push("Credit");
+    if (!clean.categories.includes("Loan")) clean.categories.push("Loan");
+    const loanNames = new Set(["council", "agro", "loan bank", "naseembe", "alikko cycle"]);
+    clean.bills.forEach((bill) => {
+      if (String(bill[2]).toLowerCase() === "credit" && loanNames.has(String(bill[0]).toLowerCase())) {
+        bill[2] = "Loan";
+      }
+    });
     clean.loans.forEach((loan) => {
       const old = Array.isArray(loan)
         ? { name: loan[0], balance: loan[1], monthly: loan[2], paid: false }
@@ -846,7 +858,7 @@
     total = () =>
       s.bills.reduce((a, b) => a + paidValue(b), 0) +
       s.loans.reduce((a, l) => a + (l.paid ? Number(l.monthly || 0) : 0), 0);
-  const isCreditCategory = (c) => /(debt|credit)/i.test(c);
+  const isCreditCategory = (c) => /(debt|credit|loan)/i.test(c);
   const paidValue = (b) =>
     b[3] ? (isCreditCategory(b[2]) ? Number(b[6] || 0) : Number(b[1] || 0)) : 0;
   let paymentBillIndex = null;
@@ -1019,6 +1031,7 @@
       : "No debt balances added yet.";
     $("bills").innerHTML = "";
     const billGroups = [
+      { key: "loan", title: "Loans", className: "loanGroup" },
       { key: "credit", title: "Credit & debt", className: "creditGroup" },
       { key: "family", title: "Family", className: "familyGroup" },
       { key: "utility", title: "Utilities", className: "utilityGroup" },
@@ -1028,6 +1041,7 @@
     const groupForBill = (bill) => {
       const name = String(bill[0] || "").toLowerCase();
       const category = String(bill[2] || "").toLowerCase();
+      if (category === "loan") return "loan";
       if (isCreditCategory(category)) return "credit";
       if (category === "food" || /food|agro|cafe|coffee/.test(name)) return "food";
       if (category === "home" || /water|electric|council|utility/.test(name)) return "utility";
@@ -1061,6 +1075,7 @@
           Food: "#c17b1c",
           Debt: "#c54655",
           Credit: "#c54655",
+          Loan: "#963747",
           Personal: "#8056bd",
           Cosmetics: "#c25291",
           Transport: "#2e998d",
@@ -1238,5 +1253,6 @@
   };
   $("monthSelect").onchange = (event) => selectMonth(event.target.value);
   openPage(localStorage.getItem("moneyPlanActivePage") || "dashboard");
+  save();
   render();
 </script>
