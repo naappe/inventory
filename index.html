@@ -231,6 +231,12 @@
     color: var(--m);
     margin: 2px 0 5px;
   }
+  .fieldHelp {
+    min-height: 16px;
+    margin-top: 6px;
+    color: var(--m);
+    font-size: 11px;
+  }
   .secondary {
     background: #eeeafb;
     color: var(--p);
@@ -1239,12 +1245,12 @@
             ><input id="amount" type="number" required placeholder="Plan MVR" />
           </div>
           <div id="debtBalanceWrap" class="hidden">
-            <label class="fieldLabel">Total loan / credit / debt left</label
+            <label class="fieldLabel">Total credit / loan amount</label
             ><input
               id="debtBalance"
               type="number"
               inputmode="decimal"
-              placeholder="Balance MVR"
+              placeholder="Original total MVR"
             />
           </div>
           <button class="primary">Add expense</button>
@@ -1382,13 +1388,14 @@
           </div>
         </div>
               <div id="editDebtWrap" class="hidden">
-              <label class="fieldLabel">Total loan / credit / debt left</label>
+              <label class="fieldLabel">Total credit / loan amount</label>
                 <input
                   id="editDebtBalance"
                   type="number"
                   inputmode="decimal"
-                  placeholder="MVR"
+                  placeholder="Original total MVR"
                 />
+                <p id="editBalancePreview" class="fieldHelp"></p>
               </div>
         <div class="modalActions">
           <button type="button" id="cancelEdit" class="secondary">Cancel</button
@@ -1456,6 +1463,23 @@
         recordedPayment,
       ];
     });
+    if (Number(clean.balanceModelVersion || 0) < 2) {
+      clean.bills.forEach((bill) => {
+        const name = String(bill[0] || "").trim().toLowerCase();
+        const isTushail = /^tush(?:a|ai)l$/.test(name);
+        const matchesKnownEntry =
+          isTushail &&
+          Math.abs(Number(bill[1]) - 2000) < 0.01 &&
+          Math.abs(Number(bill[4]) - 3500) < 0.01 &&
+          Math.abs(Number(bill[5]) - 5500) < 0.01 &&
+          Math.abs(Number(bill[6]) - 2000) < 0.01;
+        if (matchesKnownEntry) {
+          bill[4] = 1500;
+          bill[5] = 3500;
+        }
+      });
+      clean.balanceModelVersion = 2;
+    }
     if (!Array.isArray(clean.loans)) clean.loans = [];
     if (!Array.isArray(clean.categories)) clean.categories = [...defaults.categories];
     if (!clean.categories.includes("Credit")) clean.categories.push("Credit");
@@ -1511,6 +1535,16 @@
       : b[3]
         ? Number(b[1] || 0)
         : 0;
+  const originalBalanceValue = (b) =>
+    Math.max(
+      Number(b[5] || 0),
+      Number(b[4] || 0) + Number(b[6] || 0),
+      Number(b[4] || 0),
+    );
+  const repaidBalanceValue = (b) =>
+    Math.max(0, originalBalanceValue(b) - Number(b[4] || 0));
+  const remainingAfterTotalChange = (b, newTotal) =>
+    Math.max(0, Number(newTotal || 0) - repaidBalanceValue(b));
   const billStatus = (b) => {
     const planned = Number(b[1] || 0);
     const paid = paidValue(b);
@@ -1755,12 +1789,7 @@
       ),
       debtBalance = debtBills.reduce((a, b) => a + Number(b[4]), 0),
       debtOriginal = debtBills.reduce(
-        (a, b) =>
-          a +
-          Math.max(
-            Number(b[5] || 0),
-            Number(b[4] || 0) + Number(b[6] || 0),
-          ),
+        (a, b) => a + originalBalanceValue(b),
         0,
       ),
       debtPct = debtOriginal
@@ -1823,12 +1852,8 @@
     if (debtBills.length) {
       debtBills.forEach((bill) => {
         const remaining = Number(bill[4] || 0);
-        const original = Math.max(
-          Number(bill[5] || 0),
-          remaining + Number(bill[6] || 0),
-          remaining,
-        );
-        const repaid = Math.max(0, original - remaining);
+        const original = originalBalanceValue(bill);
+        const repaid = repaidBalanceValue(bill);
         const pct = original
           ? Math.max(0, Math.min(100, (remaining / original) * 100))
           : 0;
@@ -1997,8 +2022,9 @@
             .map((x) => "<option>" + x + "</option>")
             .join("");
           $("editCategory").value = b[2];
-          $("editDebtBalance").value = b[4] || "";
+          $("editDebtBalance").value = originalBalanceValue(b) || "";
           $("editDebtWrap").classList.toggle("hidden", !isCreditCategory(b[2]));
+          updateEditBalancePreview();
           $("editModal").classList.remove("hidden");
         };
         r.querySelector(".del").onclick = () => {
@@ -2170,7 +2196,24 @@
       "hidden",
       !isCreditCategory($("editCategory").value),
     );
+    updateEditBalancePreview();
   };
+  function updateEditBalancePreview() {
+    if (
+      editingBillIndex === null ||
+      !isCreditCategory($("editCategory").value)
+    ) {
+      $("editBalancePreview").textContent = "";
+      return;
+    }
+    const bill = s.bills[editingBillIndex];
+    const newTotal = Math.max(0, Number($("editDebtBalance").value) || 0);
+    const repaid = repaidBalanceValue(bill);
+    const remaining = remainingAfterTotalChange(bill, newTotal);
+    $("editBalancePreview").textContent =
+      m(repaid) + " already paid · " + m(remaining) + " will remain";
+  }
+  $("editDebtBalance").oninput = updateEditBalancePreview;
   $("cancelEdit").onclick = () => {
     editingBillIndex = null;
     $("editModal").classList.add("hidden");
@@ -2184,11 +2227,9 @@
     b[1] = Number($("editAmount").value) || 0;
     b[2] = category;
     if (isCreditCategory(category)) {
-      b[4] = Number($("editDebtBalance").value) || 0;
-      b[5] = Math.max(
-        Number(b[5] || 0),
-        b[4] + Number(b[6] || 0),
-      );
+      const newTotal = Math.max(0, Number($("editDebtBalance").value) || 0);
+      b[4] = remainingAfterTotalChange(b, newTotal);
+      b[5] = newTotal;
       b[3] = Number(b[1] || 0) > 0
         ? Number(b[6] || 0) >= Number(b[1])
         : Number(b[6] || 0) > 0;
