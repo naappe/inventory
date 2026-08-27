@@ -81,6 +81,25 @@
     gap: 10px;
     margin: 18px 0;
   }
+  .settingsStack {
+    display: grid;
+    gap: 15px;
+  }
+  .backupActions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 9px;
+    margin-top: 16px;
+  }
+  .backupActions button {
+    flex: 1 1 170px;
+  }
+  .backupNote {
+    min-height: 19px;
+    margin-top: 10px;
+    color: var(--m);
+    font-size: 12px;
+  }
   .categoryItem {
     display: flex;
     align-items: center;
@@ -935,15 +954,30 @@
     </section>
   </section>
   <section id="categoriesView" class="hidden">
-    <section class="card">
-      <h2>Categories</h2>
-      <p class="sub">
-        Categories you add stay here and are available next time you add an
-        expense.
-      </p>
-      <div id="categoryList" class="categoryList"></div>
-      <button id="newCategory" class="primary">＋ Add category</button>
-    </section>
+    <div class="settingsStack">
+      <section class="card">
+        <h2>Categories</h2>
+        <p class="sub">
+          Categories you add stay here and are available next time you add an
+          expense.
+        </p>
+        <div id="categoryList" class="categoryList"></div>
+        <button id="newCategory" class="primary">＋ Add category</button>
+      </section>
+      <section class="card">
+        <h2>Backup & restore</h2>
+        <p class="sub">
+          Download a copy before clearing browser data or moving to another
+          phone. Restoring replaces the data currently saved on this device.
+        </p>
+        <div class="backupActions">
+          <button id="exportBackup" class="primary" type="button">Download backup</button>
+          <button id="chooseBackup" class="secondary" type="button">Restore from backup</button>
+          <input id="backupFile" class="hidden" type="file" accept="application/json,.json" />
+        </div>
+        <p id="backupNote" class="backupNote">Your backup stays as a JSON file on your device.</p>
+      </section>
+    </div>
   </section>
   <footer class="summaryFooter" aria-label="Monthly summary">
     <div><span>INCOME</span><strong id="footerIncome"></strong></div>
@@ -1506,6 +1540,88 @@
       if (!s.categories.includes(newCat)) s.categories.push(newCat);
       save();
       render();
+    }
+  };
+  function exportBackup() {
+    save();
+    const payload = {
+      app: "My Money Plan",
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      activeMonth,
+      months,
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "money-plan-backup-" + new Date().toISOString().slice(0, 10) + ".json";
+    document.body.append(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    $("backupNote").textContent = "✓ Backup downloaded. Keep the JSON file somewhere safe.";
+  }
+  function prepareImportedMonths(raw) {
+    const source = raw && raw.months ? raw.months : raw;
+    if (!source || typeof source !== "object" || Array.isArray(source)) {
+      throw new Error("This is not a Money Plan backup.");
+    }
+    const imported = {};
+    Object.entries(source).slice(0, 240).forEach(([month, plan]) => {
+      if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) return;
+      if (!plan || typeof plan !== "object" || !Array.isArray(plan.bills)) return;
+      const clean = preparePlan(plan);
+      clean.income = Math.max(0, Number(clean.income) || 0);
+      clean.bills = clean.bills.slice(0, 3000).map((bill) => [
+        String(bill[0] || "Expense").slice(0, 120),
+        Math.max(0, Number(bill[1]) || 0),
+        String(bill[2] || "Personal").slice(0, 60),
+        !!bill[3],
+        Math.max(0, Number(bill[4]) || 0),
+        Math.max(0, Number(bill[5]) || 0),
+        Math.max(0, Number(bill[6]) || 0),
+      ]);
+      clean.categories = [...new Set(
+        clean.categories
+          .filter((category) => typeof category === "string" && category.trim())
+          .map((category) => category.trim().slice(0, 60)),
+      )].slice(0, 100);
+      imported[month] = clean;
+    });
+    if (!Object.keys(imported).length) {
+      throw new Error("No valid monthly data was found in this file.");
+    }
+    return imported;
+  }
+  $("exportBackup").onclick = exportBackup;
+  $("chooseBackup").onclick = () => $("backupFile").click();
+  $("backupFile").onchange = async (event) => {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+    try {
+      if (file.size > 10 * 1024 * 1024) throw new Error("The backup file is too large.");
+      const raw = JSON.parse(await file.text());
+      const imported = prepareImportedMonths(raw);
+      if (!confirm("Restore this backup? It will replace the Money Plan data saved on this device.")) {
+        event.target.value = "";
+        return;
+      }
+      months = imported;
+      const requestedMonth = raw && raw.activeMonth;
+      activeMonth = requestedMonth && months[requestedMonth]
+        ? requestedMonth
+        : Object.keys(months).sort().at(-1);
+      s = preparePlan(months[activeMonth]);
+      save();
+      render();
+      $("backupNote").textContent = "✓ Backup restored successfully.";
+    } catch (error) {
+      $("backupNote").textContent = "Could not restore: " + error.message;
+    } finally {
+      event.target.value = "";
     }
   };
   function openPage(page) {
