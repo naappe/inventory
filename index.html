@@ -5,11 +5,13 @@
 ><style>
   :root {
     --p: #6546c5;
+    --p-soft: #f0edfb;
     --g: #21875a;
     --r: #c54655;
+    --w: #b86e13;
     --i: #29233d;
     --m: #766f8d;
-    --b: #f6f5fb;
+    --b: #f4f3f8;
     --c: #fff;
     --l: #e7e4f2;
   }
@@ -20,10 +22,10 @@
     margin: 0;
     background: var(--b);
     color: var(--i);
-    font: 15px system-ui;
+    font: 15px/1.45 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   }
   main {
-    max-width: 980px;
+    max-width: 1080px;
     margin: auto;
     padding: 32px 18px 70px;
   }
@@ -158,9 +160,27 @@
   }
   .cards {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 12px;
     margin-bottom: 15px;
+  }
+  .metricCard {
+    position: relative;
+    overflow: hidden;
+  }
+  .metricCard::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 4px;
+    background: var(--p);
+  }
+  .metricCard.incomeMetric::before,
+  .metricCard.availableMetric::before {
+    background: var(--g);
+  }
+  .metricCard.paidMetric::before {
+    background: var(--w);
   }
   .debtOverview {
     margin-bottom: 15px;
@@ -234,7 +254,7 @@
     border: 1px solid var(--l);
     border-radius: 18px;
     padding: 21px;
-    box-shadow: 0 5px 18px #31235b09;
+    box-shadow: 0 7px 22px #31235b0a;
   }
   .label {
     font-size: 11px;
@@ -258,6 +278,44 @@
     grid-template-columns: 1.2fr 0.8fr;
     gap: 15px;
   }
+  .paymentTop,
+  .insightGrid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 15px;
+    margin-bottom: 15px;
+  }
+  .insightGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-top: 15px;
+  }
+  .billsCard {
+    padding-bottom: 12px;
+  }
+  .sectionHead {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .filterBar {
+    display: flex;
+    gap: 6px;
+    padding: 4px;
+    border-radius: 12px;
+    background: #f1eff7;
+  }
+  .filterBar button {
+    padding: 7px 11px;
+    background: transparent;
+    color: var(--m);
+    font-size: 12px;
+  }
+  .filterBar button.active {
+    background: #fff;
+    color: var(--p);
+    box-shadow: 0 2px 7px #31235b14;
+  }
   input,
   select {
     width: 100%;
@@ -273,6 +331,10 @@
     font: inherit;
     font-weight: 800;
     cursor: pointer;
+  }
+  button:disabled {
+    cursor: not-allowed;
+    opacity: .55;
   }
   .primary {
     background: var(--p);
@@ -291,11 +353,60 @@
   }
   .bill {
     display: grid;
-    grid-template-columns: 1fr 100px 62px 30px 30px;
+    grid-template-columns: minmax(190px, 1fr) 100px 100px 86px auto;
     gap: 9px;
     align-items: center;
     border-top: 1px solid var(--l);
-    padding: 12px 0;
+    padding: 14px 0;
+  }
+  .billInfo strong {
+    display: block;
+    font-size: 14px;
+  }
+  .billMetric span {
+    display: block;
+    color: var(--m);
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+  }
+  .billMetric b {
+    display: block;
+    margin-top: 3px;
+    text-align: left;
+    font-size: 13px;
+  }
+  .billActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 5px;
+  }
+  .statusBadge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 66px;
+    padding: 5px 9px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 800;
+  }
+  .statusBadge.paid {
+    background: #e5f5eb;
+    color: #207c52;
+  }
+  .statusBadge.partial {
+    background: #fff2da;
+    color: #986010;
+  }
+  .statusBadge.unpaid {
+    background: #fff0f2;
+    color: #ad3949;
+  }
+  .statusBadge.noPlan {
+    background: #f0eff5;
+    color: var(--m);
   }
   .billGroup {
     margin-top: 20px;
@@ -317,6 +428,15 @@
     color: var(--i);
     font-size: 13px;
     font-weight: 800;
+  }
+  .billGroupHead span::before {
+    content: "";
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-right: 8px;
+    border-radius: 50%;
+    background: currentColor;
   }
   .billGroupHead small {
     color: var(--m);
@@ -370,6 +490,11 @@
     background: #ffe9ec;
     color: #b33b4b;
   }
+  .Credit,
+  .Loan {
+    background: #ffe9ec;
+    color: #b33b4b;
+  }
   .Personal {
     background: #f0e9ff;
     color: #7447b4;
@@ -383,11 +508,12 @@
     color: #257c73;
   }
   .bill b {
-    text-align: right;
+    text-align: left;
   }
   .del,
   .edit,
-  .pay {
+  .pay,
+  .undoPay {
     padding: 5px 8px;
     font-size: 13px;
   }
@@ -406,6 +532,41 @@
   .edit {
     background: #eeeafb;
     color: var(--p);
+  }
+  .undoPay {
+    background: #fff5e5;
+    color: #8d5c16;
+  }
+  .historyList {
+    display: grid;
+    gap: 0;
+    margin-top: 13px;
+  }
+  .historyRow {
+    display: grid;
+    grid-template-columns: minmax(130px, 1fr) repeat(3, minmax(100px, .7fr));
+    gap: 12px;
+    align-items: center;
+    padding: 12px 0;
+    border-top: 1px solid var(--l);
+  }
+  .historyRow:first-child {
+    border-top: 0;
+  }
+  .historyRow strong {
+    text-transform: capitalize;
+  }
+  .historyValue span {
+    display: block;
+    color: var(--m);
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: .06em;
+  }
+  .historyValue b {
+    display: block;
+    margin-top: 2px;
+    font-size: 13px;
   }
   .form {
     display: grid;
@@ -551,6 +712,46 @@
       grid-template-columns: 1fr;
       gap: 18px;
     }
+    .paymentTop,
+    .insightGrid {
+      grid-template-columns: 1fr;
+    }
+    .sectionHead {
+      align-items: stretch;
+      flex-direction: column;
+    }
+    .filterBar button {
+      flex: 1;
+    }
+    .bill {
+      grid-template-columns: 1fr 1fr;
+      gap: 10px 14px;
+      padding: 15px 0;
+    }
+    .billGroupHead {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .billInfo {
+      grid-column: 1 / -1;
+    }
+    .billStatus {
+      grid-column: 1 / -1;
+    }
+    .billActions {
+      grid-column: 1 / -1;
+      justify-content: stretch;
+    }
+    .billActions button {
+      flex: 1;
+    }
+    .historyRow {
+      grid-template-columns: repeat(3, 1fr);
+    }
+    .historyRow > strong {
+      grid-column: 1 / -1;
+    }
     .dashboardGrid {
       grid-template-columns: 1fr;
     }
@@ -594,23 +795,24 @@
   </header>
   <section id="dashboardView">
     <section class="cards">
-      <div class="card">
+      <div class="card metricCard incomeMetric">
         <div class="label">THIS MONTH'S INCOME</div>
         <div class="big green" id="incomeTotal"></div>
       </div>
-      <div class="card">
+      <div class="card metricCard paidMetric">
         <div class="label">PAID EXPENSES</div>
         <div class="big" id="expenseTotal"></div>
       </div>
-      <div class="card">
+      <div class="card metricCard availableMetric">
         <div class="label">AVAILABLE NOW</div>
         <div class="big green" id="savingTotal"></div>
       </div>
-      <div class="card">
+      <div class="card metricCard">
         <div class="label">BUDGET USED</div>
         <div class="big" id="percent"></div>
       </div>
     </section>
+    <div id="dashboardDetails">
     <section class="card debtOverview">
       <div class="debtHead">
         <div>
@@ -647,9 +849,10 @@
         <p class="muted">Only use <b>Paid</b> after money has really left your account.</p>
       </section>
     </section>
+    </div>
   </section>
   <section id="paymentsView" class="hidden">
-    <div class="grid">
+    <div class="paymentTop">
       <section class="card">
         <h2>Income for this month</h2>
         <p class="sub">Type your salary here. Then press <b>Save income</b>.</p>
@@ -662,60 +865,74 @@
           /><button class="primary" id="saveIncome">Save income</button>
         </div>
         <div class="note" id="note">Income is saved on this phone.</div>
-        <h2 style="margin-top: 22px">Monthly bills</h2>
-        <p class="sub">Remove any bill you do not need.</p>
-        <div id="bills"></div>
       </section>
-      <aside>
-        <section class="card">
-          <h2>Add expense</h2>
-          <p class="sub">Example: Cosmetics</p>
-          <form class="form" id="form" style="margin-top: 12px">
-            <input id="name" required placeholder="Expense name" />
-            <div class="two">
-              <select id="cat">
-                <option>Family</option>
-                <option>Home</option>
-                <option>Food</option>
-                <option>Debt</option>
-                <option>Personal</option>
-                <option>Cosmetics</option>
-                <option>Transport</option></select
-              ><input id="amount" type="number" required placeholder="MVR" />
-            </div>
-            <div id="debtBalanceWrap" class="hidden">
-              <label class="fieldLabel">Total loan / credit / debt left</label
-              ><input
-                id="debtBalance"
-                type="number"
-                inputmode="decimal"
-                placeholder="MVR"
-              />
-            </div>
-            <button class="primary">Add expense</button>
-          </form>
-        </section>
-        <section class="card">
-          <h2>Budget progress</h2>
-          <div class="bar"><i id="bar"></i></div>
-          <p class="muted" id="progress"></p>
-          <p class="muted" id="creditPlan" style="margin-top: 10px"></p>
-          <p class="muted" id="tip" style="margin-top: 10px"></p>
-        </section>
-        <section class="card">
-          <h2>Expense graph</h2>
-          <p class="sub">
-            Regular expenses only — debt payments are shown separately.
-          </p>
-          <div id="expenseGraph"></div>
-        </section>
-        <section class="card">
-          <h2>Loans, credit & debt graph</h2>
-          <p class="sub">Shows each loan, credit or debt balance separately.</p>
-          <div id="loanGraph"></div>
-        </section>
-      </aside>
+      <section class="card">
+        <h2>Add expense</h2>
+        <p class="sub">Choose a saved category and set this month's plan.</p>
+        <form class="form" id="form" style="margin-top: 12px">
+          <input id="name" required placeholder="Expense name" />
+          <div class="two">
+            <select id="cat">
+              <option>Family</option>
+              <option>Home</option>
+              <option>Food</option>
+              <option>Debt</option>
+              <option>Personal</option>
+              <option>Cosmetics</option>
+              <option>Transport</option></select
+            ><input id="amount" type="number" required placeholder="Plan MVR" />
+          </div>
+          <div id="debtBalanceWrap" class="hidden">
+            <label class="fieldLabel">Total loan / credit / debt left</label
+            ><input
+              id="debtBalance"
+              type="number"
+              inputmode="decimal"
+              placeholder="Balance MVR"
+            />
+          </div>
+          <button class="primary">Add expense</button>
+        </form>
+      </section>
     </div>
+    <section class="card billsCard">
+      <div class="sectionHead">
+        <div>
+          <h2>Monthly bills</h2>
+          <p class="sub">Planned and actually paid amounts stay separate.</p>
+        </div>
+        <div class="filterBar" aria-label="Filter monthly bills">
+          <button class="active" type="button" data-bill-filter="all">All</button>
+          <button type="button" data-bill-filter="waiting">Waiting</button>
+          <button type="button" data-bill-filter="paid">Paid</button>
+        </div>
+      </div>
+      <div id="bills"></div>
+    </section>
+    <div class="insightGrid">
+      <section class="card">
+        <h2>Budget progress</h2>
+        <div class="bar"><i id="bar"></i></div>
+        <p class="muted" id="progress"></p>
+        <p class="muted" id="creditPlan" style="margin-top: 10px"></p>
+        <p class="muted" id="tip" style="margin-top: 10px"></p>
+      </section>
+      <section class="card">
+        <h2>Payments</h2>
+        <p class="sub">Regular and loan payments actually recorded.</p>
+        <div id="expenseGraph"></div>
+      </section>
+      <section class="card">
+        <h2>Balances left</h2>
+        <p class="sub">Each loan, credit or debt balance separately.</p>
+        <div id="loanGraph"></div>
+      </section>
+    </div>
+    <section class="card">
+      <h2>Monthly history</h2>
+      <p class="sub">Compare the income, plan and actual payments saved for each month.</p>
+      <div id="monthlyHistory" class="historyList"></div>
+    </section>
   </section>
   <section id="categoriesView" class="hidden">
     <section class="card">
@@ -736,11 +953,12 @@
   </footer>
   <div id="paymentModal" class="modalBackdrop hidden">
     <section class="modal">
-        <h2>Record loan / credit payment</h2>
+      <h2>Record loan / credit payment</h2>
       <p class="sub">
-        Enter the actual amount you paid today. Only this amount reduces your
-        salary and credit balance.
+        Enter what you are paying now. It will be added to this month's actual
+        paid amount and removed from the balance left.
       </p>
+      <p class="muted" id="paymentContext" style="margin-top: 10px"></p>
       <form id="paymentForm" class="form">
         <input
           id="paymentAmount"
@@ -833,19 +1051,23 @@
   function preparePlan(plan) {
     const clean = plan && typeof plan === "object" ? structuredClone(plan) : structuredClone(defaults);
     if (!Array.isArray(clean.bills)) return structuredClone(defaults);
-    clean.bills = clean.bills.map((b) =>
-      Array.isArray(b)
-        ? [
-            b[0],
-            Number(b[1]) || 0,
-            b[2] || "Personal",
-            !!b[3],
-            Number(b[4]) || 0,
-            Number(b[5]) || Number(b[4]) || 0,
-            Number(b[6]) || 0,
-          ]
-        : b,
-    );
+    clean.bills = clean.bills.map((b) => {
+      if (!Array.isArray(b)) return b;
+      const category = b[2] || "Personal";
+      const wasPaid = !!b[3];
+      const recordedPayment =
+        Number(b[6]) ||
+        (wasPaid && /(debt|credit|loan)/i.test(category) ? Number(b[1]) || 0 : 0);
+      return [
+        b[0],
+        Number(b[1]) || 0,
+        category,
+        wasPaid,
+        Number(b[4]) || 0,
+        Number(b[5]) || Number(b[4]) || 0,
+        recordedPayment,
+      ];
+    });
     if (!Array.isArray(clean.loans)) clean.loans = [];
     if (!Array.isArray(clean.categories)) clean.categories = [...defaults.categories];
     if (!clean.categories.includes("Credit")) clean.categories.push("Credit");
@@ -880,6 +1102,7 @@
   if (!months[activeMonth]) months[activeMonth] = preparePlan(legacy || defaults);
   let s = preparePlan(months[activeMonth]);
   let editingBillIndex = null;
+  let activeBillFilter = "all";
   const $ = (x) => document.getElementById(x),
     m = (x) =>
       "MVR " +
@@ -895,7 +1118,20 @@
       s.loans.reduce((a, l) => a + (l.paid ? Number(l.monthly || 0) : 0), 0);
   const isCreditCategory = (c) => /(debt|credit|loan)/i.test(c);
   const paidValue = (b) =>
-    b[3] ? (isCreditCategory(b[2]) ? Number(b[6] || 0) : Number(b[1] || 0)) : 0;
+    isCreditCategory(b[2])
+      ? Number(b[6] || 0)
+      : b[3]
+        ? Number(b[1] || 0)
+        : 0;
+  const billStatus = (b) => {
+    const planned = Number(b[1] || 0);
+    const paid = paidValue(b);
+    if (planned <= 0 && paid <= 0) return "noPlan";
+    if (paid <= 0) return "unpaid";
+    if (paid < planned) return "partial";
+    return "paid";
+  };
+  const isWaitingBill = (b) => ["unpaid", "partial"].includes(billStatus(b));
   let paymentBillIndex = null;
   function makeNewMonth(fromPlan) {
     const next = preparePlan(fromPlan);
@@ -919,6 +1155,9 @@
   }
   function render() {
     $("monthSelect").value = activeMonth;
+    document.querySelectorAll("[data-bill-filter]").forEach((button) =>
+      button.classList.toggle("active", button.dataset.billFilter === activeBillFilter),
+    );
     $("cat").innerHTML =
       s.categories.map((x) => "<option>" + x + "</option>").join("") +
       '<option value="__new__">＋ Add new category</option>';
@@ -977,7 +1216,7 @@
     $("savingTotal").className = "big " + (left >= 0 ? "green" : "red");
     $("percent").textContent = s.income ? Math.round(p) + "%" : "Add income";
     const plannedTotal = s.bills.reduce((sum, bill) => sum + Number(bill[1] || 0), 0);
-    const unpaidCount = s.bills.filter((bill) => !bill[3]).length;
+    const unpaidCount = s.bills.filter(isWaitingBill).length;
     const afterPlan = s.income - plannedTotal;
     $("plannedBillsTotal").textContent = m(plannedTotal);
     $("paidBillsTotal").textContent = m(e);
@@ -1019,8 +1258,8 @@
       ? Math.round(p) + "% of income used · " + m(left) + " left"
       : "Add this month's income to see your available balance.";
     let due = s.bills
-      .filter((b) => isCreditCategory(b[2]) && !b[3])
-      .reduce((a, b) => a + Number(b[1] || 0), 0);
+      .filter((b) => isCreditCategory(b[2]) && isWaitingBill(b))
+      .reduce((a, b) => a + Math.max(0, Number(b[1] || 0) - paidValue(b)), 0);
     let canPay = Math.max(0, Math.min(left, due));
     $("creditPlan").textContent = due
       ? "Credit payment plan: " +
@@ -1069,6 +1308,40 @@
           })
           .join("")
       : "No debt balances added yet.";
+    const historyRows = Object.entries({ ...months, [activeMonth]: s })
+      .sort(([a], [b]) => b.localeCompare(a))
+      .slice(0, 12)
+      .map(([month, plan]) => {
+        const monthPlan = preparePlan(plan);
+        const monthPlanned = monthPlan.bills.reduce(
+          (sum, bill) => sum + Number(bill[1] || 0),
+          0,
+        );
+        const monthPaid = monthPlan.bills.reduce(
+          (sum, bill) => sum + paidValue(bill),
+          0,
+        );
+        const monthAvailable = Number(monthPlan.income || 0) - monthPaid;
+        const monthLabel = new Date(month + "-01T00:00:00").toLocaleDateString(
+          undefined,
+          { month: "long", year: "numeric" },
+        );
+        return (
+          '<div class="historyRow"><strong>' +
+          monthLabel +
+          '</strong><div class="historyValue"><span>PLANNED</span><b>' +
+          m(monthPlanned) +
+          '</b></div><div class="historyValue"><span>PAID</span><b>' +
+          m(monthPaid) +
+          '</b></div><div class="historyValue"><span>AVAILABLE</span><b class="' +
+          (monthAvailable < 0 ? "red" : "green") +
+          '">' +
+          m(monthAvailable) +
+          "</b></div></div>"
+        );
+      })
+      .join("");
+    $("monthlyHistory").innerHTML = historyRows || '<p class="muted">No monthly history yet.</p>';
     $("bills").innerHTML = "";
     const billGroups = [
       { key: "credit", title: "Credit & debt", className: "creditGroup" },
@@ -1082,96 +1355,133 @@
       const name = String(bill[0] || "").toLowerCase();
       const category = String(bill[2] || "").toLowerCase();
       if (category === "loan") return "loan";
-      if (isCreditCategory(category)) return "credit";
+      if (isCreditCategory(category) || /credit|debt/.test(name)) return "credit";
       if (category === "food" || /food|agro|cafe|coffee/.test(name)) return "food";
       if (category === "home" || /water|electric|council|utility/.test(name)) return "utility";
       if (category === "family" || /kids|family/.test(name)) return "family";
       return "other";
     };
+    let renderedGroups = 0;
     billGroups.forEach((group) => {
-      const entries = s.bills
+      const allEntries = s.bills
         .map((bill, index) => ({ bill, index }))
         .filter(({ bill }) => groupForBill(bill) === group.key);
+      const entries = allEntries.filter(({ bill }) => {
+        const status = billStatus(bill);
+        if (activeBillFilter === "waiting") return ["unpaid", "partial"].includes(status);
+        if (activeBillFilter === "paid") return status === "paid";
+        return true;
+      });
       if (!entries.length) return;
-      const groupTotal = entries.reduce((sum, { bill }) => sum + Number(bill[1] || 0), 0);
-      const groupPaid = entries.reduce((sum, { bill }) => sum + paidValue(bill), 0);
-      const groupUnpaid = entries.filter(({ bill }) => !bill[3]).length;
+      renderedGroups += 1;
+      const groupTotal = allEntries.reduce((sum, { bill }) => sum + Number(bill[1] || 0), 0);
+      const groupPaid = allEntries.reduce((sum, { bill }) => sum + paidValue(bill), 0);
+      const groupWaiting = allEntries.filter(({ bill }) => isWaitingBill(bill)).length;
       const section = document.createElement("section");
       section.className = "billGroup " + group.className;
-      section.innerHTML = '<div class="billGroupHead"><span>' + group.title + '</span><small>' + m(groupTotal) + ' planned · ' + m(groupPaid) + ' paid · ' + groupUnpaid + ' unpaid</small></div>';
+      section.innerHTML = '<div class="billGroupHead"><span>' + group.title + '</span><small>' + m(groupTotal) + ' planned · ' + m(groupPaid) + ' paid · ' + groupWaiting + ' waiting</small></div>';
       entries.forEach(({ bill: b, index: i }) => {
-      let r = document.createElement("div");
-      r.className = "bill";
-      r.innerHTML =
-        '<div><strong></strong><small></small></div><b></b><button class="pay"></button><button class="edit" title="Edit bill">✎</button><button class="del" title="Remove bill">×</button>';
-      r.querySelector("strong").textContent = b[0];
-      r.querySelector("small").textContent = b[2];
-      r.querySelector("small").className = "category " + b[2];
-      if (isCreditCategory(b[2]) && Number(b[4]) > 0)
-        r.querySelector("small").textContent = b[2] + " · " + m(b[4]) + " left";
-      r.style.borderLeft =
-        "4px solid " +
-        ({
-          Family: "#345b99",
-          Home: "#2877ae",
-          Food: "#c17b1c",
-          Debt: "#c54655",
-          Credit: "#c54655",
-          Loan: "#963747",
-          Personal: "#8056bd",
-          Cosmetics: "#c25291",
-          Transport: "#2e998d",
-        }[b[2]] || "#766f8d");
-      r.querySelector("b").textContent = m(b[1]);
-      let pay = r.querySelector(".pay");
-      pay.textContent = b[3] ? "Paid" : "Pay";
-      pay.classList.toggle("off", !b[3]);
-      pay.onclick = () => {
-        if (isCreditCategory(b[2])) {
-          if (b[3]) {
-            b[4] = Math.min(
-              Number(b[5] || b[4] + b[6]),
-              Number(b[4]) + Number(b[6] || 0),
-            );
-            b[3] = false;
-            b[6] = 0;
-            save();
-            render();
-          } else {
-            paymentBillIndex = i;
-            $("paymentAmount").value = b[1] || "";
-            $("paymentModal").classList.remove("hidden");
-          }
-        } else {
-          b[3] = !b[3];
+        const status = billStatus(b);
+        const actualPaid = paidValue(b);
+        let r = document.createElement("div");
+        r.className = "bill";
+        r.innerHTML =
+          '<div class="billInfo"><strong></strong><small></small></div><div class="billMetric plannedMetric"><span>Planned</span><b></b></div><div class="billMetric paidMetric"><span>Paid</span><b></b></div><div class="billStatus"><span class="statusBadge"></span></div><div class="billActions"><button class="pay"></button><button class="undoPay hidden">Undo paid</button><button class="edit" title="Edit bill">Edit</button><button class="del" title="Remove bill">Remove</button></div>';
+        r.querySelector(".billInfo strong").textContent = b[0];
+        const category = r.querySelector(".billInfo small");
+        category.textContent = b[2];
+        category.className = "category " + b[2];
+        if (isCreditCategory(b[2]) && Number(b[4]) > 0)
+          category.textContent = b[2] + " · " + m(b[4]) + " left";
+        r.style.borderLeft =
+          "4px solid " +
+          ({
+            Family: "#345b99",
+            Home: "#2877ae",
+            Food: "#c17b1c",
+            Debt: "#c54655",
+            Credit: "#c54655",
+            Loan: "#963747",
+            Personal: "#8056bd",
+            Cosmetics: "#c25291",
+            Transport: "#2e998d",
+          }[b[2]] || "#766f8d");
+        r.querySelector(".plannedMetric b").textContent = m(b[1]);
+        r.querySelector(".paidMetric b").textContent = m(actualPaid);
+        const statusBadge = r.querySelector(".statusBadge");
+        statusBadge.className = "statusBadge " + status;
+        statusBadge.textContent =
+          { paid: "Paid", partial: "Partial", unpaid: "Unpaid", noPlan: "No plan" }[status];
+        let pay = r.querySelector(".pay");
+        pay.textContent = status === "paid" ? "Undo" : status === "partial" ? "Add payment" : "Pay";
+        pay.classList.toggle("off", status !== "paid");
+        pay.disabled = status === "noPlan" && !isCreditCategory(b[2]);
+        const undoPay = r.querySelector(".undoPay");
+        undoPay.classList.toggle(
+          "hidden",
+          !(isCreditCategory(b[2]) && status === "partial"),
+        );
+        undoPay.onclick = () => {
+          b[4] = Math.min(
+            Number(b[5] || b[4] + b[6]),
+            Number(b[4]) + Number(b[6] || 0),
+          );
+          b[3] = false;
+          b[6] = 0;
           save();
           render();
-        }
-      };
-      r.querySelector(".edit").onclick = () => {
-        editingBillIndex = i;
-        $("editName").value = b[0];
-        $("editAmount").value = b[1];
-        $("editCategory").innerHTML = s.categories
-          .map((x) => "<option>" + x + "</option>")
-          .join("");
-        $("editCategory").value = b[2];
-        $("editDebtBalance").value = b[4] || "";
-      $("editDebtWrap").classList.toggle(
-        "hidden",
-        !isCreditCategory(b[2]),
-      );
-        $("editModal").classList.remove("hidden");
-      };
-      r.querySelector(".del").onclick = () => {
-        s.bills.splice(i, 1);
-        save();
-        render();
-      };
-      section.append(r);
-    });
+        };
+        pay.onclick = () => {
+          if (isCreditCategory(b[2])) {
+            if (status === "paid") {
+              b[4] = Math.min(
+                Number(b[5] || b[4] + b[6]),
+                Number(b[4]) + Number(b[6] || 0),
+              );
+              b[3] = false;
+              b[6] = 0;
+              save();
+              render();
+            } else {
+              paymentBillIndex = i;
+              const plannedRemaining = Math.max(0, Number(b[1] || 0) - actualPaid);
+              $("paymentAmount").value = plannedRemaining || "";
+              $("paymentContext").textContent =
+                b[0] + " · " + m(actualPaid) + " paid of " + m(b[1]) +
+                " planned · " + m(b[4]) + " balance left";
+              $("paymentModal").classList.remove("hidden");
+            }
+          } else {
+            b[3] = !b[3];
+            save();
+            render();
+          }
+        };
+        r.querySelector(".edit").onclick = () => {
+          editingBillIndex = i;
+          $("editName").value = b[0];
+          $("editAmount").value = b[1];
+          $("editCategory").innerHTML = s.categories
+            .map((x) => "<option>" + x + "</option>")
+            .join("");
+          $("editCategory").value = b[2];
+          $("editDebtBalance").value = b[4] || "";
+          $("editDebtWrap").classList.toggle("hidden", !isCreditCategory(b[2]));
+          $("editModal").classList.remove("hidden");
+        };
+        r.querySelector(".del").onclick = () => {
+          if (!confirm("Remove " + b[0] + " from this monthly plan?")) return;
+          s.bills.splice(i, 1);
+          save();
+          render();
+        };
+        section.append(r);
+      });
       $("bills").append(section);
     });
+    if (!renderedGroups) {
+      $("bills").innerHTML = '<p class="muted" style="padding:20px 0">No bills match this filter.</p>';
+    }
   }
   $("cat").onchange = () => {
     let isDebt = isCreditCategory($("cat").value);
@@ -1208,6 +1518,7 @@
         button.classList.toggle("active", button.dataset.page === safePage),
       );
     $("dashboardView").classList.remove("hidden");
+    $("dashboardDetails").classList.toggle("hidden", safePage !== "dashboard");
     $("paymentsView").classList.toggle("hidden", safePage !== "payments");
     $("categoriesView").classList.toggle("hidden", safePage !== "categories");
     localStorage.setItem("moneyPlanActivePage", safePage);
@@ -1215,6 +1526,12 @@
   document.querySelectorAll(".nav button").forEach(
     (button) => (button.onclick = () => openPage(button.dataset.page)),
   );
+  document.querySelectorAll("[data-bill-filter]").forEach((button) => {
+    button.onclick = () => {
+      activeBillFilter = button.dataset.billFilter;
+      render();
+    };
+  });
   $("cancelPayment").onclick = () => {
     paymentBillIndex = null;
     $("paymentModal").classList.add("hidden");
@@ -1225,9 +1542,10 @@
     let b = s.bills[paymentBillIndex],
       amount = Number($("paymentAmount").value);
     if (!amount || amount <= 0) return;
-    b[6] = Math.min(amount, Number(b[4] || amount));
-    b[4] = Math.max(0, Number(b[4]) - b[6]);
-    b[3] = true;
+    const accepted = Math.min(amount, Number(b[4] || amount));
+    b[6] = Number(b[6] || 0) + accepted;
+    b[4] = Math.max(0, Number(b[4]) - accepted);
+    b[3] = Number(b[1] || 0) > 0 ? b[6] >= Number(b[1]) : b[6] > 0;
     paymentBillIndex = null;
     save();
     render();
@@ -1254,6 +1572,9 @@
     if (isCreditCategory(category)) {
       b[4] = Number($("editDebtBalance").value) || 0;
       b[5] = Math.max(Number(b[5] || 0), b[4]);
+      b[3] = Number(b[1] || 0) > 0
+        ? Number(b[6] || 0) >= Number(b[1])
+        : Number(b[6] || 0) > 0;
     } else {
       b[4] = 0;
       b[5] = 0;
@@ -1287,6 +1608,7 @@
       false,
       balance,
       balance,
+      0,
     ]);
     save();
     e.target.reset();
