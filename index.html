@@ -592,7 +592,7 @@
   }
   .bill {
     display: grid;
-    grid-template-columns: minmax(190px, 1fr) 100px 100px 86px auto;
+    grid-template-columns: minmax(190px, 1fr) 100px 100px 112px auto;
     gap: 9px;
     align-items: center;
     border-top: 1px solid var(--l);
@@ -630,6 +630,7 @@
     border-radius: 999px;
     font-size: 11px;
     font-weight: 800;
+    white-space: nowrap;
   }
   .statusBadge.paid {
     background: #e5f5eb;
@@ -825,6 +826,11 @@
     gap: 10px;
     font-size: 13px;
     font-weight: 700;
+  }
+  .balanceMeta {
+    margin-top: 5px;
+    color: var(--m);
+    font-size: 10px;
   }
   .graphbar {
     height: 12px;
@@ -1274,7 +1280,7 @@
       </section>
       <section class="card">
         <h2>Balances left</h2>
-        <p class="sub">Each loan, credit or debt balance separately.</p>
+        <p class="sub">A monthly payment can be paid while the total balance still remains.</p>
         <div id="loanGraph"></div>
       </section>
     </div>
@@ -1434,13 +1440,19 @@
       const recordedPayment =
         Number(b[6]) ||
         (wasPaid && /(debt|credit|loan)/i.test(category) ? Number(b[1]) || 0 : 0);
+      const remainingBalance = Math.max(0, Number(b[4]) || 0);
+      const originalBalance = Math.max(
+        0,
+        Number(b[5]) || 0,
+        remainingBalance + recordedPayment,
+      );
       return [
         b[0],
         Number(b[1]) || 0,
         category,
         wasPaid,
-        Number(b[4]) || 0,
-        Number(b[5]) || Number(b[4]) || 0,
+        remainingBalance,
+        originalBalance,
         recordedPayment,
       ];
     });
@@ -1742,7 +1754,15 @@
         (b) => isCreditCategory(b[2]) && Number(b[4]) > 0,
       ),
       debtBalance = debtBills.reduce((a, b) => a + Number(b[4]), 0),
-      debtOriginal = debtBills.reduce((a, b) => a + Number(b[5] || b[4]), 0),
+      debtOriginal = debtBills.reduce(
+        (a, b) =>
+          a +
+          Math.max(
+            Number(b[5] || 0),
+            Number(b[4] || 0) + Number(b[6] || 0),
+          ),
+        0,
+      ),
       debtPct = debtOriginal
         ? Math.max(0, Math.min(100, (debtBalance / debtOriginal) * 100))
         : 0;
@@ -1798,24 +1818,45 @@
       '</span></div><div class="graphbar"><i style="width:' +
       loanPct +
       '%;background:#c54655"></i></div></div>';
-    $("loanGraph").innerHTML = debtBills.length
-      ? debtBills
-          .map((b) => {
-            let pct = b[5]
-              ? Math.max(0, Math.min(100, (b[4] / b[5]) * 100))
-              : 100;
-            return (
-              '<div class="graphrow"><div class="graphlabel"><span>' +
-              b[0] +
-              "</span><span>" +
-              m(b[4]) +
-              ' left</span></div><div class="graphbar"><i style="width:' +
-              pct +
-              '%;background:#c54655"></i></div></div>'
-            );
-          })
-          .join("")
-      : '<div class="emptyState"><div><div class="emptyMark">0</div><strong>No balances tracked yet</strong><span>Add a loan or credit balance when you create an expense.</span></div></div>';
+    const loanGraph = $("loanGraph");
+    loanGraph.innerHTML = "";
+    if (debtBills.length) {
+      debtBills.forEach((bill) => {
+        const remaining = Number(bill[4] || 0);
+        const original = Math.max(
+          Number(bill[5] || 0),
+          remaining + Number(bill[6] || 0),
+          remaining,
+        );
+        const repaid = Math.max(0, original - remaining);
+        const pct = original
+          ? Math.max(0, Math.min(100, (remaining / original) * 100))
+          : 0;
+        const row = document.createElement("div");
+        row.className = "graphrow";
+        const label = document.createElement("div");
+        label.className = "graphlabel";
+        const name = document.createElement("span");
+        const balance = document.createElement("span");
+        name.textContent = bill[0];
+        balance.textContent = m(remaining) + " left";
+        label.append(name, balance);
+        const bar = document.createElement("div");
+        bar.className = "graphbar";
+        const fill = document.createElement("i");
+        fill.style.width = pct + "%";
+        fill.style.background = "#c54655";
+        bar.append(fill);
+        const detail = document.createElement("div");
+        detail.className = "balanceMeta";
+        detail.textContent =
+          m(repaid) + " repaid · " + Math.round(pct) + "% of the total balance remains";
+        row.append(label, bar, detail);
+        loanGraph.append(row);
+      });
+    } else {
+      loanGraph.innerHTML = '<div class="emptyState"><div><div class="emptyMark">0</div><strong>No balances tracked yet</strong><span>Add a loan or credit balance when you create an expense.</span></div></div>';
+    }
     const historyRows = Object.entries({ ...months, [activeMonth]: s })
       .sort(([a], [b]) => b.localeCompare(a))
       .slice(0, 12)
@@ -1900,8 +1941,9 @@
         r.querySelector(".paidMetric b").textContent = m(actualPaid);
         const statusBadge = r.querySelector(".statusBadge");
         statusBadge.className = "statusBadge " + status;
-        statusBadge.textContent =
-          { paid: "Paid", partial: "Partial", unpaid: "Unpaid", noPlan: "No plan" }[status];
+        statusBadge.textContent = isCreditCategory(b[2]) && status === "paid"
+          ? "This month paid"
+          : { paid: "Paid", partial: "Partial", unpaid: "Unpaid", noPlan: "No plan" }[status];
         let pay = r.querySelector(".pay");
         pay.textContent = status === "paid" ? "Undo" : status === "partial" ? "Add payment" : "Pay";
         pay.classList.toggle("off", status !== "paid");
@@ -2143,7 +2185,10 @@
     b[2] = category;
     if (isCreditCategory(category)) {
       b[4] = Number($("editDebtBalance").value) || 0;
-      b[5] = Math.max(Number(b[5] || 0), b[4]);
+      b[5] = Math.max(
+        Number(b[5] || 0),
+        b[4] + Number(b[6] || 0),
+      );
       b[3] = Number(b[1] || 0) > 0
         ? Number(b[6] || 0) >= Number(b[1])
         : Number(b[6] || 0) > 0;
