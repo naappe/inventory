@@ -165,6 +165,34 @@
   .debtOverview {
     margin-bottom: 15px;
   }
+  .dashboardGrid {
+    display: grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: 15px;
+  }
+  .dashboardList {
+    display: grid;
+    gap: 11px;
+    margin-top: 15px;
+  }
+  .dashboardLine {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    color: var(--m);
+  }
+  .dashboardLine strong {
+    color: var(--i);
+  }
+  .actionCard {
+    display: grid;
+    align-content: start;
+    gap: 12px;
+  }
+  .actionCard .primary {
+    width: 100%;
+  }
   .debtHead {
     display: flex;
     justify-content: space-between;
@@ -449,6 +477,9 @@
       grid-template-columns: 1fr;
       gap: 18px;
     }
+    .dashboardGrid {
+      grid-template-columns: 1fr;
+    }
     .card {
       padding: 20px;
     }
@@ -518,6 +549,26 @@
         <i id="debtBarTop" style="background: #c54655"></i>
       </div>
       <p class="muted" id="debtTextTop"></p>
+    </section>
+    <section class="dashboardGrid">
+      <section class="card">
+        <h2>This month's plan</h2>
+        <p class="sub">Your plan is separate from what you have actually paid.</p>
+        <div class="dashboardList">
+          <div class="dashboardLine"><span>All planned bills</span><strong id="plannedBillsTotal"></strong></div>
+          <div class="dashboardLine"><span>Actually paid</span><strong id="paidBillsTotal"></strong></div>
+          <div class="dashboardLine"><span>Still unpaid</span><strong id="unpaidBillsCount"></strong></div>
+          <div class="dashboardLine"><span>Left after full plan</span><strong id="afterPlanTotal"></strong></div>
+        </div>
+      </section>
+      <section class="card actionCard">
+        <div>
+          <h2>Next step</h2>
+          <p class="sub" id="nextActionText"></p>
+        </div>
+        <button id="dashboardAction" class="primary"></button>
+        <p class="muted">Only use <b>Paid</b> after money has really left your account.</p>
+      </section>
     </section>
   </section>
   <section id="paymentsView" class="hidden">
@@ -834,6 +885,21 @@
     $("savingTotal").textContent = m(left);
     $("savingTotal").className = "big " + (left >= 0 ? "green" : "red");
     $("percent").textContent = s.income ? Math.round(p) + "%" : "Add income";
+    const plannedTotal = s.bills.reduce((sum, bill) => sum + Number(bill[1] || 0), 0);
+    const unpaidCount = s.bills.filter((bill) => !bill[3]).length;
+    const afterPlan = s.income - plannedTotal;
+    $("plannedBillsTotal").textContent = m(plannedTotal);
+    $("paidBillsTotal").textContent = m(e);
+    $("unpaidBillsCount").textContent = unpaidCount + " bill" + (unpaidCount === 1 ? "" : "s");
+    $("afterPlanTotal").textContent = s.income ? m(afterPlan) : "Add income first";
+    $("afterPlanTotal").className = s.income && afterPlan < 0 ? "red" : "";
+    $("nextActionText").textContent = !s.income
+      ? "Enter the salary you received for " + activeMonth + "."
+      : unpaidCount
+        ? unpaidCount + " bill" + (unpaidCount === 1 ? " is" : "s are") + " still waiting for payment."
+        : "All bills in this month are marked paid. Review what you can save.";
+    $("dashboardAction").textContent = !s.income ? "Add this month's income" : unpaidCount ? "Open payments" : "Review payments";
+    $("dashboardAction").onclick = () => document.querySelector('[data-page="payments"]').click();
     let debtBills = s.bills.filter(
         (b) => isCreditCategory(b[2]) && Number(b[4]) > 0,
       ),
