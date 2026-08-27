@@ -1,6 +1,18 @@
 <!doctype html><meta charset="utf-8" /><meta
   name="viewport"
   content="width=device-width,initial-scale=1"
+/><meta name="theme-color" content="#6546c5" /><meta
+  name="mobile-web-app-capable"
+  content="yes"
+/><meta name="apple-mobile-web-app-capable" content="yes" /><meta
+  name="apple-mobile-web-app-status-bar-style"
+  content="default"
+/><meta name="apple-mobile-web-app-title" content="Money Plan" /><link
+  rel="manifest"
+  href="./manifest.webmanifest"
+/><link rel="icon" href="./icons/icon.svg" type="image/svg+xml" /><link
+  rel="apple-touch-icon"
+  href="./icons/icon-192.png"
 /><title>My Money Plan</title
 ><style>
   :root {
@@ -99,6 +111,14 @@
     margin-top: 10px;
     color: var(--m);
     font-size: 12px;
+  }
+  .installActions {
+    display: flex;
+    gap: 9px;
+    margin-top: 16px;
+  }
+  .installActions button {
+    flex: 1;
   }
   .categoryItem {
     display: flex;
@@ -231,6 +251,63 @@
   }
   .actionCard .primary {
     width: 100%;
+  }
+  .alertCard {
+    margin-top: 15px;
+  }
+  .alertList {
+    display: grid;
+    gap: 9px;
+    margin-top: 14px;
+  }
+  .budgetAlert {
+    display: grid;
+    grid-template-columns: 10px 1fr;
+    gap: 11px;
+    align-items: start;
+    padding: 12px 13px;
+    border: 1px solid var(--l);
+    border-radius: 12px;
+    background: #faf9fd;
+  }
+  .budgetAlert::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    margin-top: 5px;
+    border-radius: 50%;
+    background: var(--p);
+  }
+  .budgetAlert strong {
+    display: block;
+    font-size: 13px;
+  }
+  .budgetAlert span {
+    display: block;
+    margin-top: 2px;
+    color: var(--m);
+    font-size: 12px;
+  }
+  .budgetAlert.warning {
+    border-color: #ead5ae;
+    background: #fffaf0;
+  }
+  .budgetAlert.warning::before {
+    background: var(--w);
+  }
+  .budgetAlert.danger {
+    border-color: #efc9cf;
+    background: #fff5f6;
+  }
+  .budgetAlert.danger::before {
+    background: var(--r);
+  }
+  .budgetAlert.success {
+    border-color: #c8e6d6;
+    background: #f3fbf7;
+  }
+  .budgetAlert.success::before {
+    background: var(--g);
   }
   .summaryFooter {
     position: sticky;
@@ -868,6 +945,11 @@
         <p class="muted">Only use <b>Paid</b> after money has really left your account.</p>
       </section>
     </section>
+    <section class="card alertCard">
+      <h2>Budget alerts</h2>
+      <p class="sub">Important guidance for the month you are viewing.</p>
+      <div id="budgetAlerts" class="alertList" aria-live="polite"></div>
+    </section>
     </div>
   </section>
   <section id="paymentsView" class="hidden">
@@ -963,6 +1045,17 @@
         </p>
         <div id="categoryList" class="categoryList"></div>
         <button id="newCategory" class="primary">＋ Add category</button>
+      </section>
+      <section class="card">
+        <h2>Install on your phone</h2>
+        <p class="sub">
+          Install Money Plan like an app. It opens full-screen and keeps the
+          main screen available when your connection is unavailable.
+        </p>
+        <div class="installActions">
+          <button id="installApp" class="primary" type="button">Install Money Plan</button>
+        </div>
+        <p id="installNote" class="backupNote">Preparing the install option…</p>
       </section>
       <section class="card">
         <h2>Backup & restore</h2>
@@ -1166,6 +1259,102 @@
     return "paid";
   };
   const isWaitingBill = (b) => ["unpaid", "partial"].includes(billStatus(b));
+  const groupForBill = (bill) => {
+    const name = String(bill[0] || "").toLowerCase();
+    const category = String(bill[2] || "").toLowerCase();
+    if (category === "loan") return "loan";
+    if (isCreditCategory(category) || /credit|debt/.test(name)) return "credit";
+    if (category === "food" || /food|agro|cafe|coffee/.test(name)) return "food";
+    if (category === "home" || /water|electric|council|utility/.test(name)) return "utility";
+    if (category === "family" || /kids|family/.test(name)) return "family";
+    return "other";
+  };
+  function renderBudgetAlerts({ paid, left, percentUsed, planned, unpaid, afterPlan }) {
+    const alerts = [];
+    const addAlert = (level, title, detail) => alerts.push({ level, title, detail });
+    if (!s.income) {
+      addAlert(
+        "info",
+        "Add this month's income",
+        "Budget warnings become accurate after you enter the salary actually received.",
+      );
+    } else {
+      if (left < 0) {
+        addAlert(
+          "danger",
+          "Paid expenses are over income",
+          "You have spent " + m(Math.abs(left)) + " more than this month's income.",
+        );
+      } else if (afterPlan < 0) {
+        addAlert(
+          "danger",
+          "The full plan is higher than income",
+          "Reduce or delay at least " + m(Math.abs(afterPlan)) + " before paying every planned bill.",
+        );
+      } else if (percentUsed >= 80) {
+        addAlert(
+          "warning",
+          "You are close to the monthly limit",
+          Math.round(percentUsed) + "% of income is already paid. " + m(left) + " remains available.",
+        );
+      }
+      const labels = {
+        credit: "Credit & debt",
+        family: "Family",
+        utility: "Utilities",
+        food: "Food",
+        other: "Other spending",
+        loan: "Loans",
+      };
+      const grouped = {};
+      s.bills.forEach((bill) => {
+        const key = groupForBill(bill);
+        if (!grouped[key]) grouped[key] = { planned: 0, paid: 0 };
+        grouped[key].planned += Number(bill[1] || 0);
+        grouped[key].paid += paidValue(bill);
+      });
+      Object.entries(grouped).some(([key, values]) => {
+        const ratio = values.planned ? values.paid / values.planned : 0;
+        if (ratio >= 0.8 && ratio < 1 && alerts.length < 2) {
+          addAlert(
+            "warning",
+            labels[key] + " is near its plan",
+            Math.round(ratio * 100) + "% paid · " + m(values.planned - values.paid) + " remains in this plan.",
+          );
+          return true;
+        }
+        return false;
+      });
+      if (unpaid && alerts.length < 3) {
+        const remainingPlan = Math.max(0, planned - paid);
+        addAlert(
+          "info",
+          unpaid + " bill" + (unpaid === 1 ? " is" : "s are") + " still waiting",
+          m(remainingPlan) + " remains in the monthly plan. No money is deducted until you record payment.",
+        );
+      } else if (!unpaid && alerts.length < 3) {
+        addAlert(
+          "success",
+          "All planned bills are paid",
+          m(left) + " remains available for saving or other spending.",
+        );
+      }
+    }
+    const list = $("budgetAlerts");
+    list.innerHTML = "";
+    alerts.slice(0, 3).forEach((alert) => {
+      const row = document.createElement("div");
+      row.className = "budgetAlert " + alert.level;
+      const copy = document.createElement("div");
+      const title = document.createElement("strong");
+      const detail = document.createElement("span");
+      title.textContent = alert.title;
+      detail.textContent = alert.detail;
+      copy.append(title, detail);
+      row.append(copy);
+      list.append(row);
+    });
+  }
   let paymentBillIndex = null;
   function makeNewMonth(fromPlan) {
     const next = preparePlan(fromPlan);
@@ -1252,6 +1441,14 @@
     const plannedTotal = s.bills.reduce((sum, bill) => sum + Number(bill[1] || 0), 0);
     const unpaidCount = s.bills.filter(isWaitingBill).length;
     const afterPlan = s.income - plannedTotal;
+    renderBudgetAlerts({
+      paid: e,
+      left,
+      percentUsed: p,
+      planned: plannedTotal,
+      unpaid: unpaidCount,
+      afterPlan,
+    });
     $("plannedBillsTotal").textContent = m(plannedTotal);
     $("paidBillsTotal").textContent = m(e);
     $("unpaidBillsCount").textContent = unpaidCount + " bill" + (unpaidCount === 1 ? "" : "s");
@@ -1385,16 +1582,6 @@
       { key: "other", title: "Other spending", className: "otherGroup" },
       { key: "loan", title: "Loans", className: "loanGroup" },
     ];
-    const groupForBill = (bill) => {
-      const name = String(bill[0] || "").toLowerCase();
-      const category = String(bill[2] || "").toLowerCase();
-      if (category === "loan") return "loan";
-      if (isCreditCategory(category) || /credit|debt/.test(name)) return "credit";
-      if (category === "food" || /food|agro|cafe|coffee/.test(name)) return "food";
-      if (category === "home" || /water|electric|council|utility/.test(name)) return "utility";
-      if (category === "family" || /kids|family/.test(name)) return "family";
-      return "other";
-    };
     let renderedGroups = 0;
     billGroups.forEach((group) => {
       const allEntries = s.bills
@@ -1731,6 +1918,54 @@
     $("debtBalanceWrap").classList.add("hidden");
     render();
   };
+  let deferredInstallPrompt = null;
+  const isInstalledApp = () =>
+    window.matchMedia("(display-mode: standalone)").matches ||
+    window.navigator.standalone === true;
+  function showInstalledState() {
+    $("installApp").textContent = "Money Plan is installed";
+    $("installApp").disabled = true;
+    $("installNote").textContent = "✓ Open it from your phone or computer's app list.";
+  }
+  window.addEventListener("beforeinstallprompt", (event) => {
+    event.preventDefault();
+    deferredInstallPrompt = event;
+    $("installApp").disabled = false;
+    $("installApp").textContent = "Install Money Plan";
+    $("installNote").textContent = "Ready to install. Your financial data remains on this device.";
+  });
+  window.addEventListener("appinstalled", () => {
+    deferredInstallPrompt = null;
+    showInstalledState();
+  });
+  $("installApp").onclick = async () => {
+    if (isInstalledApp()) {
+      showInstalledState();
+      return;
+    }
+    if (!deferredInstallPrompt) {
+      $("installNote").textContent =
+        "If no install window appears, open your browser menu and choose Install app or Add to Home Screen.";
+      return;
+    }
+    deferredInstallPrompt.prompt();
+    const choice = await deferredInstallPrompt.userChoice;
+    deferredInstallPrompt = null;
+    $("installNote").textContent = choice.outcome === "accepted"
+      ? "Installing Money Plan…"
+      : "Installation cancelled. You can install it later.";
+  };
+  if (isInstalledApp()) showInstalledState();
+  else $("installNote").textContent =
+    "Use Install Money Plan, or choose Install app from your browser menu.";
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("./sw.js").catch(() => {
+        $("installNote").textContent =
+          "Offline setup is not ready yet. Refresh once while connected to the internet.";
+      });
+    });
+  }
   $("monthSelect").onchange = (event) => selectMonth(event.target.value);
   openPage(localStorage.getItem("moneyPlanActivePage") || "dashboard");
   save();
