@@ -412,7 +412,7 @@
     bottom: 12px;
     z-index: 4;
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: 10px;
     margin-top: 22px;
     padding: 12px;
@@ -440,9 +440,43 @@
     align-items: center;
     gap: 14px;
   }
-  .debtHead strong {
-    font-size: 18px;
+  .balanceSplit {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 15px;
+  }
+  .balanceTile {
+    padding: 14px;
+    border: 1px solid var(--l);
+    border-radius: 14px;
+    background: #fbfafe;
+  }
+  .balanceTileHead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .balanceTileHead span {
+    color: var(--m);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .05em;
+  }
+  .balanceTileHead strong {
     color: var(--r);
+    font-size: 17px;
+  }
+  .loanBalanceTile .balanceTileHead strong {
+    color: #963747;
+  }
+  .balanceTile .graphbar {
+    margin-top: 10px;
+  }
+  .balanceTile .muted {
+    margin-top: 7px;
+    font-size: 11px;
   }
   .card {
     background: var(--c);
@@ -1087,6 +1121,9 @@
     .dashboardGrid {
       grid-template-columns: 1fr;
     }
+    .balanceSplit {
+      grid-template-columns: 1fr;
+    }
     .summaryFooter {
       grid-template-columns: repeat(2, 1fr);
       bottom: 72px;
@@ -1166,18 +1203,32 @@
     <section class="card debtOverview">
       <div class="debtHead">
         <div>
-          <h2>Loans, credit & debt balance</h2>
+          <h2>Credit and loan balances</h2>
           <p class="sub">
-            Your total credit and debt left, shown separately from normal
-            expenses.
+            Credit and loans stay separate so you can see exactly what remains.
           </p>
         </div>
-        <strong id="debtBalanceTop">MVR 0</strong>
       </div>
-      <div class="graphbar">
-        <i id="debtBarTop" style="background: #c54655"></i>
+      <div class="balanceSplit">
+        <div class="balanceTile">
+          <div class="balanceTileHead">
+            <span>CREDIT / DEBT LEFT</span><strong id="creditBalanceTop">MVR 0</strong>
+          </div>
+          <div class="graphbar">
+            <i id="creditBarTop" style="background: #c54655"></i>
+          </div>
+          <p class="muted" id="creditTextTop"></p>
+        </div>
+        <div class="balanceTile loanBalanceTile">
+          <div class="balanceTileHead">
+            <span>LOANS LEFT</span><strong id="loanBalanceTop">MVR 0</strong>
+          </div>
+          <div class="graphbar">
+            <i id="loanBarTop" style="background: #963747"></i>
+          </div>
+          <p class="muted" id="loanTextTop"></p>
+        </div>
       </div>
-      <p class="muted" id="debtTextTop"></p>
     </section>
     <section class="card categorySnapshotCard">
       <div>
@@ -1336,7 +1387,8 @@
   <footer class="summaryFooter" aria-label="Monthly summary">
     <div><span>INCOME</span><strong id="footerIncome"></strong></div>
     <div><span>PAID</span><strong id="footerPaid"></strong></div>
-    <div><span>LOANS / CREDIT LEFT</span><strong id="footerDebt"></strong></div>
+    <div><span>CREDIT LEFT</span><strong id="footerCredit"></strong></div>
+    <div><span>LOANS LEFT</span><strong id="footerLoans"></strong></div>
     <div><span>AVAILABLE NOW</span><strong id="footerAvailable"></strong></div>
   </footer>
   <div id="paymentModal" class="modalBackdrop hidden">
@@ -1784,30 +1836,56 @@
         : "All bills in this month are marked paid. Review what you can save.";
     $("dashboardAction").textContent = !s.income ? "Add this month's income" : unpaidCount ? "Open payments" : "Review payments";
     $("dashboardAction").onclick = () => openPage("payments");
-    let debtBills = s.bills.filter(
-        (b) => isCreditCategory(b[2]) && Number(b[4]) > 0,
+    let creditBills = s.bills.filter(
+        (b) =>
+          isCreditCategory(b[2]) &&
+          String(b[2] || "").toLowerCase() !== "loan" &&
+          Number(b[4]) > 0,
       ),
-      debtBalance = debtBills.reduce((a, b) => a + Number(b[4]), 0),
-      debtOriginal = debtBills.reduce(
+      loanBills = s.bills.filter(
+        (b) =>
+          String(b[2] || "").toLowerCase() === "loan" &&
+          Number(b[4]) > 0,
+      ),
+      debtBills = [...creditBills, ...loanBills],
+      creditBalance = creditBills.reduce((a, b) => a + Number(b[4]), 0),
+      creditOriginal = creditBills.reduce(
         (a, b) => a + originalBalanceValue(b),
         0,
       ),
-      debtPct = debtOriginal
-        ? Math.max(0, Math.min(100, (debtBalance / debtOriginal) * 100))
+      creditPct = creditOriginal
+        ? Math.max(0, Math.min(100, (creditBalance / creditOriginal) * 100))
+        : 0,
+      loanBalance = loanBills.reduce((a, b) => a + Number(b[4]), 0),
+      loanOriginal = loanBills.reduce(
+        (a, b) => a + originalBalanceValue(b),
+        0,
+      ),
+      loanPctRemaining = loanOriginal
+        ? Math.max(0, Math.min(100, (loanBalance / loanOriginal) * 100))
         : 0;
-    $("debtBalanceTop").textContent = m(debtBalance);
-    $("debtBarTop").style.width = debtPct + "%";
+    $("creditBalanceTop").textContent = m(creditBalance);
+    $("creditBarTop").style.width = creditPct + "%";
+    $("loanBalanceTop").textContent = m(loanBalance);
+    $("loanBarTop").style.width = loanPctRemaining + "%";
     $("footerIncome").textContent = m(s.income);
     $("footerPaid").textContent = m(e);
-    $("footerDebt").textContent = m(debtBalance);
+    $("footerCredit").textContent = m(creditBalance);
+    $("footerLoans").textContent = m(loanBalance);
     $("footerAvailable").textContent = m(left);
     $("footerAvailable").className = left < 0 ? "red" : "green";
-    $("debtTextTop").textContent = debtBills.length
-      ? Math.round(debtPct) +
-        "% debt remaining · " +
-        m(debtBills.reduce((a, b) => a + Number(b[1]), 0)) +
-        " monthly payment plan"
-      : "No debt balances added yet.";
+    $("creditTextTop").textContent = creditBills.length
+      ? Math.round(creditPct) +
+        "% remaining · " +
+        m(creditBills.reduce((a, b) => a + Number(b[1]), 0)) +
+        " monthly plan"
+      : "No credit balances added yet.";
+    $("loanTextTop").textContent = loanBills.length
+      ? Math.round(loanPctRemaining) +
+        "% remaining · " +
+        m(loanBills.reduce((a, b) => a + Number(b[1]), 0)) +
+        " monthly plan"
+      : "No loan balances added yet.";
     $("bar").style.width = p + "%";
     $("bar").style.background =
       left < 0 ? "var(--r)" : p > 80 ? "#bd771c" : "var(--p)";
