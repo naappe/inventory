@@ -1,4 +1,4 @@
-const CACHE_NAME = "money-plan-v13";
+const CACHE_NAME = "money-plan-v14";
 const APP_FILES = [
   "./",
   "./index.html",
@@ -11,6 +11,8 @@ const APP_FILES = [
   "./professional.css",
   "./salary-plan.css",
   "./salary-plan.js",
+  "./friendly.css",
+  "./friendly.js",
   "./ot.html",
   "./manifest.webmanifest",
   "./icons/icon.svg",
