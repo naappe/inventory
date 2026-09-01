@@ -1,0 +1,22 @@
+/* Monthly Plan should be a planning workspace, not a payment-history filter. */
+body[data-payment-mode="plan"] #paymentsView .filterBar{display:none!important;}
+body[data-payment-mode="plan"] #paymentsView .compactBillSummary{grid-template-columns:repeat(3,minmax(0,1fr))!important;}
+body[data-payment-mode="plan"] #paymentsView .compactBillStat{min-height:82px!important;display:flex!important;flex-direction:column!important;align-items:flex-start!important;justify-content:center!important;}
+body[data-payment-mode="plan"] #paymentsView .compactBillStat>span{font-size:8px!important;letter-spacing:.06em!important;text-transform:uppercase!important;}
+body[data-payment-mode="plan"] #paymentsView .compactBillStat>strong{margin-top:4px!important;font-size:18px!important;}
+body[data-payment-mode="plan"] #paymentsView .compactBillStat:nth-child(1)>strong{color:var(--wf-purple)!important;}
+body[data-payment-mode="plan"] #paymentsView .compactBillStat:nth-child(2)>strong{color:var(--wf-blue)!important;}
+body[data-payment-mode="plan"] #paymentsView .compactBillStat:nth-child(3)>strong{color:var(--wf-green)!important;}
+.planStatHint{display:block;margin-top:5px;color:#8a94a4;font-size:8px;line-height:1.35;}
+
+@media(max-width:760px){
+  body[data-payment-mode="plan"] #paymentsView .billsCard{padding:14px!important;}
+  body[data-payment-mode="plan"] #paymentsView .billsCard .sectionHead{display:block!important;}
+  body[data-payment-mode="plan"] #paymentsView .billsCard .sectionHead h2{font-size:21px!important;line-height:1.2!important;}
+  body[data-payment-mode="plan"] #paymentsView .billsCard .sectionHead .sub{margin-top:6px!important;font-size:11px!important;line-height:1.5!important;}
+  body[data-payment-mode="plan"] #paymentsView .compactBillSummary{grid-template-columns:1fr 1fr!important;gap:8px!important;margin-top:14px!important;}
+  body[data-payment-mode="plan"] #paymentsView .compactBillStat{min-height:92px!important;padding:12px!important;}
+  body[data-payment-mode="plan"] #paymentsView .compactBillStat:nth-child(3){grid-column:1/-1!important;min-height:74px!important;}
+  body[data-payment-mode="plan"] #paymentsView .compactBillStat>strong{font-size:19px!important;}
+  .planStatHint{font-size:9px;}
+}
