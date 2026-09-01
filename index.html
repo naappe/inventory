@@ -15,7 +15,7 @@
   <script>
     (async () => {
       try {
-        const response = await fetch('./money-core.html?v=20260901-month-workflow', { cache: 'no-store' });
+        const response = await fetch('./money-core.html?v=20260901-spending-ledger', { cache: 'no-store' });
         if (!response.ok) throw new Error('Could not load Money Plan');
         let html = await response.text();
 
@@ -33,7 +33,8 @@
           '<link rel="stylesheet" href="./professional.css?v=20260901-1" />' +
           '<link rel="stylesheet" href="./salary-plan.css?v=20260901-2" />' +
           '<link rel="stylesheet" href="./friendly.css?v=20260901-2" />' +
-          '<link rel="stylesheet" href="./month-workflow.css?v=20260901-1" />'
+          '<link rel="stylesheet" href="./month-workflow.css?v=20260901-1" />' +
+          '<link rel="stylesheet" href="./spending-ledger.css?v=20260901-1" />'
         );
         html += '<scr' + 'ipt src="./modern.js?v=20260901-3"></scr' + 'ipt>';
         html += '<scr' + 'ipt src="./logic-fix.js?v=20260901-2"></scr' + 'ipt>';
@@ -41,6 +42,7 @@
         html += '<scr' + 'ipt src="./salary-plan.js?v=20260901-2"></scr' + 'ipt>';
         html += '<scr' + 'ipt src="./friendly.js?v=20260901-2"></scr' + 'ipt>';
         html += '<scr' + 'ipt src="./month-workflow.js?v=20260901-1"></scr' + 'ipt>';
+        html += '<scr' + 'ipt src="./spending-ledger.js?v=20260901-1"></scr' + 'ipt>';
 
         document.open();
         document.write(html);
