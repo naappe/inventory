@@ -1,0 +1,364 @@
+/* Professional finance application shell — desktop sidebar, compact workspaces */
+:root{
+  --pro-bg:#f5f7fb;
+  --pro-surface:#ffffff;
+  --pro-surface-2:#f9fafc;
+  --pro-text:#172033;
+  --pro-muted:#6d7587;
+  --pro-border:#e4e8f0;
+  --pro-sidebar:#172033;
+  --pro-sidebar-2:#202a40;
+  --pro-accent:#6556d9;
+  --pro-accent-soft:#eeeefe;
+  --pro-green:#187764;
+  --pro-red:#bd4658;
+  --pro-amber:#a66a12;
+  --pro-shadow:0 8px 24px rgba(26,34,52,.06);
+  --pro-radius:14px;
+}
+
+html,body{background:var(--pro-bg)!important;color:var(--pro-text)!important;}
+body{font-size:14px!important;}
+main{
+  max-width:none!important;
+  margin:0!important;
+  padding:26px 34px 64px 294px!important;
+  min-height:100vh;
+}
+
+/* App sidebar */
+.head{
+  position:fixed!important;
+  z-index:30!important;
+  inset:18px auto 18px 18px!important;
+  width:246px!important;
+  margin:0!important;
+  padding:22px 18px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:stretch!important;
+  justify-content:flex-start!important;
+  gap:22px!important;
+  border:0!important;
+  border-radius:20px!important;
+  background:linear-gradient(180deg,var(--pro-sidebar) 0%,#121a2b 100%)!important;
+  color:#fff!important;
+  box-shadow:0 18px 45px rgba(21,28,43,.16)!important;
+}
+.brandBlock{align-items:center!important;gap:12px!important;}
+.brandMark{width:40px!important;height:40px!important;border-radius:11px!important;box-shadow:none!important;}
+.head h1{font-size:19px!important;letter-spacing:-.025em!important;}
+.head .sub{margin-top:3px!important;color:#9aa4b8!important;font-size:11px!important;line-height:1.35!important;}
+.headTools{
+  display:flex!important;
+  flex:1!important;
+  min-height:0!important;
+  flex-direction:column!important;
+  align-items:stretch!important;
+  justify-content:flex-start!important;
+  gap:12px!important;
+}
+.nav{
+  order:1!important;
+  display:flex!important;
+  flex:1!important;
+  flex-direction:column!important;
+  flex-wrap:nowrap!important;
+  gap:5px!important;
+  width:100%!important;
+}
+.nav button,.nav .extraNavButton,.nav .otNavLink{
+  width:100%!important;
+  justify-content:flex-start!important;
+  min-height:42px!important;
+  padding:10px 12px!important;
+  border:1px solid transparent!important;
+  border-radius:10px!important;
+  background:transparent!important;
+  color:#aeb7c9!important;
+  box-shadow:none!important;
+  font-size:12px!important;
+  font-weight:750!important;
+  text-align:left!important;
+}
+.nav button:hover,.nav .extraNavButton:hover,.nav .otNavLink:hover{
+  background:rgba(255,255,255,.055)!important;
+  color:#fff!important;
+}
+.nav button.active,.nav .extraNavButton.active{
+  border-color:rgba(255,255,255,.08)!important;
+  background:linear-gradient(135deg,#6b5ae4,#5948c8)!important;
+  color:#fff!important;
+  box-shadow:0 8px 18px rgba(69,54,171,.24)!important;
+}
+.nav .otNavLink{margin-top:auto!important;text-decoration:none!important;}
+.monthPicker{
+  order:2!important;
+  width:100%!important;
+  margin-top:6px!important;
+  padding-top:14px!important;
+  border-top:1px solid rgba(255,255,255,.08)!important;
+  color:#8995aa!important;
+  font-size:9px!important;
+  letter-spacing:.08em!important;
+}
+.monthPicker input{
+  width:100%!important;
+  margin-top:4px!important;
+  padding:9px 10px!important;
+  border:1px solid rgba(255,255,255,.1)!important;
+  border-radius:9px!important;
+  background:var(--pro-sidebar-2)!important;
+  color:#fff!important;
+  font-size:12px!important;
+}
+
+/* Global surface language */
+.card,.modernMetric,.moneyProgressCard,.billGroup,.bankBalancePanel,.historySummaryItem,.vendorRow{
+  border-color:var(--pro-border)!important;
+  box-shadow:var(--pro-shadow)!important;
+}
+.card{
+  border-radius:var(--pro-radius)!important;
+  background:var(--pro-surface)!important;
+  padding:20px!important;
+}
+.card:hover{transform:none!important;box-shadow:var(--pro-shadow)!important;}
+h2{color:var(--pro-text)!important;letter-spacing:-.025em!important;}
+.sub,.muted{color:var(--pro-muted)!important;}
+input,select{
+  border-color:var(--pro-border)!important;
+  border-radius:9px!important;
+  background:#fff!important;
+  color:var(--pro-text)!important;
+}
+input:focus,select:focus{
+  border-color:#9287eb!important;
+  box-shadow:0 0 0 3px rgba(101,86,217,.10)!important;
+}
+.primary{background:var(--pro-accent)!important;box-shadow:none!important;}
+.secondary{background:#f0f2f7!important;color:#4c566a!important;}
+
+/* Dashboard */
+#dashboardView{max-width:1280px;margin:0 auto;}
+.modernDashboard{gap:12px!important;margin-bottom:14px!important;}
+.modernMetricGrid{
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  gap:12px!important;
+}
+.modernMetric{
+  padding:18px 18px!important;
+  border-radius:14px!important;
+  background:var(--pro-surface)!important;
+}
+.modernMetric::before{width:3px!important;}
+.modernMetricLabel{color:#7d8494!important;font-size:9px!important;}
+.modernMetricValue{font-size:22px!important;color:var(--pro-text)!important;}
+.modernMetricHint{color:#8a91a0!important;font-size:10px!important;}
+.modernMetric.safe{
+  border-color:#252f43!important;
+  background:linear-gradient(135deg,#202a40,#172033)!important;
+}
+.modernMetric.safe::before{background:#5ed0b5!important;}
+.modernMetric.safe .modernMetricLabel,.modernMetric.safe .modernMetricHint{color:#a8b3c7!important;}
+.modernMetric.safe .modernMetricValue{color:#fff!important;}
+.modernMetric.safe.danger{background:linear-gradient(135deg,#4b2630,#33202a)!important;}
+.moneyProgressCard{padding:15px 18px!important;border-radius:13px!important;background:#fff!important;}
+.moneyProgressTrack{height:6px!important;background:#edf0f5!important;}
+.moneyProgressTrack i{background:var(--pro-accent)!important;}
+.upcomingCard{margin-bottom:14px!important;}
+.upcomingHead{align-items:center!important;}
+.upcomingRow{padding:10px 0!important;}
+.upcomingRow button{background:var(--pro-accent-soft)!important;color:var(--pro-accent)!important;}
+#dashboardView .debtOverview{margin-top:0!important;}
+.balanceTile{background:var(--pro-surface-2)!important;border-color:var(--pro-border)!important;}
+
+/* Payments = workspace, not a long report */
+#paymentsView{max-width:1280px!important;margin:0 auto!important;}
+.paymentsIntro{
+  align-items:center!important;
+  margin:0 0 16px!important;
+  padding:0 2px!important;
+}
+.paymentsIntro .eyebrow{color:var(--pro-accent)!important;}
+.paymentsIntro h2{font-size:27px!important;}
+.paymentsIntro p{font-size:12px!important;color:var(--pro-muted)!important;}
+.flowStep{
+  border-color:var(--pro-border)!important;
+  background:#fff!important;
+  color:#697386!important;
+}
+.flowStep b{background:var(--pro-accent-soft)!important;color:var(--pro-accent)!important;}
+#paymentsView .paymentTop{
+  grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr)!important;
+  gap:14px!important;
+  margin-bottom:14px!important;
+}
+#paymentsView .paymentTop > .card{padding:18px!important;border-radius:14px!important;}
+#paymentsView .paymentTop h2{font-size:17px!important;}
+.bankBalancePanel{
+  margin-top:14px!important;
+  padding:14px!important;
+  border:1px solid #d7e8e3!important;
+  border-radius:11px!important;
+  background:#f4faf8!important;
+  box-shadow:none!important;
+}
+.bankBalanceAmount{font-size:25px!important;color:var(--pro-green)!important;}
+.bankUpdateBtn{background:#e6f3ef!important;color:#176a5c!important;}
+.bankBalanceRule{color:#647b75!important;border-top-color:#dbeae6!important;}
+
+#paymentsView .billsCard{
+  padding:18px!important;
+  border-radius:14px!important;
+}
+#paymentsView .sectionHead{align-items:center!important;}
+#paymentsView .sectionHead h2{font-size:18px!important;}
+#paymentsView .filterBar{background:#f1f3f7!important;border-radius:9px!important;}
+#paymentsView .filterBar button{border-radius:7px!important;color:#7a8290!important;}
+#paymentsView .filterBar button.active{background:#fff!important;color:var(--pro-accent)!important;}
+.compactBillSummary{margin:12px 0!important;}
+.compactBillStat{
+  border-color:var(--pro-border)!important;
+  border-radius:10px!important;
+  background:var(--pro-surface-2)!important;
+  box-shadow:none!important;
+}
+.compactBillStat.due strong{color:var(--pro-red)!important;}
+.compactBillStat.paid strong{color:var(--pro-green)!important;}
+
+/* Collapsed categories become a compact two-column index; selected group is the workspace */
+#paymentsView #bills{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:8px!important;
+  align-items:start!important;
+}
+#paymentsView .billGroup{
+  border:1px solid var(--pro-border)!important;
+  border-radius:11px!important;
+  background:#fff!important;
+  box-shadow:none!important;
+}
+#paymentsView .billGroup:not(.compactCollapsed){
+  grid-column:1 / -1!important;
+  max-height:510px!important;
+  overflow:auto!important;
+  box-shadow:0 7px 20px rgba(26,34,52,.05)!important;
+}
+#paymentsView .billGroup:not(.compactCollapsed) .billGroupHead{
+  position:sticky!important;
+  top:0!important;
+  z-index:2!important;
+  background:#f9fafc!important;
+  border-bottom:1px solid var(--pro-border)!important;
+}
+#paymentsView .billGroupHead{
+  min-height:40px!important;
+  padding:9px 40px 9px 11px!important;
+  background:#fafbfc!important;
+}
+#paymentsView .billGroupHead span{color:#273247!important;font-size:11px!important;}
+#paymentsView .billGroupHead small{color:#8a91a0!important;font-size:8px!important;}
+.groupToggle{background:#eef1f6!important;color:#626b7c!important;}
+#paymentsView .bill{
+  grid-template-columns:minmax(150px,1.5fr) 78px 78px 86px auto!important;
+  padding:8px 10px!important;
+  gap:6px 8px!important;
+  border-top:1px solid #edf0f4!important;
+}
+#paymentsView .billInfo strong{font-size:11px!important;color:#273247!important;}
+#paymentsView .billActions button{font-size:8px!important;padding:5px 6px!important;}
+#paymentsView .pay{background:var(--pro-accent-soft)!important;color:var(--pro-accent)!important;}
+#paymentsView .copyAccount{background:#edf7f4!important;color:#176f60!important;}
+#paymentsView .edit{background:#f0f2f6!important;color:#566174!important;}
+#paymentsView .del{background:#fff1f3!important;color:var(--pro-red)!important;}
+.paymentsFootNote{background:#f7f8fb!important;color:#818899!important;}
+
+/* Payees / History / Settings */
+.extraView,#categoriesView{max-width:1120px;margin:0 auto;}
+.pageIntro{margin-bottom:14px!important;}
+.pageIntro h2{font-size:27px!important;}
+.payeeCreate{grid-template-columns:1.1fr 1fr auto!important;}
+.vendorRow{
+  padding:10px 12px!important;
+  border-radius:10px!important;
+  background:#fff!important;
+  box-shadow:none!important;
+}
+.historySummaryItem{border-radius:10px!important;background:#f8f9fb!important;box-shadow:none!important;}
+.transactionRow{padding:11px 0!important;}
+#categoriesView .settingsStack::before{font-size:27px!important;}
+#categoriesView .settingsStack{gap:12px!important;}
+#categoriesView .card{padding:18px!important;}
+
+/* Old sticky footer is redundant in the professional shell. */
+.summaryFooter{display:none!important;}
+
+@media (max-width:1100px){
+  main{padding-left:250px!important;padding-right:22px!important;}
+  .head{width:214px!important;}
+  .modernMetricGrid{grid-template-columns:repeat(2,minmax(0,1fr))!important;}
+  #paymentsView .bill{grid-template-columns:minmax(0,1fr) 80px 80px!important;}
+  #paymentsView .billInfo{grid-column:1 / -1!important;}
+  #paymentsView .billStatus{grid-column:1!important;}
+  #paymentsView .billActions{grid-column:2 / -1!important;justify-content:flex-end!important;}
+}
+
+@media (max-width:760px){
+  main{padding:14px 12px 96px!important;}
+  .head{
+    position:relative!important;
+    inset:auto!important;
+    width:auto!important;
+    margin:0 0 14px!important;
+    padding:15px!important;
+    border-radius:15px!important;
+  }
+  .headTools{display:block!important;}
+  .monthPicker{order:0!important;margin:12px 0 0!important;padding-top:10px!important;}
+  .nav{
+    position:fixed!important;
+    inset:auto 0 0 0!important;
+    z-index:50!important;
+    display:grid!important;
+    grid-template-columns:repeat(5,1fr)!important;
+    width:auto!important;
+    gap:2px!important;
+    padding:7px 8px calc(7px + env(safe-area-inset-bottom))!important;
+    border-top:1px solid var(--pro-border)!important;
+    background:rgba(255,255,255,.96)!important;
+    box-shadow:0 -8px 24px rgba(26,34,52,.08)!important;
+    backdrop-filter:blur(14px)!important;
+  }
+  .nav button,.nav .extraNavButton{
+    min-height:40px!important;
+    padding:7px 3px!important;
+    justify-content:center!important;
+    color:#70798b!important;
+    font-size:10px!important;
+    text-align:center!important;
+  }
+  .nav button.active,.nav .extraNavButton.active{
+    background:var(--pro-accent-soft)!important;
+    color:var(--pro-accent)!important;
+    box-shadow:none!important;
+  }
+  .nav .otNavLink{display:none!important;}
+  .modernMetricGrid{grid-template-columns:repeat(2,minmax(0,1fr))!important;}
+  .modernMetric{padding:14px!important;}
+  .modernMetricValue{font-size:18px!important;}
+  .paymentsIntro{align-items:flex-start!important;flex-direction:column!important;}
+  #paymentsView .paymentTop{grid-template-columns:1fr!important;}
+  #paymentsView #bills{grid-template-columns:1fr!important;}
+  #paymentsView .billGroup:not(.compactCollapsed){grid-column:auto!important;max-height:none!important;}
+  #paymentsView .bill{
+    grid-template-columns:1fr 1fr!important;
+    gap:7px 10px!important;
+  }
+  #paymentsView .billInfo{grid-column:1 / -1!important;}
+  #paymentsView .billStatus{grid-column:1 / -1!important;}
+  #paymentsView .billActions{grid-column:1 / -1!important;display:grid!important;grid-template-columns:repeat(3,1fr)!important;}
+  .payeeCreate{grid-template-columns:1fr!important;}
+  .vendorRow{grid-template-columns:1fr!important;}
+}
