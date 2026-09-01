@@ -15,7 +15,7 @@
   <script>
     (async () => {
       try {
-        const response = await fetch('./money-core.html?v=20260901-clickable-dashboard', { cache: 'no-store' });
+        const response = await fetch('./money-core.html?v=20260901-debt-drilldown', { cache: 'no-store' });
         if (!response.ok) throw new Error('Could not load Money Plan');
         let html = await response.text();
 
@@ -45,24 +45,42 @@
         html += '<scr' + 'ipt src="./spending-ledger.js?v=20260901-1"></scr' + 'ipt>';
 
         html += '<style>' +
-          '#dashboardCashFlow .dashboardCashGrid>div.dashboardJump,#dashboardView .budgetAlert.dashboardJump{cursor:pointer;transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease,background .16s ease;position:relative;}' +
-          '#dashboardCashFlow .dashboardCashGrid>div.dashboardJump:hover,#dashboardView .budgetAlert.dashboardJump:hover{transform:translateY(-2px);border-color:#b9b3ee!important;box-shadow:0 8px 20px rgba(70,61,139,.10)!important;background:#fff!important;}' +
-          '#dashboardCashFlow .dashboardCashGrid>div.dashboardJump:focus-visible,#dashboardView .budgetAlert.dashboardJump:focus-visible{outline:3px solid rgba(101,86,217,.22);outline-offset:2px;}' +
+          '#dashboardCashFlow .dashboardCashGrid>div.dashboardJump,#dashboardView .budgetAlert.dashboardJump,#dashboardView .balanceTile.dashboardJump{cursor:pointer;transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease,background .16s ease;position:relative;}' +
+          '#dashboardCashFlow .dashboardCashGrid>div.dashboardJump:hover,#dashboardView .budgetAlert.dashboardJump:hover,#dashboardView .balanceTile.dashboardJump:hover{transform:translateY(-2px);border-color:#b9b3ee!important;box-shadow:0 8px 20px rgba(70,61,139,.10)!important;background:#fff!important;}' +
+          '#dashboardCashFlow .dashboardCashGrid>div.dashboardJump:focus-visible,#dashboardView .budgetAlert.dashboardJump:focus-visible,#dashboardView .balanceTile.dashboardJump:focus-visible{outline:3px solid rgba(101,86,217,.22);outline-offset:2px;}' +
           '#dashboardCashFlow .dashboardCashGrid>div.dashboardJump::after{content:"→";position:absolute;right:9px;top:9px;color:#9aa1af;font-size:11px;font-weight:900;}' +
           '#dashboardView .budgetAlert.dashboardJump{padding-right:42px!important;}' +
           '#dashboardView .budgetAlert.dashboardJump::after{content:"Open →";position:absolute;right:13px;top:50%;transform:translateY(-50%);color:#6556d9;font-size:10px;font-weight:850;}' +
+          '#dashboardView .balanceTile.dashboardJump{padding-right:72px!important;}' +
+          '#dashboardView .balanceTile.dashboardJump::after{content:"Open →";position:absolute;right:14px;top:14px;color:#6556d9;font-size:10px;font-weight:850;}' +
+          '#dashboardView .balanceTile.dashboardJump.creditJump::after{content:"Credit →";}' +
+          '#dashboardView .balanceTile.dashboardJump.loanJump::after{content:"Loans →";}' +
+          '.jumpFlash{animation:jumpFlash .9s ease;}' +
+          '@keyframes jumpFlash{0%,100%{box-shadow:inherit}35%{box-shadow:0 0 0 4px rgba(101,86,217,.18),0 8px 26px rgba(70,61,139,.12)}}' +
         '</style>';
 
         html += '<scr' + 'ipt>(function(){' +
-          'function jump(page,selector){openPage(page);setTimeout(function(){var el=document.querySelector(selector);if(el){el.scrollIntoView({behavior:"smooth",block:"center"});el.classList.add("jumpFlash");setTimeout(function(){el.classList.remove("jumpFlash")},800);}},60);}' +
-          'function make(el,label,fn){if(!el||el.dataset.jumpReady)return;el.dataset.jumpReady="1";el.classList.add("dashboardJump");el.tabIndex=0;el.setAttribute("role","button");el.setAttribute("aria-label",label);el.title=label;el.addEventListener("click",fn);el.addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();fn();}});}' +
-          'function wire(){var cells=document.querySelectorAll("#dashboardCashFlow .dashboardCashGrid>div");' +
+          'function flash(el){if(!el)return;el.scrollIntoView({behavior:"smooth",block:"center"});el.classList.add("jumpFlash");setTimeout(function(){el.classList.remove("jumpFlash")},900);}' +
+          'function jump(page,selector){openPage(page);setTimeout(function(){flash(document.querySelector(selector));},80);}' +
+          'function make(el,label,fn,extra){if(!el||el.dataset.jumpReady)return;el.dataset.jumpReady="1";el.classList.add("dashboardJump");if(extra)el.classList.add(extra);el.tabIndex=0;el.setAttribute("role","button");el.setAttribute("aria-label",label);el.title=label;el.addEventListener("click",fn);el.addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();fn();}});}' +
+          'function openDebtGroup(kind){openPage("payments");setTimeout(function(){' +
+            'var groups=Array.from(document.querySelectorAll("#paymentsView #bills .billGroup"));' +
+            'var words=kind==="loan"?["loan","loans"]:["credit","debt"];' +
+            'var group=groups.find(function(g){var head=g.querySelector(".billGroupHead")||g;var text=(head.textContent||"").toLowerCase();return words.some(function(w){return text.includes(w);});});' +
+            'if(!group){flash(document.querySelector("#paymentsView #bills")||document.querySelector("#paymentsView"));return;}' +
+            'if(group.classList.contains("compactCollapsed")){var toggle=group.querySelector(".groupToggle")||group.querySelector(".billGroupHead");if(toggle)toggle.click();}' +
+            'setTimeout(function(){flash(group);},70);' +
+          '},110);}' +
+          'function wire(){' +
+            'var cells=document.querySelectorAll("#dashboardCashFlow .dashboardCashGrid>div");' +
             'make(cells[0],"Open bank balance",function(){jump("payments","#bankBalancePanel");});' +
             'make(cells[1],"Open old bills reserved",function(){jump("spending",".carryCard");});' +
             'make(cells[2],"Open free money details",function(){jump("spending","#spendingPosition");});' +
             'make(cells[3],"Open this month purchases",function(){jump("spending","#purchaseLedger");});' +
             'make(cells[4],"Open shop credit",function(){jump("spending","#vendorCreditList");});' +
-            'document.querySelectorAll("#dashboardView .budgetAlert").forEach(function(el){var t=(el.textContent||"").toLowerCase();if(t.includes("waiting")||t.includes("bill")||t.includes("unpaid")){make(el,"Open pending payments",function(){jump("payments",".billsCard");});}});' +
+            'document.querySelectorAll("#dashboardView .budgetAlert").forEach(function(el){var t=(el.textContent||"").toLowerCase();if(t.includes("waiting")||t.includes("bill")||t.includes("unpaid")){make(el,"Open pending payments",function(){jump("payments","#bills");});}});' +
+            'var debtTiles=document.querySelectorAll("#dashboardView .debtOverview .balanceTile,#dashboardView .balanceSplit .balanceTile");' +
+            'debtTiles.forEach(function(tile,index){var t=(tile.textContent||"").toLowerCase();if(t.includes("loan")){make(tile,"Open loan payments",function(){openDebtGroup("loan");},"loanJump");}else if(t.includes("credit")||t.includes("debt")||index===0){make(tile,"Open credit and debt payments",function(){openDebtGroup("credit");},"creditJump");}});' +
           '}' +
           'var oldRender=render;render=function(){oldRender();setTimeout(wire,0);};' +
           'var oldOpen=openPage;openPage=function(page){oldOpen(page);setTimeout(wire,0);};' +
