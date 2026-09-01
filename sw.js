@@ -1,4 +1,4 @@
-const CACHE_NAME = "money-plan-v20";
+const CACHE_NAME = "money-plan-v21";
 const APP_FILES = [
   "./",
   "./index.html",
