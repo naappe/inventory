@@ -6,106 +6,44 @@
   <meta name="theme-color" content="#172033" />
   <title>My Money Plan</title>
   <style>
-    html,body{margin:0;min-height:100%;background:#f5f7fb;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-    .boot{min-height:100vh;display:grid;place-items:center;color:#6556d9;font-weight:800}
+    html,body{margin:0;min-height:100%;background:#f4f6fa;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    .boot{min-height:100vh;display:grid;place-items:center;color:#6252d6;font-weight:800}
   </style>
 </head>
 <body>
   <div class="boot">Loading My Money Plan…</div>
   <script>
-    (async () => {
-      try {
-        const response = await fetch('./money-core.html?v=20260901-debt-route-fix', { cache: 'no-store' });
-        if (!response.ok) throw new Error('Could not load Money Plan');
-        let html = await response.text();
+    (async()=>{
+      try{
+        const response=await fetch('./money-core.html?v=20260901-workflow-v2',{cache:'no-store'});
+        if(!response.ok)throw new Error('Could not load Money Plan');
+        let html=await response.text();
 
-        const categoryButton = '<button data-page="categories">Categories</button>';
-        const otLink = '<a class="otNavLink" href="./ot.html">OT Work</a>';
-        if (!html.includes('class="otNavLink"')) {
-          html = html.replace(categoryButton, categoryButton + otLink);
-        }
+        html=html.replace('</style>','</style>'+[
+          '<link rel="stylesheet" href="./modern.css?v=20260901-3" />',
+          '<link rel="stylesheet" href="./compact.css?v=20260901-1" />',
+          '<link rel="stylesheet" href="./professional.css?v=20260901-1" />',
+          '<link rel="stylesheet" href="./salary-plan.css?v=20260901-2" />',
+          '<link rel="stylesheet" href="./friendly.css?v=20260901-2" />',
+          '<link rel="stylesheet" href="./month-workflow.css?v=20260901-3" />',
+          '<link rel="stylesheet" href="./spending-ledger.css?v=20260901-1" />',
+          '<link rel="stylesheet" href="./card-details.css?v=20260901-2" />',
+          '<link rel="stylesheet" href="./workflow-v2.css?v=20260901-1" />'
+        ].join(''));
 
-        html = html.replace(
-          '</style>',
-          '</style>' +
-          '<link rel="stylesheet" href="./modern.css?v=20260901-3" />' +
-          '<link rel="stylesheet" href="./compact.css?v=20260901-1" />' +
-          '<link rel="stylesheet" href="./professional.css?v=20260901-1" />' +
-          '<link rel="stylesheet" href="./salary-plan.css?v=20260901-2" />' +
-          '<link rel="stylesheet" href="./friendly.css?v=20260901-2" />' +
-          '<link rel="stylesheet" href="./month-workflow.css?v=20260901-1" />' +
-          '<link rel="stylesheet" href="./spending-ledger.css?v=20260901-1" />' +
-          '<link rel="stylesheet" href="./card-details.css?v=20260901-1" />'
-        );
-        html += '<scr' + 'ipt src="./modern.js?v=20260901-3"></scr' + 'ipt>';
-        html += '<scr' + 'ipt src="./logic-fix.js?v=20260901-2"></scr' + 'ipt>';
-        html += '<scr' + 'ipt src="./compact.js?v=20260901-1"></scr' + 'ipt>';
-        html += '<scr' + 'ipt src="./salary-plan.js?v=20260901-2"></scr' + 'ipt>';
-        html += '<scr' + 'ipt src="./friendly.js?v=20260901-2"></scr' + 'ipt>';
-        html += '<scr' + 'ipt src="./month-workflow.js?v=20260901-1"></scr' + 'ipt>';
-        html += '<scr' + 'ipt src="./spending-ledger.js?v=20260901-1"></scr' + 'ipt>';
-        html += '<scr' + 'ipt src="./card-details.js?v=20260901-1"></scr' + 'ipt>';
+        html+='<'+'script src="./modern.js?v=20260901-3"><'+'/script>';
+        html+='<'+'script src="./logic-fix.js?v=20260901-2"><'+'/script>';
+        html+='<'+'script src="./compact.js?v=20260901-1"><'+'/script>';
+        html+='<'+'script src="./salary-plan.js?v=20260901-2"><'+'/script>';
+        html+='<'+'script src="./friendly.js?v=20260901-2"><'+'/script>';
+        html+='<'+'script src="./month-workflow.js?v=20260901-3"><'+'/script>';
+        html+='<'+'script src="./spending-ledger.js?v=20260901-1"><'+'/script>';
+        html+='<'+'script src="./card-details.js?v=20260901-2"><'+'/script>';
+        html+='<'+'script src="./workflow-v2.js?v=20260901-1"><'+'/script>';
 
-        html += '<style>' +
-          '#dashboardCashFlow .dashboardCashGrid>div.dashboardJump,#dashboardView .budgetAlert.dashboardJump,#dashboardView .balanceTile.dashboardJump{cursor:pointer;transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease,background .16s ease;position:relative;}' +
-          '#dashboardCashFlow .dashboardCashGrid>div.dashboardJump:hover,#dashboardView .budgetAlert.dashboardJump:hover,#dashboardView .balanceTile.dashboardJump:hover{transform:translateY(-2px);border-color:#b9b3ee!important;box-shadow:0 8px 20px rgba(70,61,139,.10)!important;background:#fff!important;}' +
-          '#dashboardCashFlow .dashboardCashGrid>div.dashboardJump:focus-visible,#dashboardView .budgetAlert.dashboardJump:focus-visible,#dashboardView .balanceTile.dashboardJump:focus-visible{outline:3px solid rgba(101,86,217,.22);outline-offset:2px;}' +
-          '#dashboardCashFlow .dashboardCashGrid>div.dashboardJump::after{content:"→";position:absolute;right:9px;top:9px;color:#9aa1af;font-size:11px;font-weight:900;}' +
-          '#dashboardView .budgetAlert.dashboardJump{padding-right:42px!important;}' +
-          '#dashboardView .budgetAlert.dashboardJump::after{content:"Open →";position:absolute;right:13px;top:50%;transform:translateY(-50%);color:#6556d9;font-size:10px;font-weight:850;}' +
-          '#dashboardView .balanceTile.dashboardJump{padding-right:72px!important;}' +
-          '#dashboardView .balanceTile.dashboardJump::after{content:"Open →";position:absolute;right:14px;top:14px;color:#6556d9;font-size:10px;font-weight:850;}' +
-          '#dashboardView .balanceTile.dashboardJump.creditJump::after{content:"Credit →";}' +
-          '#dashboardView .balanceTile.dashboardJump.loanJump::after{content:"Loans →";}' +
-          '.jumpFlash{animation:jumpFlash .9s ease;}' +
-          '@keyframes jumpFlash{0%,100%{box-shadow:inherit}35%{box-shadow:0 0 0 4px rgba(101,86,217,.18),0 8px 26px rgba(70,61,139,.12)}}' +
-        '</style>';
-
-        html += '<scr' + 'ipt>(function(){' +
-          'var FILTER_KEY="moneyPlanPaymentFilterV2";var GROUP_KEY="moneyPlanOpenBillGroupV2";' +
-          'function flash(el){if(!el)return;el.scrollIntoView({behavior:"smooth",block:"center"});el.classList.add("jumpFlash");setTimeout(function(){el.classList.remove("jumpFlash")},900);}' +
-          'function jump(page,selector){openPage(page);setTimeout(function(){flash(document.querySelector(selector));},80);}' +
-          'function make(el,label,fn,extra){if(!el||el.dataset.jumpReady)return;el.dataset.jumpReady="1";el.classList.add("dashboardJump");if(extra)el.classList.add(extra);el.tabIndex=0;el.setAttribute("role","button");el.setAttribute("aria-label",label);el.title=label;el.addEventListener("click",fn);el.addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();fn();}});}' +
-          'function setAllBillsFilter(){try{activeBillFilter="all";}catch(e){}try{localStorage.setItem(FILTER_KEY,"all");}catch(e){};}' +
-          'function groupTitle(g){var s=g&&g.querySelector(".billGroupHead span");return (s?s.textContent:"").trim();}' +
-          'function openDebtGroup(kind){' +
-            'setAllBillsFilter();' +
-            'try{render();}catch(e){}' +
-            'openPage("payments");' +
-            'setTimeout(function(){' +
-              'setAllBillsFilter();try{render();}catch(e){}' +
-              'setTimeout(function(){' +
-                'var groups=Array.from(document.querySelectorAll("#paymentsView #bills .billGroup"));' +
-                'var group=groups.find(function(g){var t=groupTitle(g).toLowerCase();return kind==="loan"?(t==="loan"||t==="loans"):(t.indexOf("credit")>=0||t.indexOf("debt")>=0);});' +
-                'if(!group){flash(document.querySelector("#paymentsView #bills")||document.querySelector("#paymentsView"));return;}' +
-                'groups.forEach(function(g){var open=g===group;g.classList.toggle("compactCollapsed",!open);var tog=g.querySelector(".groupToggle");if(tog){tog.setAttribute("aria-expanded",String(open));tog.title=open?"Collapse":"Expand";}});' +
-                'try{localStorage.setItem(GROUP_KEY+":"+activeMonth+":all",groupTitle(group));}catch(e){}' +
-                'var allBtn=document.querySelector("#paymentsView [data-bill-filter=\"all\"]");if(allBtn){document.querySelectorAll("#paymentsView [data-bill-filter]").forEach(function(b){b.classList.toggle("active",b===allBtn);});}' +
-                'flash(group);' +
-              '},80);' +
-            '},100);' +
-          '}' +
-          'function wire(){' +
-            'var cells=document.querySelectorAll("#dashboardCashFlow .dashboardCashGrid>div");' +
-            'make(cells[0],"Open bank balance",function(){jump("payments","#bankBalancePanel");});' +
-            'make(cells[1],"Open old bills reserved",function(){jump("spending",".carryCard");});' +
-            'make(cells[2],"Open free money details",function(){jump("spending","#spendingPosition");});' +
-            'make(cells[3],"Open this month purchases",function(){jump("spending","#purchaseLedger");});' +
-            'make(cells[4],"Open shop credit",function(){jump("spending","#vendorCreditList");});' +
-            'document.querySelectorAll("#dashboardView .budgetAlert").forEach(function(el){var t=(el.textContent||"").toLowerCase();if(t.includes("waiting")||t.includes("bill")||t.includes("unpaid")){make(el,"Open pending payments",function(){jump("payments","#bills");});}});' +
-            'var debtTiles=document.querySelectorAll("#dashboardView .debtOverview .balanceTile,#dashboardView .balanceSplit .balanceTile");' +
-            'debtTiles.forEach(function(tile,index){var t=(tile.textContent||"").toLowerCase();if(t.includes("loan")){make(tile,"Open loan details",function(){openDebtGroup("loan");},"loanJump");}else if(t.includes("credit")||t.includes("debt")||index===0){make(tile,"Open credit and debt details",function(){openDebtGroup("credit");},"creditJump");}});' +
-          '}' +
-          'var oldRender=render;render=function(){oldRender();setTimeout(wire,0);};' +
-          'var oldOpen=openPage;openPage=function(page){oldOpen(page);setTimeout(wire,0);};' +
-          'setTimeout(wire,0);' +
-        '})();</scr' + 'ipt>';
-
-        document.open();
-        document.write(html);
-        document.close();
-      } catch (error) {
-        document.body.innerHTML = '<div class="boot">Could not load My Money Plan. Please refresh.</div>';
+        document.open();document.write(html);document.close();
+      }catch(error){
+        document.body.innerHTML='<div class="boot">Could not load My Money Plan. Please refresh.</div>';
         console.error(error);
       }
     })();
