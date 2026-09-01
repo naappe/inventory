@@ -3,11 +3,11 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <meta name="theme-color" content="#6546c5" />
+  <meta name="theme-color" content="#172033" />
   <title>My Money Plan</title>
   <style>
-    html,body{margin:0;min-height:100%;background:#f4f3f8;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-    .boot{min-height:100vh;display:grid;place-items:center;color:#6546c5;font-weight:800}
+    html,body{margin:0;min-height:100%;background:#f5f7fb;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    .boot{min-height:100vh;display:grid;place-items:center;color:#6556d9;font-weight:800}
   </style>
 </head>
 <body>
@@ -15,7 +15,7 @@
   <script>
     (async () => {
       try {
-        const response = await fetch('./money-core.html?v=20260901-compact', { cache: 'no-store' });
+        const response = await fetch('./money-core.html?v=20260901-professional', { cache: 'no-store' });
         if (!response.ok) throw new Error('Could not load Money Plan');
         let html = await response.text();
 
@@ -27,7 +27,10 @@
 
         html = html.replace(
           '</style>',
-          '</style><link rel="stylesheet" href="./modern.css?v=20260901-3" /><link rel="stylesheet" href="./compact.css?v=20260901-1" />'
+          '</style>' +
+          '<link rel="stylesheet" href="./modern.css?v=20260901-3" />' +
+          '<link rel="stylesheet" href="./compact.css?v=20260901-1" />' +
+          '<link rel="stylesheet" href="./professional.css?v=20260901-1" />'
         );
         html += '<scr' + 'ipt src="./modern.js?v=20260901-3"></scr' + 'ipt>';
         html += '<scr' + 'ipt src="./logic-fix.js?v=20260901-2"></scr' + 'ipt>';
