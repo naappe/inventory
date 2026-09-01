@@ -1,0 +1,33 @@
+/* Selected-month spending visibility */
+.selectedMonthSpending{margin:14px 0!important;padding:18px!important;box-shadow:var(--wf-shadow,0 8px 28px rgba(28,39,61,.055))!important;}
+.selectedMonthHead{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:13px;}
+.selectedMonthEyebrow{display:block;color:var(--wf-purple,#6252d6);font-size:8px;font-weight:900;letter-spacing:.08em;}
+.selectedMonthHead h2{margin:3px 0 0!important;font-size:18px!important;}
+.selectedMonthHead p{margin:4px 0 0;color:#788397;font-size:10px;}
+#selectedMonthOpenPay{padding:8px 11px;border-radius:8px;background:#eeecff;color:#6252d6;font-size:9px;font-weight:850;white-space:nowrap;}
+.selectedMonthStats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:12px;}
+.selectedMonthStats>div{padding:11px 12px;border:1px solid #e4e9f1;border-radius:10px;background:#f8fafc;}
+.selectedMonthStats span{display:block;color:#7b8698;font-size:8px;font-weight:900;letter-spacing:.055em;text-transform:uppercase;}
+.selectedMonthStats strong{display:block;margin-top:4px;color:#243047;font-size:15px;}
+.selectedMonthStats .total{background:#f2faf7;border-color:#d7ebe5;}
+.selectedMonthStats .total strong{color:#16806a;}
+.selectedMonthPaidList{display:grid;border:1px solid #e7ebf2;border-radius:11px;overflow:hidden;background:#fff;}
+.selectedMonthPaidRow{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border-bottom:1px solid #edf0f4;}
+.selectedMonthPaidRow:last-child{border-bottom:0;}
+.selectedPaidName{display:block;color:#202b40;font-size:11px;}
+.selectedPaidMeta{display:block;margin-top:2px;color:#838d9d;font-size:9px;}
+.selectedPaidMoney{text-align:right;white-space:nowrap;}
+.selectedPaidMoney small{display:block;color:#16806a;font-size:7px;font-weight:900;letter-spacing:.06em;}
+.selectedPaidMoney strong{display:block;margin-top:2px;color:#16806a;font-size:11px;}
+.selectedMonthEmpty{padding:18px;text-align:center;color:#7c8696;}
+.selectedMonthEmpty strong{display:block;color:#465267;font-size:11px;}
+.selectedMonthEmpty span{display:block;margin-top:3px;font-size:9px;}
+
+@media(max-width:760px){
+  .selectedMonthSpending{padding:14px!important;}
+  .selectedMonthHead{align-items:stretch;flex-direction:column;gap:9px;}
+  #selectedMonthOpenPay{width:100%;}
+  .selectedMonthStats{grid-template-columns:1fr 1fr;}
+  .selectedMonthStats .total{grid-column:1/-1;}
+  .selectedMonthPaidRow{padding:11px;}
+}
