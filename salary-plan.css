@@ -1,0 +1,187 @@
+/* Salary-first planning layer: explain what this salary can cover and what moves forward. */
+.salaryPlanCard{
+  margin:0 0 14px;
+  padding:18px 20px!important;
+  border:1px solid var(--pro-border,#e4e8f0)!important;
+  border-radius:14px!important;
+  background:#fff!important;
+  box-shadow:0 8px 24px rgba(26,34,52,.06)!important;
+}
+.salaryPlanHead{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:16px;
+  margin-bottom:14px;
+}
+.salaryPlanHead h2{margin:0!important;font-size:18px!important;}
+.salaryPlanHead p{margin:3px 0 0;color:#6d7587;font-size:11px;}
+.salaryPlanBadge{
+  flex:0 0 auto;
+  padding:6px 9px;
+  border-radius:999px;
+  background:#eef0fe;
+  color:#5c50c7;
+  font-size:10px;
+  font-weight:850;
+}
+.salaryPlanNumbers{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:8px;
+}
+.salaryPlanStat{
+  min-width:0;
+  padding:11px 12px;
+  border:1px solid #e7eaf1;
+  border-radius:11px;
+  background:#fafbfc;
+}
+.salaryPlanStat span{
+  display:block;
+  color:#7b8494;
+  font-size:9px;
+  font-weight:850;
+  letter-spacing:.055em;
+  text-transform:uppercase;
+}
+.salaryPlanStat strong{
+  display:block;
+  margin-top:4px;
+  color:#172033;
+  font-size:15px;
+  font-weight:850;
+  letter-spacing:-.02em;
+  white-space:nowrap;
+}
+.salaryPlanStat.available strong{color:#187764;}
+.salaryPlanStat.unpaid strong{color:#bd4658;}
+.salaryAllocation{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  gap:9px;
+  margin-top:10px;
+}
+.salaryAllocationBox{
+  position:relative;
+  overflow:hidden;
+  padding:13px 14px;
+  border:1px solid #e5e8f0;
+  border-radius:12px;
+  background:#fff;
+}
+.salaryAllocationBox::before{
+  content:"";
+  position:absolute;
+  inset:0 auto 0 0;
+  width:3px;
+  background:#6556d9;
+}
+.salaryAllocationBox.next::before{background:#a66a12;}
+.salaryAllocationBox span{
+  display:block;
+  color:#71798a;
+  font-size:10px;
+  font-weight:850;
+  text-transform:uppercase;
+  letter-spacing:.055em;
+}
+.salaryAllocationBox strong{
+  display:block;
+  margin-top:4px;
+  color:#172033;
+  font-size:19px;
+  letter-spacing:-.025em;
+}
+.salaryAllocationBox small{
+  display:block;
+  margin-top:2px;
+  color:#8991a0;
+  font-size:10px;
+}
+.salaryPlanStatus{
+  display:flex;
+  align-items:flex-start;
+  gap:9px;
+  margin-top:10px;
+  padding:10px 12px;
+  border:1px solid #d7e9e4;
+  border-radius:10px;
+  background:#f2faf7;
+  color:#2f695d;
+  font-size:11px;
+  line-height:1.45;
+}
+.salaryPlanStatus::before{
+  content:"✓";
+  display:grid;
+  place-items:center;
+  width:19px;
+  height:19px;
+  flex:0 0 auto;
+  border-radius:50%;
+  background:#dff2ec;
+  color:#187764;
+  font-weight:900;
+}
+.salaryPlanStatus.short{
+  border-color:#f0d8b3;
+  background:#fff9ee;
+  color:#845710;
+}
+.salaryPlanStatus.short::before{
+  content:"!";
+  background:#f8e7c8;
+  color:#99630d;
+}
+.salaryPlanHint{
+  margin-top:8px;
+  color:#858d9d;
+  font-size:10px;
+}
+
+/* Replace ambiguous bill summary with salary allocation summary. */
+#paymentsView .compactBillSummary.salaryAware .compactBillStat:nth-child(1) strong{color:#6556d9!important;}
+#paymentsView .compactBillSummary.salaryAware .compactBillStat:nth-child(2) strong{color:#a66a12!important;}
+#paymentsView .compactBillSummary.salaryAware .compactBillStat:nth-child(3) strong{color:#187764!important;}
+
+/* Per-bill salary assignment */
+.salaryDeferBtn{
+  background:#fff6e7!important;
+  color:#8f5c0c!important;
+}
+.salaryDeferBtn.isDeferred{
+  background:#eef0fe!important;
+  color:#574ac4!important;
+}
+.salaryTag{
+  display:inline-flex!important;
+  align-items:center;
+  width:max-content;
+  margin-top:4px!important;
+  padding:3px 6px;
+  border-radius:999px;
+  background:#fff1d9;
+  color:#8f5c0c!important;
+  font-size:8px!important;
+  font-weight:900!important;
+  letter-spacing:.035em;
+  text-transform:uppercase;
+}
+.bill.salaryDeferred{
+  background:#fffdf8;
+}
+.bill.salaryDeferred .plannedMetric b{
+  color:#9b691b;
+}
+
+@media(max-width:980px){
+  .salaryPlanNumbers{grid-template-columns:repeat(2,minmax(0,1fr));}
+}
+@media(max-width:700px){
+  .salaryPlanCard{padding:15px!important;}
+  .salaryPlanHead{flex-direction:column;gap:8px;}
+  .salaryPlanNumbers{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .salaryAllocation{grid-template-columns:1fr;}
+  .salaryAllocationBox strong{font-size:18px;}
+}
