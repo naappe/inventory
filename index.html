@@ -15,7 +15,7 @@
   <script>
     (async () => {
       try {
-        const response = await fetch('./money-core.html?v=20260901-card-details', { cache: 'no-store' });
+        const response = await fetch('./money-core.html?v=20260901-debt-route-fix', { cache: 'no-store' });
         if (!response.ok) throw new Error('Could not load Money Plan');
         let html = await response.text();
 
@@ -62,17 +62,29 @@
         '</style>';
 
         html += '<scr' + 'ipt>(function(){' +
+          'var FILTER_KEY="moneyPlanPaymentFilterV2";var GROUP_KEY="moneyPlanOpenBillGroupV2";' +
           'function flash(el){if(!el)return;el.scrollIntoView({behavior:"smooth",block:"center"});el.classList.add("jumpFlash");setTimeout(function(){el.classList.remove("jumpFlash")},900);}' +
           'function jump(page,selector){openPage(page);setTimeout(function(){flash(document.querySelector(selector));},80);}' +
           'function make(el,label,fn,extra){if(!el||el.dataset.jumpReady)return;el.dataset.jumpReady="1";el.classList.add("dashboardJump");if(extra)el.classList.add(extra);el.tabIndex=0;el.setAttribute("role","button");el.setAttribute("aria-label",label);el.title=label;el.addEventListener("click",fn);el.addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();fn();}});}' +
-          'function openDebtGroup(kind){openPage("payments");setTimeout(function(){' +
-            'var groups=Array.from(document.querySelectorAll("#paymentsView #bills .billGroup"));' +
-            'var words=kind==="loan"?["loan","loans"]:["credit","debt"];' +
-            'var group=groups.find(function(g){var head=g.querySelector(".billGroupHead")||g;var text=(head.textContent||"").toLowerCase();return words.some(function(w){return text.includes(w);});});' +
-            'if(!group){flash(document.querySelector("#paymentsView #bills")||document.querySelector("#paymentsView"));return;}' +
-            'if(group.classList.contains("compactCollapsed")){var toggle=group.querySelector(".groupToggle")||group.querySelector(".billGroupHead");if(toggle)toggle.click();}' +
-            'setTimeout(function(){flash(group);},70);' +
-          '},110);}' +
+          'function setAllBillsFilter(){try{activeBillFilter="all";}catch(e){}try{localStorage.setItem(FILTER_KEY,"all");}catch(e){};}' +
+          'function groupTitle(g){var s=g&&g.querySelector(".billGroupHead span");return (s?s.textContent:"").trim();}' +
+          'function openDebtGroup(kind){' +
+            'setAllBillsFilter();' +
+            'try{render();}catch(e){}' +
+            'openPage("payments");' +
+            'setTimeout(function(){' +
+              'setAllBillsFilter();try{render();}catch(e){}' +
+              'setTimeout(function(){' +
+                'var groups=Array.from(document.querySelectorAll("#paymentsView #bills .billGroup"));' +
+                'var group=groups.find(function(g){var t=groupTitle(g).toLowerCase();return kind==="loan"?(t==="loan"||t==="loans"):(t.indexOf("credit")>=0||t.indexOf("debt")>=0);});' +
+                'if(!group){flash(document.querySelector("#paymentsView #bills")||document.querySelector("#paymentsView"));return;}' +
+                'groups.forEach(function(g){var open=g===group;g.classList.toggle("compactCollapsed",!open);var tog=g.querySelector(".groupToggle");if(tog){tog.setAttribute("aria-expanded",String(open));tog.title=open?"Collapse":"Expand";}});' +
+                'try{localStorage.setItem(GROUP_KEY+":"+activeMonth+":all",groupTitle(group));}catch(e){}' +
+                'var allBtn=document.querySelector("#paymentsView [data-bill-filter=\"all\"]");if(allBtn){document.querySelectorAll("#paymentsView [data-bill-filter]").forEach(function(b){b.classList.toggle("active",b===allBtn);});}' +
+                'flash(group);' +
+              '},80);' +
+            '},100);' +
+          '}' +
           'function wire(){' +
             'var cells=document.querySelectorAll("#dashboardCashFlow .dashboardCashGrid>div");' +
             'make(cells[0],"Open bank balance",function(){jump("payments","#bankBalancePanel");});' +
@@ -82,7 +94,7 @@
             'make(cells[4],"Open shop credit",function(){jump("spending","#vendorCreditList");});' +
             'document.querySelectorAll("#dashboardView .budgetAlert").forEach(function(el){var t=(el.textContent||"").toLowerCase();if(t.includes("waiting")||t.includes("bill")||t.includes("unpaid")){make(el,"Open pending payments",function(){jump("payments","#bills");});}});' +
             'var debtTiles=document.querySelectorAll("#dashboardView .debtOverview .balanceTile,#dashboardView .balanceSplit .balanceTile");' +
-            'debtTiles.forEach(function(tile,index){var t=(tile.textContent||"").toLowerCase();if(t.includes("loan")){make(tile,"Open loan payments",function(){openDebtGroup("loan");},"loanJump");}else if(t.includes("credit")||t.includes("debt")||index===0){make(tile,"Open credit and debt payments",function(){openDebtGroup("credit");},"creditJump");}});' +
+            'debtTiles.forEach(function(tile,index){var t=(tile.textContent||"").toLowerCase();if(t.includes("loan")){make(tile,"Open loan details",function(){openDebtGroup("loan");},"loanJump");}else if(t.includes("credit")||t.includes("debt")||index===0){make(tile,"Open credit and debt details",function(){openDebtGroup("credit");},"creditJump");}});' +
           '}' +
           'var oldRender=render;render=function(){oldRender();setTimeout(wire,0);};' +
           'var oldOpen=openPage;openPage=function(page){oldOpen(page);setTimeout(wire,0);};' +
