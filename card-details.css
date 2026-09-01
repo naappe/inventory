@@ -1,0 +1,161 @@
+/* Universal drill-down interaction for Money Plan cards */
+.detailsClickable{
+  position:relative;
+  transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease,background .16s ease;
+}
+.detailsClickable:not(.detailsComplex){cursor:pointer;}
+.detailsClickable:not(.detailsComplex):hover{
+  transform:translateY(-1px);
+  border-color:#c9c5ee!important;
+  box-shadow:0 8px 22px rgba(41,48,72,.08)!important;
+}
+.detailsClickable:focus-visible{
+  outline:3px solid rgba(101,86,217,.20);
+  outline-offset:2px;
+}
+.detailsClickable.detailsArrow::after{
+  content:"→";
+  position:absolute;
+  right:10px;
+  top:10px;
+  color:#9aa2b1;
+  font-size:11px;
+  font-weight:900;
+  pointer-events:none;
+}
+.detailsClickable.detailsComplex::after{display:none;}
+.detailsClickable button,.detailsClickable a,.detailsClickable input,.detailsClickable select,.detailsClickable textarea,.detailsClickable summary{cursor:auto;}
+
+.cardDetailBackdrop{
+  position:fixed;
+  inset:0;
+  z-index:1000;
+  display:flex;
+  justify-content:flex-end;
+  background:rgba(17,24,39,.34);
+  backdrop-filter:blur(2px);
+}
+.cardDetailBackdrop.hidden{display:none;}
+.cardDetailDrawer{
+  width:min(430px,92vw);
+  height:100%;
+  overflow:auto;
+  background:#fff;
+  box-shadow:-22px 0 50px rgba(18,25,40,.16);
+  animation:detailSlide .18s ease-out;
+}
+@keyframes detailSlide{from{transform:translateX(24px);opacity:.7}to{transform:none;opacity:1}}
+.cardDetailTop{
+  position:sticky;
+  top:0;
+  z-index:2;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:18px 19px 14px;
+  border-bottom:1px solid #e8ebf1;
+  background:rgba(255,255,255,.96);
+  backdrop-filter:blur(10px);
+}
+.cardDetailTop span{
+  display:block;
+  color:#7e8797;
+  font-size:9px;
+  font-weight:900;
+  letter-spacing:.07em;
+  text-transform:uppercase;
+}
+.cardDetailTop h2{
+  margin:3px 0 0!important;
+  color:#172033!important;
+  font-size:21px!important;
+  letter-spacing:-.025em!important;
+}
+.cardDetailClose{
+  display:grid;
+  place-items:center;
+  width:34px;
+  height:34px;
+  flex:0 0 auto;
+  padding:0!important;
+  border-radius:9px;
+  background:#f0f2f6!important;
+  color:#536073!important;
+  font-size:20px!important;
+}
+.cardDetailBody{padding:17px 19px 26px;}
+.cardDetailSummary{
+  margin:0 0 15px;
+  color:#6f7889;
+  font-size:12px;
+  line-height:1.55;
+}
+.cardDetailMetrics{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+  margin-bottom:15px;
+}
+.cardDetailMetric{
+  padding:11px 12px;
+  border:1px solid #e6e9f0;
+  border-radius:10px;
+  background:#fafbfc;
+}
+.cardDetailMetric span{
+  display:block;
+  color:#7d8595;
+  font-size:8px;
+  font-weight:850;
+  letter-spacing:.055em;
+  text-transform:uppercase;
+}
+.cardDetailMetric strong{
+  display:block;
+  margin-top:4px;
+  color:#202b40;
+  font-size:14px;
+  line-height:1.25;
+}
+.cardDetailText{
+  display:grid;
+  gap:7px;
+  padding:13px 14px;
+  border:1px solid #e8ebf1;
+  border-radius:11px;
+  background:#fff;
+}
+.cardDetailText div{
+  color:#596477;
+  font-size:11px;
+  line-height:1.45;
+}
+.cardDetailAction{
+  width:100%;
+  margin-top:15px;
+  padding:10px 13px!important;
+  border-radius:9px!important;
+  background:#6556d9!important;
+  color:#fff!important;
+  font-size:11px!important;
+  font-weight:850!important;
+}
+.cardDetailHint{
+  margin-top:10px;
+  color:#939baa;
+  font-size:9px;
+  line-height:1.4;
+  text-align:center;
+}
+.jumpFlash{
+  animation:detailFlash .9s ease;
+}
+@keyframes detailFlash{
+  0%,100%{box-shadow:inherit}
+  35%{box-shadow:0 0 0 4px rgba(101,86,217,.18),0 10px 24px rgba(55,48,130,.12)}
+}
+@media(max-width:700px){
+  .cardDetailDrawer{width:100%;}
+  .cardDetailMetrics{grid-template-columns:1fr 1fr;}
+}
