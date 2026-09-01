@@ -53,10 +53,18 @@
     try{return typeof isCreditCategory==="function"&&isCreditCategory(bill?.[2]);}
     catch{return category.includes("credit")||category.includes("debt");}
   }
+  function isFinishedDebt(bill){
+    return isDebtBill(bill)&&Number(bill?.[4]||0)<=0;
+  }
   function debtType(bill){
     return String(bill?.[2]||"").trim().toLowerCase()==="loan"?"Loan":"Credit / debt";
   }
   function money(value){return "MVR "+Number(value||0).toLocaleString(undefined,{maximumFractionDigits:2});}
+  function pruneFinishedDebts(plan){
+    if(!plan||!Array.isArray(plan.bills))return plan;
+    plan.bills=plan.bills.filter(bill=>!isFinishedDebt(bill));
+    return plan;
+  }
 
   function ensureRolloverModal(){
     if($("monthRolloverModal"))return;
@@ -66,7 +74,7 @@
     wrap.innerHTML=
       '<section class="monthRolloverModal" role="dialog" aria-modal="true" aria-labelledby="monthRolloverTitle">'+
         '<div class="monthRolloverHead"><div><span>NEXT MONTH SETUP</span><h2 id="monthRolloverTitle">Choose what continues</h2><p id="monthRolloverSub"></p></div><button type="button" id="monthRolloverClose" aria-label="Close">×</button></div>'+ 
-        '<div class="monthRolloverNote"><strong>Simple rule</strong><span>Normal expenses can be removed completely. Loans and credit balances stay tracked, but you choose whether to schedule a payment next month.</span></div>'+ 
+        '<div class="monthRolloverNote"><strong>Simple rule</strong><span>Finished loans and credit are closed and will not carry forward. Active balances stay tracked, but you choose whether to make a payment next month. Normal expenses only continue when selected.</span></div>'+ 
         '<div class="monthRolloverToolbar"><button type="button" id="rolloverSelectUsual">Select usual bills</button><button type="button" id="rolloverClearPlans">Clear payment plans</button></div>'+ 
         '<div id="monthRolloverList" class="monthRolloverList"></div>'+ 
         '<div class="monthRolloverFooter"><button type="button" id="monthRolloverCancel">Cancel</button><button type="button" id="monthRolloverConfirm" class="primary">Create next month →</button></div>'+ 
@@ -86,9 +94,9 @@
     list.innerHTML="";
     const bills=Array.isArray(s?.bills)?s.bills:[];
     const sections=[
-      {key:"regular",title:"Regular expenses",hint:"Uncheck anything you do not need next month.",filter:b=>!isDebtBill(b)},
-      {key:"credit",title:"Credit & debt",hint:"Balance stays tracked. Toggle only controls next month's payment plan.",filter:b=>isDebtBill(b)&&String(b?.[2]||"").trim().toLowerCase()!=="loan"},
-      {key:"loan",title:"Loans",hint:"Balance stays tracked. Turn off people you do not need to pay next month.",filter:b=>String(b?.[2]||"").trim().toLowerCase()==="loan"}
+      {key:"regular",title:"Regular expenses",hint:"Select only expenses you want in the next month.",filter:b=>!isDebtBill(b)},
+      {key:"credit",title:"Credit & debt",hint:"Active balances stay tracked. Finished balances close automatically.",filter:b=>isDebtBill(b)&&String(b?.[2]||"").trim().toLowerCase()!=="loan"},
+      {key:"loan",title:"Loans",hint:"Active loans stay tracked. Paid-off loans do not continue.",filter:b=>String(b?.[2]||"").trim().toLowerCase()==="loan"}
     ];
     sections.forEach(section=>{
       const rows=bills.map((bill,index)=>({bill,index})).filter(x=>section.filter(x.bill));
@@ -102,10 +110,11 @@
       const holder=block.querySelector(".rolloverRows");
       rows.forEach(({bill,index})=>{
         const debt=isDebtBill(bill);
+        const finished=isFinishedDebt(bill);
         const planned=Number(bill?.[1]||0);
         const remaining=Number(bill?.[4]||0);
         const row=document.createElement("label");
-        row.className="rolloverRow";
+        row.className="rolloverRow"+(finished?" rolloverFinished":"");
         row.innerHTML=
           '<input type="checkbox" class="rolloverCheck" />'+
           '<div class="rolloverMain"><strong></strong><span></span></div>'+ 
@@ -113,11 +122,15 @@
         const check=row.querySelector("input");
         check.dataset.billIndex=String(index);
         check.dataset.kind=debt?"debt":"regular";
-        check.checked=debt?planned>0:planned>0;
+        check.dataset.finished=finished?"1":"0";
+        check.checked=!finished&&planned>0;
+        check.disabled=finished;
         row.querySelector(".rolloverMain strong").textContent=String(bill?.[0]||"Unnamed");
-        row.querySelector(".rolloverMain span").textContent=debt?(debtType(bill)+" · "+(remaining>0?money(remaining)+" remaining":"no balance")):String(bill?.[2]||"Expense");
-        row.querySelector(".rolloverAmount small").textContent=debt?"PAY NEXT MONTH":"NEXT MONTH PLAN";
-        row.querySelector(".rolloverAmount strong").textContent=planned>0?money(planned):"No plan";
+        row.querySelector(".rolloverMain span").textContent=finished
+          ? debtType(bill)+" · Paid off — closes after this month"
+          : debt?(debtType(bill)+" · "+money(remaining)+" remaining"):String(bill?.[2]||"Expense");
+        row.querySelector(".rolloverAmount small").textContent=finished?"STATUS":debt?"PAY NEXT MONTH":"NEXT MONTH PLAN";
+        row.querySelector(".rolloverAmount strong").textContent=finished?"Finished ✓":planned>0?money(planned):"No plan";
         holder.append(row);
       });
       list.append(block);
@@ -133,12 +146,13 @@
     renderRolloverList();
     $("rolloverSelectUsual").onclick=()=>{
       document.querySelectorAll("#monthRolloverList .rolloverCheck").forEach(check=>{
+        if(check.dataset.finished==="1"){check.checked=false;return;}
         const bill=s.bills[Number(check.dataset.billIndex)];
         check.checked=Number(bill?.[1]||0)>0;
       });
     };
     $("rolloverClearPlans").onclick=()=>{
-      document.querySelectorAll("#monthRolloverList .rolloverCheck").forEach(check=>check.checked=false);
+      document.querySelectorAll("#monthRolloverList .rolloverCheck:not(:disabled)").forEach(check=>check.checked=false);
     };
     $("monthRolloverConfirm").onclick=createSelectedNextMonth;
     $("monthRolloverModal").classList.remove("hidden");
@@ -156,9 +170,13 @@
     (nextPlan.bills||[]).forEach((bill,index)=>{
       const source=s.bills[index];
       const debt=isDebtBill(source);
+      const finished=isFinishedDebt(source);
       const selected=choices.has(index)?choices.get(index):Number(source?.[1]||0)>0;
+      if(finished){
+        // Finished loans/credit remain in the closed month history only.
+        return;
+      }
       if(debt){
-        // Keep the balance in the new month even when no payment is scheduled.
         const copy=[...bill];
         if(!selected)copy[1]=0;
         built.push(copy);
@@ -182,7 +200,11 @@
     const next=shiftMonth(activeMonth,1);
     if(months[next]){
       markMonthSaved();
+      // Clean any old copied paid-off loan/credit records from an already-created next month.
+      months[next]=pruneFinishedDebts(preparePlan(months[next]));
+      try{localStorage.setItem(typeof STORAGE_KEY!=="undefined"?STORAGE_KEY:"moneyPlanMonths",JSON.stringify(months));}catch{}
       selectMonth(next);
+      try{save();}catch{}
       try{openPage(localStorage.getItem("moneyPlanModernPage")||localStorage.getItem("moneyPlanActivePage")||"payments");}catch{}
       setTimeout(renderMonthManager,0);
       return;
@@ -202,7 +224,7 @@
         '<button type="button" id="saveMonthBtn" class="saveMonthBtn">Save month</button>'+ 
         '<button type="button" id="nextMonthBtn" class="nextMonthBtn">Next month →</button>'+ 
       '</div>'+ 
-      '<p class="monthWorkflowHelp">Next month now lets you choose which expenses continue. Loan and credit balances remain tracked even when you skip the next payment.</p>';
+      '<p class="monthWorkflowHelp">Finished loans and credit close with this month. Active balances can stay tracked without scheduling a payment next month.</p>';
     picker.append(box);
     $("saveMonthBtn").onclick=markMonthSaved;
     $("nextMonthBtn").onclick=goNextMonth;
