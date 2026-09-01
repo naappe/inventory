@@ -1,8 +1,10 @@
-const CACHE_NAME = "money-plan-v7";
+const CACHE_NAME = "money-plan-v8";
 const APP_FILES = [
   "./",
   "./index.html",
   "./money-core.html",
+  "./modern.css",
+  "./modern.js",
   "./ot.html",
   "./manifest.webmanifest",
   "./icons/icon.svg",
