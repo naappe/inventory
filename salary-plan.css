@@ -27,7 +27,7 @@
 }
 .salaryPlanNumbers{
   display:grid;
-  grid-template-columns:repeat(4,minmax(0,1fr));
+  grid-template-columns:repeat(5,minmax(0,1fr));
   gap:8px;
 }
 .salaryPlanStat{
@@ -54,7 +54,10 @@
   letter-spacing:-.02em;
   white-space:nowrap;
 }
+.salaryPlanStat.paid strong{color:#187764;}
+.salaryPlanStat.available{background:#f5faf8;border-color:#dbeae5;}
 .salaryPlanStat.available strong{color:#187764;}
+.salaryPlanStat.unpaid{background:#fff7f8;border-color:#f2dfe3;}
 .salaryPlanStat.unpaid strong{color:#bd4658;}
 .salaryAllocation{
   display:grid;
@@ -168,13 +171,12 @@
   letter-spacing:.035em;
   text-transform:uppercase;
 }
-.bill.salaryDeferred{
-  background:#fffdf8;
-}
-.bill.salaryDeferred .plannedMetric b{
-  color:#9b691b;
-}
+.bill.salaryDeferred{background:#fffdf8;}
+.bill.salaryDeferred .plannedMetric b{color:#9b691b;}
 
+@media(max-width:1180px){
+  .salaryPlanNumbers{grid-template-columns:repeat(3,minmax(0,1fr));}
+}
 @media(max-width:980px){
   .salaryPlanNumbers{grid-template-columns:repeat(2,minmax(0,1fr));}
 }
@@ -182,6 +184,7 @@
   .salaryPlanCard{padding:15px!important;}
   .salaryPlanHead{flex-direction:column;gap:8px;}
   .salaryPlanNumbers{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .salaryPlanStat:last-child{grid-column:1 / -1;}
   .salaryAllocation{grid-template-columns:1fr;}
   .salaryAllocationBox strong{font-size:18px;}
 }
