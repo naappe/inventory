@@ -58,12 +58,11 @@
     group.classList.toggle('workflowNoPlanWork',mode==='plan'&&!relevant.length);
     group.classList.toggle('workflowNoPayWork',mode==='pay'&&!relevant.length);
     if(!relevant.length)return;
-    let due=0,paidCount=0,pending=0,notPaid=0;
+    let due=0,pending=0,notPaid=0;
     relevant.forEach(r=>{
       const b=rowBill(r);if(!b)return;
       const d=dueFor(b);due+=d;
-      if(d<=.004&&paidFor(b)>0)paidCount++;
-      else if(r.classList.contains('statusPending'))pending++;
+      if(d>.004&&r.classList.contains('statusPending'))pending++;
       else if(d>.004)notPaid++;
     });
     const sEl=document.createElement('span');sEl.className='workflowFreshSummary';
@@ -172,8 +171,6 @@
 
   const oldRender=typeof render==='function'?render:null;
   if(oldRender){render=function(){oldRender();setTimeout(refresh,90);};}
-  const observer=new MutationObserver(()=>requestAnimationFrame(refresh));
-  observer.observe(document.documentElement,{childList:true,subtree:true});
   document.addEventListener('click',e=>{
     if(e.target.closest('#historyNav'))setTimeout(renderFreshHistory,120);
     if(e.target.closest('#workflowPlanNav'))lastMode='';
