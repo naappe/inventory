@@ -1,4 +1,4 @@
-const CACHE_NAME = "money-plan-v25";
+const CACHE_NAME = "money-plan-v26";
 const APP_FILES = [
   "./",
   "./index.html",
@@ -21,6 +21,8 @@ const APP_FILES = [
   "./card-details.js",
   "./workflow-v2.css",
   "./workflow-v2.js",
+  "./workflow-v2-fixes.css",
+  "./workflow-v2-fixes.js",
   "./ot.html",
   "./manifest.webmanifest",
   "./icons/icon.svg",
