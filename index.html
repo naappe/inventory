@@ -15,7 +15,7 @@
   <script>
     (async () => {
       try {
-        const response = await fetch('./money-core.html?v=20260901-debt-drilldown', { cache: 'no-store' });
+        const response = await fetch('./money-core.html?v=20260901-card-details', { cache: 'no-store' });
         if (!response.ok) throw new Error('Could not load Money Plan');
         let html = await response.text();
 
@@ -34,7 +34,8 @@
           '<link rel="stylesheet" href="./salary-plan.css?v=20260901-2" />' +
           '<link rel="stylesheet" href="./friendly.css?v=20260901-2" />' +
           '<link rel="stylesheet" href="./month-workflow.css?v=20260901-1" />' +
-          '<link rel="stylesheet" href="./spending-ledger.css?v=20260901-1" />'
+          '<link rel="stylesheet" href="./spending-ledger.css?v=20260901-1" />' +
+          '<link rel="stylesheet" href="./card-details.css?v=20260901-1" />'
         );
         html += '<scr' + 'ipt src="./modern.js?v=20260901-3"></scr' + 'ipt>';
         html += '<scr' + 'ipt src="./logic-fix.js?v=20260901-2"></scr' + 'ipt>';
@@ -43,6 +44,7 @@
         html += '<scr' + 'ipt src="./friendly.js?v=20260901-2"></scr' + 'ipt>';
         html += '<scr' + 'ipt src="./month-workflow.js?v=20260901-1"></scr' + 'ipt>';
         html += '<scr' + 'ipt src="./spending-ledger.js?v=20260901-1"></scr' + 'ipt>';
+        html += '<scr' + 'ipt src="./card-details.js?v=20260901-1"></scr' + 'ipt>';
 
         html += '<style>' +
           '#dashboardCashFlow .dashboardCashGrid>div.dashboardJump,#dashboardView .budgetAlert.dashboardJump,#dashboardView .balanceTile.dashboardJump{cursor:pointer;transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease,background .16s ease;position:relative;}' +
