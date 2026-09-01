@@ -1,0 +1,333 @@
+/* Money Plan Workflow v2 — one job per page, clear month sequence */
+:root{
+  --wf-bg:#f4f6fa;
+  --wf-card:#ffffff;
+  --wf-card-2:#f8fafc;
+  --wf-line:#e4e9f1;
+  --wf-text:#182236;
+  --wf-muted:#738095;
+  --wf-purple:#6252d6;
+  --wf-purple-soft:#eeecff;
+  --wf-green:#16806a;
+  --wf-green-soft:#e9f7f2;
+  --wf-red:#c84356;
+  --wf-red-soft:#fff0f2;
+  --wf-blue:#3274c8;
+  --wf-blue-soft:#edf5ff;
+  --wf-amber:#a66b16;
+  --wf-sidebar:#151f33;
+  --wf-shadow:0 8px 28px rgba(28,39,61,.055);
+}
+
+html,body{background:var(--wf-bg)!important;color:var(--wf-text)!important;}
+body{min-width:0;}
+main{padding:24px 30px 72px 286px!important;}
+
+/* Sidebar becomes the workflow map. */
+.head{
+  inset:16px auto 16px 16px!important;
+  width:238px!important;
+  padding:20px 16px!important;
+  border-radius:18px!important;
+  background:linear-gradient(180deg,#172238 0%,#111a2c 100%)!important;
+}
+.brandBlock{align-items:center!important;}
+.head h1{font-size:18px!important;}
+.head .sub{max-width:150px;color:#99a5ba!important;font-size:10px!important;line-height:1.45!important;}
+.headTools{gap:10px!important;}
+.nav{gap:4px!important;}
+.workflowNavLabel{
+  margin:9px 10px 3px;
+  color:#65728a;
+  font-size:8px;
+  font-weight:900;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+}
+.nav .workflowNavBtn,
+.nav .otNavLink{
+  display:flex!important;
+  align-items:center!important;
+  gap:10px!important;
+  min-height:39px!important;
+  padding:8px 10px!important;
+  border-radius:9px!important;
+  color:#aab5c9!important;
+  font-size:11px!important;
+  font-weight:760!important;
+}
+.workflowNavIcon{
+  display:grid;
+  place-items:center;
+  width:22px;
+  height:22px;
+  flex:0 0 auto;
+  border-radius:7px;
+  background:rgba(255,255,255,.055);
+  color:#aeb8ca;
+  font-size:11px;
+  font-weight:900;
+}
+.nav .workflowNavBtn.active{
+  background:#6556d9!important;
+  color:#fff!important;
+  box-shadow:0 7px 18px rgba(58,45,160,.28)!important;
+}
+.nav .workflowNavBtn.active .workflowNavIcon{background:rgba(255,255,255,.16);color:#fff;}
+.workflowFlowHint{
+  margin-top:5px;
+  padding:9px 10px;
+  border:1px solid rgba(255,255,255,.07);
+  border-radius:9px;
+  background:rgba(255,255,255,.025);
+  color:#77859d;
+  font-size:8px;
+  line-height:1.55;
+}
+.workflowFlowHint b{color:#aeb8ca;}
+
+.monthPicker{margin-top:2px!important;padding-top:12px!important;}
+.monthPicker input{min-height:38px!important;}
+.monthWorkflowHelp{display:none!important;}
+
+/* Page title language */
+.workflowPageHead,
+.workflowPaymentsHead{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:18px;
+  margin:0 auto 14px;
+  padding:2px 2px 0;
+  max-width:1280px;
+}
+.workflowPageEyebrow{
+  display:block;
+  margin-bottom:4px;
+  color:var(--wf-purple);
+  font-size:9px;
+  font-weight:900;
+  letter-spacing:.085em;
+  text-transform:uppercase;
+}
+.workflowPageHead h2,
+.workflowPaymentsHead h2{margin:0!important;color:var(--wf-text)!important;font-size:27px!important;line-height:1.12!important;letter-spacing:-.035em!important;}
+.workflowPageHead p,
+.workflowPaymentsHead p{margin:5px 0 0!important;color:var(--wf-muted)!important;font-size:11px!important;line-height:1.5!important;}
+.workflowQuickActions{display:flex;gap:7px;flex:0 0 auto;}
+.workflowQuickActions button{
+  min-height:35px;
+  padding:7px 11px;
+  border:1px solid var(--wf-line);
+  border-radius:9px;
+  background:#fff;
+  color:#536073;
+  font-size:10px;
+  font-weight:820;
+}
+.workflowQuickActions button.primary{border-color:var(--wf-purple)!important;background:var(--wf-purple)!important;color:#fff!important;}
+
+/* OVERVIEW — what do I have, what needs attention, what do I owe. */
+#dashboardView{max-width:1280px!important;}
+#dashboardView>.cards{display:none!important;}
+#dashboardView .categorySnapshotCard,
+#dashboardView .dashboardGrid{display:none!important;}
+#dashboardView #dashboardDetails{display:grid;gap:14px;}
+#dashboardView .modernDashboard{margin-bottom:0!important;}
+#dashboardView .modernMetricGrid{grid-template-columns:repeat(4,minmax(0,1fr))!important;}
+#dashboardView .modernMetric{min-height:112px;box-shadow:var(--wf-shadow)!important;}
+#dashboardView .moneyProgressCard{box-shadow:var(--wf-shadow)!important;}
+#dashboardCashFlow,
+#upcomingPaymentsCard,
+#dashboardView .debtOverview,
+#dashboardView .alertCard{margin:0!important;box-shadow:var(--wf-shadow)!important;}
+#dashboardView .debtOverview .balanceTile{cursor:pointer;}
+#dashboardView .alertCard{padding:16px 18px!important;}
+#dashboardView .alertCard h2{font-size:16px!important;}
+
+/* Shared finance status semantics. */
+.statusUnpaid{border-left-color:var(--wf-red)!important;background:linear-gradient(90deg,var(--wf-red-soft),#fff 18%)!important;}
+.statusPaid{border-left-color:var(--wf-green)!important;background:linear-gradient(90deg,var(--wf-green-soft),#fff 18%)!important;}
+.statusPending{border-left-color:var(--wf-blue)!important;background:linear-gradient(90deg,var(--wf-blue-soft),#fff 18%)!important;}
+.friendlyBillAmount.isDue .friendlyLabel,.friendlyBillAmount.isDue strong{color:var(--wf-red)!important;}
+.friendlyBillAmount.isPaid .friendlyLabel,.friendlyBillAmount.isPaid strong{color:var(--wf-green)!important;}
+.friendlyBillAmount.isPending .friendlyLabel,.friendlyBillAmount.isPending strong{color:var(--wf-blue)!important;}
+
+/* PLAN + PAY share the old Payments engine but have different jobs. */
+#paymentsView{max-width:1280px!important;}
+#paymentsView .paymentsIntro{display:none!important;}
+.workflowPaymentsHead{align-items:flex-start;}
+.workflowModeBadge{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:6px 9px;
+  border-radius:999px;
+  background:var(--wf-purple-soft);
+  color:var(--wf-purple);
+  font-size:9px;
+  font-weight:900;
+  white-space:nowrap;
+}
+.workflowPayStrip{
+  display:none;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:8px;
+  margin:0 0 14px;
+}
+.workflowPayStat{
+  padding:12px 13px;
+  border:1px solid var(--wf-line);
+  border-radius:11px;
+  background:#fff;
+  box-shadow:var(--wf-shadow);
+}
+.workflowPayStat span{display:block;color:#7c8798;font-size:8px;font-weight:900;letter-spacing:.055em;text-transform:uppercase;}
+.workflowPayStat strong{display:block;margin-top:4px;color:var(--wf-text);font-size:17px;letter-spacing:-.025em;}
+.workflowPayStat.safe strong{color:var(--wf-green);}
+.workflowPayStat.due strong{color:var(--wf-red);}
+.workflowPayStat.next strong{color:var(--wf-blue);}
+.workflowPayStat.danger strong{color:var(--wf-red);}
+
+body[data-payment-mode="plan"] #paymentsView .insightGrid,
+body[data-payment-mode="plan"] #paymentsView>.card:not(.salaryPlanCard):not(.billsCard){display:none!important;}
+body[data-payment-mode="plan"] #paymentsView .paymentTop{display:grid!important;}
+body[data-payment-mode="plan"] #paymentsView .salaryPlanCard{display:block!important;}
+body[data-payment-mode="plan"] #paymentsView .billsCard{display:block!important;}
+body[data-payment-mode="plan"] #paymentsView .friendlyPrimary.workflowPlanAllocation{background:var(--wf-purple-soft)!important;color:var(--wf-purple)!important;}
+body[data-payment-mode="plan"] #paymentsView .friendlyPrimary.workflowPlanAllocation.isDeferred{background:var(--wf-blue-soft)!important;color:var(--wf-blue)!important;}
+body[data-payment-mode="plan"] #paymentsView .friendlyPrimary.workflowPlanAllocation.isPaid{background:var(--wf-green-soft)!important;color:var(--wf-green)!important;}
+body[data-payment-mode="plan"] #paymentsView .friendlyBillControl .friendlyPrimary:not(.workflowPlanAllocation){display:none!important;}
+body[data-payment-mode="plan"] #paymentsView .copyAccount{display:none!important;}
+
+body[data-payment-mode="pay"] .workflowPayStrip{display:grid;}
+body[data-payment-mode="pay"] #paymentsView .paymentTop,
+body[data-payment-mode="pay"] #paymentsView .salaryPlanCard,
+body[data-payment-mode="pay"] #paymentsView .insightGrid,
+body[data-payment-mode="pay"] #paymentsView>.card:not(.billsCard){display:none!important;}
+body[data-payment-mode="pay"] #paymentsView .billsCard{display:block!important;}
+body[data-payment-mode="pay"] #paymentsView #bills .salaryDeferred{display:none!important;}
+body[data-payment-mode="pay"] #paymentsView .salaryDeferBtn{display:none!important;}
+body[data-payment-mode="pay"] #paymentsView .friendlyMenu .warn{display:none!important;}
+
+#paymentsView .paymentTop{align-items:start!important;}
+#paymentsView .paymentTop>.card{min-height:0!important;}
+#paymentsView .salaryPlanCard{margin:0 0 14px!important;}
+#paymentsView .salaryPlanNumbers{grid-template-columns:repeat(5,minmax(0,1fr))!important;}
+#paymentsView .billsCard{margin-top:0!important;box-shadow:var(--wf-shadow)!important;}
+#paymentsView .billsCard .sectionHead{margin-bottom:3px;}
+#paymentsView .billGroup:not(.compactCollapsed){max-height:440px!important;}
+#paymentsView .billGroupHead{min-height:43px!important;}
+#paymentsView .bill{grid-template-columns:minmax(170px,1.4fr) minmax(155px,.75fr) auto!important;align-items:center!important;}
+#paymentsView .bill>.plannedMetric,
+#paymentsView .bill>.paidMetric,
+#paymentsView .bill>.billStatus,
+#paymentsView .bill>.billActions{display:none!important;}
+#paymentsView .billInfo{grid-column:auto!important;}
+#paymentsView .friendlyBillAmount{grid-column:auto!important;min-width:150px;}
+#paymentsView .friendlyBillControl{grid-column:auto!important;justify-self:end;}
+#paymentsView .friendlyPrimary{min-width:92px!important;}
+#paymentsView .friendlyMore{width:34px!important;}
+#paymentsView .friendlyGroupSummary{margin-left:auto!important;}
+
+/* DEBTS — balances are not mixed with monthly expenses. */
+#debtsView{max-width:1280px;margin:0 auto;}
+.debtSummaryGrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px;}
+.debtSummaryCard{padding:14px 15px;border:1px solid var(--wf-line);border-radius:12px;background:#fff;box-shadow:var(--wf-shadow);}
+.debtSummaryCard span{display:block;color:#7b8698;font-size:8px;font-weight:900;letter-spacing:.06em;text-transform:uppercase;}
+.debtSummaryCard strong{display:block;margin-top:4px;color:var(--wf-text);font-size:19px;letter-spacing:-.03em;}
+.debtSummaryCard.credit strong,.debtSummaryCard.loan strong{color:#a53d50;}
+.debtSummaryCard.paid strong{color:var(--wf-green);}
+.debtColumns{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start;}
+.debtPanel{padding:0!important;overflow:hidden;box-shadow:var(--wf-shadow)!important;}
+.debtPanelHead{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:16px 17px;border-bottom:1px solid var(--wf-line);background:#fafbfc;}
+.debtPanelHead h2{font-size:17px!important;}
+.debtPanelHead p{margin:3px 0 0;color:var(--wf-muted);font-size:10px;}
+.debtPanelHead strong{color:#a53d50;font-size:16px;white-space:nowrap;}
+.debtAccountList{display:grid;}
+.debtAccountRow{padding:14px 16px;border-bottom:1px solid #edf0f4;}
+.debtAccountRow:last-child{border-bottom:0;}
+.debtAccountTop{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
+.debtAccountName strong{display:block;color:#202b40;font-size:12px;}
+.debtAccountName span{display:block;margin-top:3px;color:#7f8999;font-size:9px;}
+.debtRemaining{text-align:right;}
+.debtRemaining small{display:block;color:#8a94a4;font-size:7px;font-weight:900;letter-spacing:.06em;}
+.debtRemaining strong{display:block;margin-top:2px;color:#a33d50;font-size:14px;}
+.debtAccountMeta{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:10px;}
+.debtMetaCell{padding:8px 9px;border-radius:8px;background:#f7f8fb;}
+.debtMetaCell span{display:block;color:#8a94a4;font-size:7px;font-weight:850;text-transform:uppercase;}
+.debtMetaCell b{display:block;margin-top:2px;color:#334056;font-size:10px;}
+.debtAccountBottom{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;}
+.debtStatus{display:inline-flex;padding:5px 8px;border-radius:999px;font-size:8px;font-weight:900;}
+.debtStatus.due{background:var(--wf-red-soft);color:var(--wf-red);}
+.debtStatus.pending{background:var(--wf-blue-soft);color:var(--wf-blue);}
+.debtStatus.paid{background:var(--wf-green-soft);color:var(--wf-green);}
+.debtStatus.neutral{background:#f0f2f6;color:#6e7788;}
+.debtManageBtn{padding:7px 10px!important;border-radius:8px!important;background:var(--wf-purple-soft)!important;color:var(--wf-purple)!important;font-size:9px!important;font-weight:850!important;}
+.debtManageBtn:disabled{background:#eef6f3!important;color:var(--wf-green)!important;opacity:1!important;}
+.debtEmpty{padding:28px 18px;color:#7d8797;text-align:center;font-size:11px;}
+
+/* Payees, Spending, History, Settings — same width and hierarchy. */
+#spendingView,#payeesView,#historyView,#categoriesView{max-width:1280px!important;margin:0 auto!important;}
+#spendingView .spendingPageHead,
+#payeesView .pageIntro,
+#historyView .pageIntro{margin-bottom:14px!important;}
+#categoriesView .settingsStack::before{content:"Settings"!important;display:block;margin:0 0 1px;color:var(--wf-text);font-size:27px;font-weight:850;letter-spacing:-.035em;}
+#categoriesView .settingsStack::after{content:"Categories, backup, installation and supporting tools.";display:block;grid-row:2;margin:-10px 0 2px;color:var(--wf-muted);font-size:11px;}
+
+/* Keep old report widgets out of the main workflow. */
+.summaryFooter{display:none!important;}
+.paymentsFootNote{display:none!important;}
+
+@media(max-width:1100px){
+  main{padding:20px 20px 70px 244px!important;}
+  .head{width:208px!important;}
+  #dashboardView .modernMetricGrid{grid-template-columns:repeat(2,minmax(0,1fr))!important;}
+  .debtSummaryGrid{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .debtColumns{grid-template-columns:1fr;}
+  #paymentsView .salaryPlanNumbers{grid-template-columns:repeat(3,minmax(0,1fr))!important;}
+}
+
+@media(max-width:760px){
+  main{padding:12px 11px 94px!important;}
+  .head{margin:0 0 12px!important;padding:14px!important;}
+  .brandBlock{margin-bottom:3px;}
+  .headTools{display:block!important;}
+  .monthPicker{display:block!important;margin-top:9px!important;}
+  .monthPicker input{margin-top:4px!important;}
+  .workflowFlowHint,.workflowNavLabel{display:none;}
+  .nav{
+    display:flex!important;
+    grid-template-columns:none!important;
+    overflow-x:auto!important;
+    gap:5px!important;
+    padding:7px 8px calc(7px + env(safe-area-inset-bottom))!important;
+    scrollbar-width:none;
+  }
+  .nav::-webkit-scrollbar{display:none;}
+  .nav .workflowNavBtn{min-width:82px!important;width:auto!important;flex:0 0 auto!important;justify-content:center!important;gap:4px!important;padding:6px 8px!important;color:#657084!important;}
+  .workflowNavIcon{width:19px;height:19px;background:#f1f3f7;color:#657084;}
+  .nav .workflowNavBtn.active{background:var(--wf-purple-soft)!important;color:var(--wf-purple)!important;box-shadow:none!important;}
+  .nav .workflowNavBtn.active .workflowNavIcon{background:#ddd8ff;color:var(--wf-purple);}
+  .workflowPageHead,.workflowPaymentsHead{align-items:flex-start;flex-direction:column;gap:9px;margin-bottom:11px;}
+  .workflowPageHead h2,.workflowPaymentsHead h2{font-size:23px!important;}
+  .workflowQuickActions{width:100%;display:grid;grid-template-columns:1fr 1fr;}
+  .workflowQuickActions button{width:100%;}
+  #dashboardView .modernMetricGrid{grid-template-columns:repeat(2,minmax(0,1fr))!important;}
+  .workflowPayStrip{grid-template-columns:repeat(2,minmax(0,1fr));}
+  #paymentsView .salaryPlanNumbers{grid-template-columns:repeat(2,minmax(0,1fr))!important;}
+  #paymentsView #bills{grid-template-columns:1fr!important;}
+  #paymentsView .bill{grid-template-columns:1fr!important;gap:7px!important;}
+  #paymentsView .friendlyBillAmount{min-width:0;}
+  #paymentsView .friendlyBillControl{justify-self:stretch;width:100%;}
+  #paymentsView .friendlyPrimary{flex:1;}
+  .debtSummaryGrid{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .debtColumns{grid-template-columns:1fr;}
+  .debtAccountMeta{grid-template-columns:1fr 1fr;}
+}
+
+@media(max-width:460px){
+  #dashboardView .modernMetricGrid,.debtSummaryGrid,.workflowPayStrip{grid-template-columns:1fr 1fr!important;}
+  .workflowQuickActions{grid-template-columns:1fr;}
+  .debtAccountMeta{grid-template-columns:1fr;}
+}
