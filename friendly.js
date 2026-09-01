@@ -15,6 +15,11 @@
     menu.append(b);
   }
 
+  function setRowStatus(row,state){
+    row.classList.remove("statusUnpaid","statusPaid","statusPending","statusNeutral");
+    row.classList.add(state);
+  }
+
   function friendlyRow(row){
     row.querySelector(".friendlyBillAmount")?.remove();
     row.querySelector(".friendlyBillControl")?.remove();
@@ -22,7 +27,6 @@
     const planned=parseMoney(row.querySelector(".plannedMetric b")?.textContent);
     const paid=parseMoney(row.querySelector(".paidMetric b")?.textContent);
     const due=Math.max(0,planned-paid);
-    const status=(row.querySelector(".statusBadge")?.textContent||"").trim().toLowerCase();
     const deferred=row.classList.contains("salaryDeferred");
     const originalPay=row.querySelector(".billActions .pay");
     const undoPartial=row.querySelector(".billActions .undoPay:not(.hidden)");
@@ -37,29 +41,59 @@
     const strong=document.createElement("strong");
     const small=document.createElement("small");
 
+    let state="neutral";
     if(deferred && due>0){
-      amount.classList.add("isNext");label.textContent="Next salary";strong.textContent=money(due);small.textContent=paid>0?money(paid)+" already paid":"Moved forward";
+      state="pending";
+      setRowStatus(row,"statusPending");
+      amount.classList.add("isPending");
+      label.textContent="Pending";
+      strong.textContent=money(due);
+      small.textContent=paid>0?money(paid)+" paid · next salary":"Kept for next salary";
     }else if(due<=.004 && paid>0){
-      amount.classList.add("isPaid");label.textContent="Paid";strong.textContent=money(paid);small.textContent="Completed this month";
+      state="paid";
+      setRowStatus(row,"statusPaid");
+      amount.classList.add("isPaid");
+      label.textContent="Paid";
+      strong.textContent=money(paid);
+      small.textContent="Completed this month";
     }else if(planned<=.004){
-      label.textContent="Plan";strong.textContent="No payment";small.textContent="Nothing due this month";
+      state="neutral";
+      setRowStatus(row,"statusNeutral");
+      label.textContent="No plan";
+      strong.textContent="MVR 0";
+      small.textContent="Nothing planned this month";
     }else if(paid>0){
-      amount.classList.add("isDue");label.textContent="Still due";strong.textContent=money(due);small.textContent=money(paid)+" already paid";
+      state="pending";
+      setRowStatus(row,"statusPending");
+      amount.classList.add("isPending");
+      label.textContent="Pending";
+      strong.textContent=money(due);
+      small.textContent=money(paid)+" already paid";
     }else{
-      amount.classList.add("isDue");label.textContent="Due now";strong.textContent=money(planned);small.textContent="Not paid yet";
+      state="unpaid";
+      setRowStatus(row,"statusUnpaid");
+      amount.classList.add("isDue");
+      label.textContent="Not paid";
+      strong.textContent=money(planned);
+      small.textContent="Full amount still due";
     }
     amount.append(label,strong,small);
 
     const control=document.createElement("div");control.className="friendlyBillControl";
     const primary=document.createElement("button");primary.type="button";primary.className="friendlyPrimary";
-    if(deferred && due>0){
-      primary.classList.add("isNext");primary.textContent="Next salary";primary.onclick=(e)=>{e.preventDefault();e.stopPropagation();salary?.click();};
-    }else if(due<=.004 && paid>0){
+    if(state==="pending" && deferred){
+      primary.classList.add("isPending");primary.textContent="Pending";
+      primary.onclick=(e)=>{e.preventDefault();e.stopPropagation();salary?.click();};
+      primary.title="Kept for next salary";
+    }else if(state==="paid"){
       primary.classList.add("isPaid");primary.textContent="Paid";primary.disabled=true;
-    }else if(planned<=.004){
+    }else if(state==="neutral"){
       primary.classList.add("isNoPlan");primary.textContent="No plan";primary.disabled=true;
+    }else if(state==="pending"){
+      primary.classList.add("isPending");primary.textContent="Add payment";
+      primary.onclick=(e)=>{e.preventDefault();e.stopPropagation();originalPay?.click();};
     }else{
-      primary.textContent=paid>0?"Add payment":"Pay";
+      primary.classList.add("isUnpaid");primary.textContent="Pay";
       primary.onclick=(e)=>{e.preventDefault();e.stopPropagation();originalPay?.click();};
     }
 
@@ -83,25 +117,30 @@
   function groupSummary(group){
     const old=group.querySelector(".friendlyGroupSummary");if(old)old.remove();
     const rows=[...group.querySelectorAll(":scope > .bill")];
-    let currentDue=0,currentCount=0,nextDue=0,nextCount=0;
+    let unpaidDue=0,unpaidCount=0,pendingDue=0,pendingCount=0;
     rows.forEach(row=>{
       const planned=parseMoney(row.querySelector(".plannedMetric b")?.textContent);
       const paid=parseMoney(row.querySelector(".paidMetric b")?.textContent);
       const due=Math.max(0,planned-paid);if(due<=.004)return;
-      if(row.classList.contains("salaryDeferred")){nextDue+=due;nextCount++;}
-      else{currentDue+=due;currentCount++;}
+      if(row.classList.contains("salaryDeferred")||paid>0){pendingDue+=due;pendingCount++;}
+      else{unpaidDue+=due;unpaidCount++;}
     });
     const s=document.createElement("span");s.className="friendlyGroupSummary";
-    if(!currentCount&&!nextCount){s.textContent="All paid";s.classList.add("ok");}
-    else if(currentCount){s.textContent=currentCount+" to pay · "+money(currentDue)+(nextCount?" · "+nextCount+" next salary":"");}
-    else{s.textContent=nextCount+" next salary · "+money(nextDue);s.classList.add("next");}
+    if(!unpaidCount&&!pendingCount){
+      s.textContent="All paid";s.classList.add("ok");
+    }else if(unpaidCount){
+      s.textContent=unpaidCount+" not paid · "+money(unpaidDue)+(pendingCount?" · "+pendingCount+" pending":"");
+      s.classList.add("unpaid");
+    }else{
+      s.textContent=pendingCount+" pending · "+money(pendingDue);s.classList.add("pending");
+    }
     group.querySelector(".billGroupHead")?.append(s);
   }
 
   function improveLabels(){
     const head=document.querySelector("#paymentsView .billsCard .sectionHead h2");if(head)head.textContent="Bills";
-    const sub=document.querySelector("#paymentsView .billsCard .sectionHead .sub");if(sub)sub.textContent="Open a category. Each bill shows one amount and one main action; use ••• for everything else.";
-    const note=$("paymentsFootNote");if(note)note.textContent="Pay = money leaves the bank. Next salary = keep the bill, but do not count it against this salary.";
+    const sub=document.querySelector("#paymentsView .billsCard .sectionHead .sub");if(sub)sub.textContent="Red = not paid · Green = paid · Blue = pending. Open a category to manage its bills.";
+    const note=$("paymentsFootNote");if(note)note.textContent="Red = not paid. Green = paid. Blue = pending or moved to next salary.";
   }
 
   function enhanceFriendly(){
