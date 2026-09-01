@@ -1,0 +1,126 @@
+/* Friendly bill rows — clear amount + one main action + more menu */
+#paymentsView .billGroup{overflow:visible!important;}
+#paymentsView .bill{
+  position:relative!important;
+  z-index:1;
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) minmax(150px,190px) auto!important;
+  align-items:center!important;
+  gap:14px!important;
+  min-height:66px!important;
+  padding:12px 14px!important;
+  border-top:1px solid #edf0f5!important;
+  background:#fff!important;
+}
+#paymentsView .bill:hover{z-index:3;background:#fbfcfe!important;}
+#paymentsView .bill.salaryDeferred{background:#fffdf8!important;}
+#paymentsView .bill > .plannedMetric,
+#paymentsView .bill > .paidMetric,
+#paymentsView .bill > .billStatus,
+#paymentsView .bill > .billActions{display:none!important;}
+#paymentsView .billInfo{min-width:0!important;}
+#paymentsView .billInfo strong{display:block!important;font-size:13px!important;color:#172033!important;}
+#paymentsView .billInfo small{display:inline-flex!important;max-width:100%;margin-top:4px!important;font-size:9px!important;}
+#paymentsView .vendorAccountLine{display:block!important;margin-top:5px!important;color:#7f8797!important;font-size:9px!important;}
+
+.friendlyBillAmount{min-width:0;text-align:right;}
+.friendlyBillAmount .friendlyLabel{display:block;color:#7f8797;font-size:9px;font-weight:850;letter-spacing:.055em;text-transform:uppercase;}
+.friendlyBillAmount strong{display:block;margin-top:3px;color:#172033;font-size:15px;font-weight:850;white-space:nowrap;}
+.friendlyBillAmount small{display:block;margin-top:2px;color:#8b93a2;font-size:9px;white-space:nowrap;}
+.friendlyBillAmount.isPaid strong{color:#187764;}
+.friendlyBillAmount.isDue strong{color:#bd4658;}
+.friendlyBillAmount.isNext strong{color:#9a6413;}
+
+.friendlyBillControl{position:relative;display:flex;align-items:center;justify-content:flex-end;gap:7px;}
+.friendlyPrimary{
+  min-width:86px;
+  height:34px;
+  padding:0 12px!important;
+  border-radius:9px!important;
+  background:#6556d9!important;
+  color:#fff!important;
+  font-size:10px!important;
+  font-weight:850!important;
+  white-space:nowrap;
+}
+.friendlyPrimary.isPaid{background:#e5f4ef!important;color:#176b5c!important;cursor:default!important;}
+.friendlyPrimary.isNoPlan{background:#f0f2f6!important;color:#858d9d!important;cursor:default!important;}
+.friendlyPrimary.isNext{background:#fff2dc!important;color:#8c5d13!important;}
+.friendlyMore{
+  display:grid!important;
+  place-items:center!important;
+  width:34px!important;
+  height:34px!important;
+  padding:0!important;
+  border:1px solid #e1e5ed!important;
+  border-radius:9px!important;
+  background:#fff!important;
+  color:#586174!important;
+  font-size:16px!important;
+  font-weight:800!important;
+  line-height:1!important;
+}
+.friendlyMore:hover{background:#f5f7fb!important;}
+.friendlyMenu{
+  position:absolute;
+  z-index:100;
+  top:40px;
+  right:0;
+  display:none;
+  min-width:190px;
+  padding:6px;
+  border:1px solid #dfe4ed;
+  border-radius:11px;
+  background:#fff;
+  box-shadow:0 14px 38px rgba(21,29,45,.16);
+}
+.friendlyMenu.open{display:grid;gap:2px;}
+.friendlyMenu button{
+  width:100%!important;
+  padding:9px 10px!important;
+  border:0!important;
+  border-radius:8px!important;
+  background:transparent!important;
+  color:#3f495c!important;
+  font-size:11px!important;
+  font-weight:700!important;
+  text-align:left!important;
+}
+.friendlyMenu button:hover{background:#f4f6fa!important;}
+.friendlyMenu button.warn{color:#95600f!important;}
+.friendlyMenu button.danger{color:#b13c4d!important;}
+.friendlyMenu button.undo{color:#5c50c7!important;}
+
+#paymentsView .billGroupHead > small{display:none!important;}
+.friendlyGroupSummary{margin-left:auto;color:#747d8d;font-size:9px;font-weight:750;white-space:nowrap;}
+.friendlyGroupSummary.ok{color:#187764;}
+.friendlyGroupSummary.next{color:#95600f;}
+
+/* Make the salary explanation read as one clear decision block. */
+.salaryPlanHead p{max-width:720px!important;font-size:12px!important;line-height:1.45!important;}
+.salaryPlanNumbers{grid-template-columns:repeat(5,minmax(0,1fr))!important;}
+.salaryPlanStat{padding:12px 13px!important;}
+.salaryPlanStat.paid strong{color:#187764!important;}
+.salaryPlanStatus{font-size:12px!important;}
+.salaryPlanHint{font-size:11px!important;line-height:1.45!important;}
+
+/* Remove visual noise from the open group. */
+#paymentsView .billGroup:not(.compactCollapsed){border-color:#dfe4ed!important;box-shadow:0 8px 22px rgba(26,34,52,.05)!important;}
+#paymentsView .billGroup:not(.compactCollapsed) .billGroupHead{background:#f8f9fc!important;}
+#paymentsView .groupToggle{background:#eef1f6!important;color:#667084!important;}
+
+@media(max-width:980px){
+  .salaryPlanNumbers{grid-template-columns:repeat(3,minmax(0,1fr))!important;}
+  #paymentsView .bill{grid-template-columns:minmax(0,1fr) auto!important;gap:8px 12px!important;}
+  .friendlyBillAmount{grid-column:1;text-align:left!important;}
+  .friendlyBillControl{grid-column:2;grid-row:1 / span 2;align-self:center;}
+}
+@media(max-width:700px){
+  .salaryPlanNumbers{grid-template-columns:repeat(2,minmax(0,1fr))!important;}
+  #paymentsView .bill{grid-template-columns:1fr!important;padding:12px!important;}
+  .friendlyBillAmount{grid-column:1!important;text-align:left!important;}
+  .friendlyBillControl{grid-column:1!important;grid-row:auto!important;justify-content:stretch!important;}
+  .friendlyPrimary{flex:1!important;}
+  .friendlyMenu{left:0;right:0;min-width:0;}
+  .friendlyGroupSummary{white-space:normal;text-align:right;}
+}
