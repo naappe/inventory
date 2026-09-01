@@ -24,6 +24,7 @@
 
   function totals(){
     const paid=paidTotalSalary();
+    const planned=(s.bills||[]).reduce((a,b)=>a+Math.max(0,Number(b?.[1]||0)),0);
     const income=Math.max(0,Number(s.income||0));
     const salaryLeft=Math.max(0,income-paid);
     const unpaid=unpaidBills();
@@ -35,7 +36,7 @@
     if(hasBank()) available=income>0?Math.min(salaryLeft,bank()):bank();
     const short=Math.max(0,thisSalaryDue-available);
     const spare=Math.max(0,available-thisSalaryDue);
-    return {paid,income,salaryLeft,bankNow:hasBank()?bank():null,available,unpaid,allDue,next,nextDue,thisSalaryDue,short,spare,
+    return {paid,planned,income,salaryLeft,bankNow:hasBank()?bank():null,available,unpaid,allDue,next,nextDue,thisSalaryDue,short,spare,
       thisCount:unpaid.filter(b=>!isNextSalary(b)).length,nextCount:next.length};
   }
 
@@ -46,12 +47,13 @@
     card.id="salaryPlanCard";
     card.className="card salaryPlanCard";
     card.innerHTML=
-      '<div class="salaryPlanHead"><div><h2>Salary plan</h2><p>See exactly what this salary has already paid, what it can still cover, and what must wait.</p></div><span class="salaryPlanBadge">THIS SALARY → NEXT SALARY</span></div>'+ 
+      '<div class="salaryPlanHead"><div><h2>Salary plan</h2><p>One view for the total plan, what is already paid, what is still pending, and what must wait for the next salary.</p></div><span class="salaryPlanBadge">THIS SALARY → NEXT SALARY</span></div>'+ 
       '<div class="salaryPlanNumbers">'+
         '<div class="salaryPlanStat"><span>Salary received</span><strong id="salaryReceived"></strong></div>'+ 
-        '<div class="salaryPlanStat"><span>Already paid</span><strong id="salaryPaid"></strong></div>'+ 
+        '<div class="salaryPlanStat"><span>Total bills planned</span><strong id="salaryPlanned"></strong></div>'+ 
+        '<div class="salaryPlanStat paid"><span>Already paid</span><strong id="salaryPaid"></strong></div>'+ 
+        '<div class="salaryPlanStat unpaid"><span>Still unpaid</span><strong id="salaryUnpaid"></strong></div>'+ 
         '<div class="salaryPlanStat available"><span>Available this salary</span><strong id="salaryAvailable"></strong></div>'+ 
-        '<div class="salaryPlanStat unpaid"><span>All unpaid bills</span><strong id="salaryUnpaid"></strong></div>'+ 
       '</div>'+ 
       '<div class="salaryAllocation">'+
         '<div class="salaryAllocationBox"><span>Pay with this salary</span><strong id="salaryThisDue"></strong><small id="salaryThisCount"></small></div>'+ 
@@ -66,28 +68,29 @@
     if(!$("salaryPlanCard"))return;
     const t=totals();
     $("salaryReceived").textContent=money(t.income);
+    $("salaryPlanned").textContent=money(t.planned);
     $("salaryPaid").textContent=money(t.paid);
-    $("salaryAvailable").textContent=money(t.available);
     $("salaryUnpaid").textContent=money(t.allDue);
+    $("salaryAvailable").textContent=money(t.available);
     $("salaryThisDue").textContent=money(t.thisSalaryDue);
     $("salaryNextDue").textContent=money(t.nextDue);
-    $("salaryThisCount").textContent=t.thisCount+" unpaid "+(t.thisCount===1?"bill":"bills")+" assigned here";
-    $("salaryNextCount").textContent=t.nextCount+" "+(t.nextCount===1?"bill":"bills")+" moved forward";
+    $("salaryThisCount").textContent=t.thisCount+" unpaid "+(t.thisCount===1?"bill":"bills")+" assigned to this salary";
+    $("salaryNextCount").textContent=t.nextCount+" "+(t.nextCount===1?"bill":"bills")+" kept for next salary";
     const status=$("salaryPlanStatus");
     status.classList.toggle("short",t.short>0);
     if(!t.unpaid.length){
-      status.textContent="All planned bills are paid. There is nothing waiting for the next salary.";
+      status.textContent="All planned bills are paid. There is nothing pending for the next salary.";
     }else if(t.short>0){
-      status.innerHTML="This salary cannot cover the current plan. Move at least <b>"+money(t.short)+"</b> more of unpaid bills to <b>Next salary</b>.";
+      status.innerHTML="This salary cannot cover the bills currently assigned to it. Move at least <b>"+money(t.short)+"</b> more to <b>Next salary</b>.";
     }else{
-      status.innerHTML="This salary plan fits. After the bills assigned to this salary, about <b>"+money(t.spare)+"</b> remains available.";
+      status.innerHTML="This salary plan fits. After paying the bills assigned to this salary, about <b>"+money(t.spare)+"</b> remains available.";
     }
     const hint=$("salaryPlanHint");
     if(hint){
       if(t.bankNow!==null && t.income>0 && t.bankNow<t.salaryLeft-.004)
-        hint.innerHTML="Your salary budget has "+money(t.salaryLeft)+" left, but the bank currently has "+money(t.bankNow)+". The lower bank amount limits what can be paid now.";
+        hint.innerHTML="Salary budget left: "+money(t.salaryLeft)+". Bank now: "+money(t.bankNow)+". The lower bank balance limits what can actually be paid now.";
       else if(t.bankNow!==null && t.income>0 && t.bankNow>t.salaryLeft+.004)
-        hint.innerHTML="Bank now: "+money(t.bankNow)+". Salary budget left: "+money(t.salaryLeft)+". This plan protects the salary budget and does not treat extra bank money as new salary.";
+        hint.innerHTML="Bank now: "+money(t.bankNow)+". Salary budget left: "+money(t.salaryLeft)+". Extra bank money is not counted as new salary, so this plan protects the salary budget.";
       else
         hint.innerHTML='For any bill you cannot pay now, press <b>Next salary</b> on that bill. It stays visible but is removed from this salary requirement.';
     }
@@ -165,7 +168,7 @@
       const p=second.querySelector(".sub");if(p)p.textContent="Add what you expect to pay. This does not reduce the bank until you record payment.";
     }
     const bills=document.querySelector("#paymentsView .billsCard .sectionHead h2");if(bills)bills.textContent="Bills and salary allocation";
-    const billsSub=document.querySelector("#paymentsView .billsCard .sectionHead .sub");if(billsSub)billsSub.textContent="Assign unpaid bills to this salary or keep them for the next salary.";
+    const billsSub=document.querySelector("#paymentsView .billsCard .sectionHead .sub");if(billsSub)billsSub.textContent="Assign each unpaid bill to this salary or keep it for the next salary.";
   }
 
   function enhanceSalaryPlan(){
