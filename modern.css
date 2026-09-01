@@ -1,0 +1,409 @@
+:root {
+  --money-positive:#167c70;
+  --money-soft:#eef9f6;
+  --money-border:#cfe9e4;
+}
+
+.nav .otNavLink {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:9px;
+  background:rgba(255,255,255,.07);
+  color:rgba(255,255,255,.72);
+  padding:9px 11px;
+  font:inherit;
+  font-size:12px;
+  font-weight:800;
+  text-decoration:none;
+  white-space:nowrap;
+}
+.nav .extraNavButton {
+  border:1px solid rgba(255,255,255,.14);
+  background:rgba(255,255,255,.1);
+  color:rgba(255,255,255,.82);
+  padding:9px 11px;
+}
+.nav .extraNavButton.active {
+  border-color:#fff;
+  background:#fff;
+  color:var(--p-dark);
+  box-shadow:0 5px 16px rgba(31,21,70,.18);
+}
+
+#dashboardView > .cards { display:none !important; }
+#dashboardView .categorySnapshotCard,
+#dashboardView .dashboardGrid { display:none !important; }
+
+.modernDashboard {
+  display:grid;
+  gap:15px;
+  margin-bottom:15px;
+}
+.modernMetricGrid {
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:12px;
+}
+.modernMetric {
+  position:relative;
+  min-width:0;
+  overflow:hidden;
+  padding:19px 20px;
+  border:1px solid rgba(104,88,149,.13);
+  border-radius:18px;
+  background:#fff;
+  box-shadow:var(--shadow-md);
+}
+.modernMetric::before {
+  content:"";
+  position:absolute;
+  inset:0 auto 0 0;
+  width:4px;
+  background:var(--p);
+}
+.modernMetric.paid::before { background:var(--w); }
+.modernMetric.remaining::before { background:#2877ae; }
+.modernMetric.safe::before { background:var(--money-positive); }
+.modernMetric.safe.danger::before { background:var(--r); }
+.modernMetricLabel {
+  display:block;
+  color:var(--m);
+  font-size:10px;
+  font-weight:850;
+  letter-spacing:.065em;
+  text-transform:uppercase;
+}
+.modernMetricValue {
+  display:block;
+  margin-top:7px;
+  color:var(--i);
+  font-size:clamp(20px,2vw,27px);
+  font-weight:850;
+  letter-spacing:-.035em;
+  white-space:nowrap;
+}
+.modernMetric.safe .modernMetricValue { color:var(--money-positive); }
+.modernMetric.safe.danger .modernMetricValue { color:var(--r); }
+.modernMetricHint {
+  display:block;
+  margin-top:6px;
+  color:var(--m);
+  font-size:11px;
+}
+
+.moneyProgressCard {
+  padding:18px 20px;
+  border:1px solid rgba(104,88,149,.13);
+  border-radius:18px;
+  background:#fff;
+  box-shadow:var(--shadow-md);
+}
+.moneyProgressHead {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+}
+.moneyProgressHead strong { font-size:14px; }
+.moneyProgressHead span { color:var(--m); font-size:12px; }
+.moneyProgressTrack {
+  height:8px;
+  margin-top:12px;
+  overflow:hidden;
+  border-radius:999px;
+  background:#ece9f5;
+}
+.moneyProgressTrack i {
+  display:block;
+  height:100%;
+  width:0;
+  border-radius:inherit;
+  background:linear-gradient(90deg,var(--p),var(--p-light));
+  transition:width .45s ease;
+}
+
+.upcomingCard { margin-bottom:15px; }
+.upcomingHead {
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:14px;
+}
+.upcomingHead button {
+  padding:8px 10px;
+  background:var(--p-soft);
+  color:var(--p);
+  font-size:12px;
+}
+.upcomingList {
+  display:grid;
+  gap:0;
+  margin-top:14px;
+}
+.upcomingRow {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto auto;
+  align-items:center;
+  gap:14px;
+  padding:12px 0;
+  border-top:1px solid var(--l);
+}
+.upcomingRow:first-child { border-top:0; }
+.upcomingName strong { display:block; font-size:13px; }
+.upcomingName span { display:block; margin-top:2px; color:var(--m); font-size:11px; }
+.upcomingAmount { font-size:13px; font-weight:850; white-space:nowrap; }
+.upcomingRow button {
+  padding:7px 10px;
+  background:var(--p-soft);
+  color:var(--p);
+  font-size:11px;
+}
+
+.paymentTop { align-items:start; }
+.paymentTop > .card { height:auto; }
+#paymentsView .paymentTop > .card:first-child h2 { margin-bottom:2px; }
+.incomeLogicNote {
+  margin-top:12px;
+  color:var(--m);
+  font-size:11px;
+}
+
+.bankBalancePanel {
+  margin-top:20px;
+  padding:17px 18px;
+  border:1px solid var(--money-border);
+  border-radius:15px;
+  background:linear-gradient(135deg,#f7fcfb 0%,var(--money-soft) 100%);
+}
+.bankBalanceHead {
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:16px;
+}
+.bankBalanceLabel {
+  display:block;
+  color:#5e6876;
+  font-size:10px;
+  font-weight:850;
+  letter-spacing:.065em;
+  text-transform:uppercase;
+}
+.bankBalanceAmount {
+  display:block;
+  margin-top:4px;
+  color:var(--money-positive);
+  font-size:clamp(25px,2.2vw,31px);
+  font-weight:850;
+  letter-spacing:-.035em;
+  white-space:nowrap;
+}
+.bankBalanceAmount.red { color:var(--r); }
+.bankBalanceMeta {
+  margin-top:4px;
+  color:var(--m);
+  font-size:10px;
+}
+.bankBalanceRule {
+  display:flex;
+  align-items:flex-start;
+  gap:7px;
+  margin-top:12px;
+  padding-top:11px;
+  border-top:1px solid #d9eee9;
+  color:#53706b;
+  font-size:11px;
+}
+.bankBalanceRule::before {
+  content:"✓";
+  display:grid;
+  place-items:center;
+  width:18px;
+  height:18px;
+  flex:0 0 auto;
+  border-radius:50%;
+  background:#dff3ee;
+  color:var(--money-positive);
+  font-weight:900;
+}
+.bankUpdateBtn {
+  flex:0 0 auto;
+  padding:8px 10px;
+  background:#dff3ee;
+  color:#136d65;
+  font-size:11px;
+}
+
+.accountField { display:grid; gap:5px; }
+.accountField .fieldLabel { margin-bottom:0; }
+.vendorAccountLine {
+  display:block;
+  margin-top:5px;
+  color:#6d6681 !important;
+  font-size:11px !important;
+  font-weight:700;
+  letter-spacing:.01em;
+}
+.copyAccount {
+  background:#e8f5f2 !important;
+  color:#146e66 !important;
+}
+
+.extraView {
+  animation:pageReveal .28s ease both;
+}
+.pageIntro {
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:16px;
+  margin-bottom:15px;
+}
+.pageIntro h2 { font-size:24px; }
+.pageIntro p { color:var(--m); margin-top:3px; }
+
+.payeeCreate {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;
+  gap:10px;
+  margin-top:15px;
+}
+.payeeCreate button { white-space:nowrap; }
+.vendorManager {
+  display:grid;
+  gap:8px;
+  margin-top:18px;
+}
+.vendorRow {
+  display:grid;
+  grid-template-columns:minmax(0,1.1fr) minmax(0,1fr) auto;
+  align-items:center;
+  gap:10px;
+  padding:11px 12px;
+  border:1px solid var(--l);
+  border-radius:12px;
+  background:#fbfafe;
+}
+.vendorRow strong,
+.vendorRow span { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.vendorRow span { color:var(--m); font-size:12px; }
+.vendorRowActions { display:flex; gap:6px; }
+.vendorRowActions button { padding:7px 9px; font-size:11px; }
+.vendorEditBtn { background:#eeeafb; color:var(--p); }
+.vendorCopyBtn { background:#e8f5f2; color:#146e66; }
+.vendorDeleteBtn { background:#fff0f2; color:var(--r); }
+
+.historySummary {
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+  margin:14px 0 18px;
+}
+.historySummaryItem {
+  padding:13px;
+  border:1px solid var(--l);
+  border-radius:13px;
+  background:#fbfafe;
+}
+.historySummaryItem span {
+  display:block;
+  color:var(--m);
+  font-size:10px;
+  font-weight:850;
+  letter-spacing:.055em;
+  text-transform:uppercase;
+}
+.historySummaryItem strong { display:block; margin-top:5px; font-size:16px; }
+.transactionList { display:grid; }
+.transactionRow {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto auto;
+  align-items:center;
+  gap:16px;
+  padding:13px 0;
+  border-top:1px solid var(--l);
+}
+.transactionRow:first-child { border-top:0; }
+.transactionMain strong { display:block; font-size:13px; }
+.transactionMain span { display:block; margin-top:2px; color:var(--m); font-size:11px; }
+.transactionAmount { font-weight:850; white-space:nowrap; }
+.transactionAmount.negative { color:var(--r); }
+.transactionAmount.positive { color:var(--g); }
+.transactionBank {
+  color:var(--m);
+  font-size:11px;
+  text-align:right;
+  white-space:nowrap;
+}
+
+.paidEditNotice {
+  margin-top:8px;
+  padding:8px 10px;
+  border-radius:9px;
+  background:#fff8ea;
+  color:#855714;
+  font-size:11px;
+}
+
+#categoriesView .settingsStack::before {
+  content:"Settings";
+  display:block;
+  margin-bottom:-2px;
+  color:var(--i);
+  font-size:24px;
+  font-weight:850;
+  letter-spacing:-.03em;
+}
+.otSettingsCard .otSettingsLink {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  margin-top:13px;
+  padding:10px 13px;
+  border-radius:9px;
+  background:var(--p-soft);
+  color:var(--p);
+  font-weight:800;
+  text-decoration:none;
+}
+
+@media (max-width:980px) {
+  .modernMetricGrid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+
+@media (max-width:700px) {
+  .headTools { gap:9px; }
+  .nav {
+    grid-template-columns:repeat(5,1fr) !important;
+  }
+  .nav button,
+  .nav .extraNavButton {
+    min-width:0;
+    padding:10px 4px;
+    font-size:11px;
+  }
+  .nav .otNavLink { display:none; }
+  .modernMetricGrid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .modernMetric { padding:15px 14px; }
+  .modernMetricValue { font-size:18px; }
+  .upcomingRow { grid-template-columns:minmax(0,1fr) auto; }
+  .upcomingRow button { grid-column:1 / -1; width:100%; }
+  .bankBalanceHead { align-items:stretch; flex-direction:column; }
+  .bankUpdateBtn { width:100%; }
+  .payeeCreate { grid-template-columns:1fr; }
+  .vendorRow { grid-template-columns:1fr; }
+  .vendorRowActions { justify-content:stretch; }
+  .vendorRowActions button { flex:1; }
+  .historySummary { grid-template-columns:1fr; }
+  .transactionRow {
+    grid-template-columns:minmax(0,1fr) auto;
+    gap:8px 12px;
+  }
+  .transactionBank {
+    grid-column:1 / -1;
+    text-align:left;
+  }
+  .pageIntro { align-items:flex-start; flex-direction:column; }
+}
