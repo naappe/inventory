@@ -1,4 +1,4 @@
-const CACHE_NAME = "money-plan-v10";
+const CACHE_NAME = "money-plan-v11";
 const APP_FILES = [
   "./",
   "./index.html",
@@ -8,6 +8,7 @@ const APP_FILES = [
   "./logic-fix.js",
   "./compact.css",
   "./compact.js",
+  "./professional.css",
   "./ot.html",
   "./manifest.webmanifest",
   "./icons/icon.svg",
