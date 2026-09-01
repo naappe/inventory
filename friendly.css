@@ -1,4 +1,13 @@
 /* Friendly bill rows — clear amount + one main action + more menu */
+:root{
+  --status-unpaid:#c84355;
+  --status-unpaid-bg:#fff7f8;
+  --status-paid:#16835f;
+  --status-paid-bg:#f3fbf7;
+  --status-pending:#2f6fda;
+  --status-pending-bg:#f4f8ff;
+}
+
 #paymentsView .billGroup{overflow:visible!important;}
 #paymentsView .bill{
   position:relative!important;
@@ -11,9 +20,26 @@
   padding:12px 14px!important;
   border-top:1px solid #edf0f5!important;
   background:#fff!important;
+  transition:background .15s ease,box-shadow .15s ease!important;
 }
-#paymentsView .bill:hover{z-index:3;background:#fbfcfe!important;}
-#paymentsView .bill.salaryDeferred{background:#fffdf8!important;}
+#paymentsView .bill:hover{z-index:3;}
+#paymentsView .bill.statusUnpaid{
+  background:var(--status-unpaid-bg)!important;
+  box-shadow:inset 4px 0 0 var(--status-unpaid)!important;
+}
+#paymentsView .bill.statusPaid{
+  background:var(--status-paid-bg)!important;
+  box-shadow:inset 4px 0 0 var(--status-paid)!important;
+}
+#paymentsView .bill.statusPending,
+#paymentsView .bill.salaryDeferred{
+  background:var(--status-pending-bg)!important;
+  box-shadow:inset 4px 0 0 var(--status-pending)!important;
+}
+#paymentsView .bill.statusNeutral{
+  background:#fbfcfe!important;
+  box-shadow:inset 4px 0 0 #a7afbd!important;
+}
 #paymentsView .bill > .plannedMetric,
 #paymentsView .bill > .paidMetric,
 #paymentsView .bill > .billStatus,
@@ -27,9 +53,10 @@
 .friendlyBillAmount .friendlyLabel{display:block;color:#7f8797;font-size:9px;font-weight:850;letter-spacing:.055em;text-transform:uppercase;}
 .friendlyBillAmount strong{display:block;margin-top:3px;color:#172033;font-size:15px;font-weight:850;white-space:nowrap;}
 .friendlyBillAmount small{display:block;margin-top:2px;color:#8b93a2;font-size:9px;white-space:nowrap;}
-.friendlyBillAmount.isPaid strong{color:#187764;}
-.friendlyBillAmount.isDue strong{color:#bd4658;}
-.friendlyBillAmount.isNext strong{color:#9a6413;}
+.friendlyBillAmount.isPaid .friendlyLabel,.friendlyBillAmount.isPaid strong{color:var(--status-paid);}
+.friendlyBillAmount.isDue .friendlyLabel,.friendlyBillAmount.isDue strong{color:var(--status-unpaid);}
+.friendlyBillAmount.isPending .friendlyLabel,.friendlyBillAmount.isPending strong,
+.friendlyBillAmount.isNext .friendlyLabel,.friendlyBillAmount.isNext strong{color:var(--status-pending);}
 
 .friendlyBillControl{position:relative;display:flex;align-items:center;justify-content:flex-end;gap:7px;}
 .friendlyPrimary{
@@ -43,9 +70,10 @@
   font-weight:850!important;
   white-space:nowrap;
 }
-.friendlyPrimary.isPaid{background:#e5f4ef!important;color:#176b5c!important;cursor:default!important;}
+.friendlyPrimary.isUnpaid{background:var(--status-unpaid)!important;color:#fff!important;}
+.friendlyPrimary.isPaid{background:#dff3ea!important;color:var(--status-paid)!important;cursor:default!important;}
+.friendlyPrimary.isPending,.friendlyPrimary.isNext{background:#e6efff!important;color:var(--status-pending)!important;}
 .friendlyPrimary.isNoPlan{background:#f0f2f6!important;color:#858d9d!important;cursor:default!important;}
-.friendlyPrimary.isNext{background:#fff2dc!important;color:#8c5d13!important;}
 .friendlyMore{
   display:grid!important;
   place-items:center!important;
@@ -87,22 +115,37 @@
   text-align:left!important;
 }
 .friendlyMenu button:hover{background:#f4f6fa!important;}
-.friendlyMenu button.warn{color:#95600f!important;}
+.friendlyMenu button.warn{color:#2f6fda!important;}
 .friendlyMenu button.danger{color:#b13c4d!important;}
 .friendlyMenu button.undo{color:#5c50c7!important;}
 
 #paymentsView .billGroupHead > small{display:none!important;}
 .friendlyGroupSummary{margin-left:auto;color:#747d8d;font-size:9px;font-weight:750;white-space:nowrap;}
-.friendlyGroupSummary.ok{color:#187764;}
-.friendlyGroupSummary.next{color:#95600f;}
+.friendlyGroupSummary.ok{color:var(--status-paid);}
+.friendlyGroupSummary.unpaid{color:var(--status-unpaid);}
+.friendlyGroupSummary.next,.friendlyGroupSummary.pending{color:var(--status-pending);}
 
 /* Make the salary explanation read as one clear decision block. */
 .salaryPlanHead p{max-width:720px!important;font-size:12px!important;line-height:1.45!important;}
 .salaryPlanNumbers{grid-template-columns:repeat(5,minmax(0,1fr))!important;}
 .salaryPlanStat{padding:12px 13px!important;}
-.salaryPlanStat.paid strong{color:#187764!important;}
+.salaryPlanStat.paid strong{color:var(--status-paid)!important;}
 .salaryPlanStatus{font-size:12px!important;}
 .salaryPlanHint{font-size:11px!important;line-height:1.45!important;}
+
+/* Pending / next-salary chips are blue. */
+.salaryTag{
+  background:#e6efff!important;
+  color:var(--status-pending)!important;
+}
+.salaryDeferBtn{
+  background:#eef4ff!important;
+  color:var(--status-pending)!important;
+}
+.salaryDeferBtn.isDeferred{
+  background:#e6efff!important;
+  color:var(--status-pending)!important;
+}
 
 /* Remove visual noise from the open group. */
 #paymentsView .billGroup:not(.compactCollapsed){border-color:#dfe4ed!important;box-shadow:0 8px 22px rgba(26,34,52,.05)!important;}
