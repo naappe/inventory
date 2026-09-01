@@ -27,9 +27,10 @@
 
         html = html.replace(
           '</style>',
-          '</style><link rel="stylesheet" href="./modern.css?v=20260901-1" />'
+          '</style><link rel="stylesheet" href="./modern.css?v=20260901-2" />'
         );
-        html += '<scr' + 'ipt src="./modern.js?v=20260901-1"></scr' + 'ipt>';
+        html += '<scr' + 'ipt src="./modern.js?v=20260901-2"></scr' + 'ipt>';
+        html += '<scr' + 'ipt src="./logic-fix.js?v=20260901-1"></scr' + 'ipt>';
 
         document.open();
         document.write(html);
