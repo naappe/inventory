@@ -15,7 +15,7 @@
   <script>
     (async () => {
       try {
-        const response = await fetch('./money-core.html?v=20260830-otnav', { cache: 'no-store' });
+        const response = await fetch('./money-core.html?v=20260901-bank-vendor', { cache: 'no-store' });
         if (!response.ok) throw new Error('Could not load Money Plan');
         let html = await response.text();
 
@@ -25,7 +25,7 @@
           html = html.replace(categoryButton, categoryButton + otLink);
         }
 
-        const otCss = `
+        const extensionCss = `
           .nav .otNavLink {
             display:inline-flex;
             align-items:center;
@@ -43,6 +43,73 @@
           }
           .nav .otNavLink:hover { filter:brightness(1.05); }
           .nav .otNavLink:active { transform:translateY(1px) scale(.985); }
+
+          .cards { grid-template-columns:repeat(5,minmax(0,1fr)); }
+          .bankMetric::before { background:#167c73; }
+          .bankMetric .big { color:#167c73; }
+          .bankMetricActions {
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:8px;
+            margin-top:9px;
+          }
+          .bankMetricActions small {
+            min-width:0;
+            overflow:hidden;
+            color:var(--m);
+            font-size:10px;
+            text-overflow:ellipsis;
+            white-space:nowrap;
+          }
+          .bankUpdateBtn {
+            flex:0 0 auto;
+            padding:6px 9px;
+            background:#e7f6f3;
+            color:#136d65;
+            font-size:11px;
+          }
+          .accountField { display:grid; gap:5px; }
+          .accountField .fieldLabel { margin-bottom:0; }
+          .vendorAccountLine {
+            display:block;
+            margin-top:5px;
+            color:#6d6681 !important;
+            font-size:11px !important;
+            font-weight:700;
+            letter-spacing:.01em;
+          }
+          .copyAccount {
+            background:#e8f5f2 !important;
+            color:#146e66 !important;
+          }
+          .vendorManager {
+            display:grid;
+            gap:8px;
+            margin-top:15px;
+          }
+          .vendorRow {
+            display:grid;
+            grid-template-columns:minmax(0,1.1fr) minmax(0,1fr) auto;
+            align-items:center;
+            gap:10px;
+            padding:11px 12px;
+            border:1px solid var(--l);
+            border-radius:12px;
+            background:#fbfafe;
+          }
+          .vendorRow strong,
+          .vendorRow span { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+          .vendorRow span { color:var(--m); font-size:12px; }
+          .vendorRowActions { display:flex; gap:6px; }
+          .vendorRowActions button { padding:7px 9px; font-size:11px; }
+          .vendorEditBtn { background:#eeeafb; color:var(--p); }
+          .vendorCopyBtn { background:#e8f5f2; color:#146e66; }
+          .summaryFooter { grid-template-columns:repeat(6,1fr); }
+
+          @media (max-width:980px) {
+            .cards { grid-template-columns:repeat(3,minmax(0,1fr)); }
+          }
           @media (max-width:700px) {
             .nav { grid-template-columns:repeat(4,1fr) !important; }
             .nav .otNavLink {
@@ -53,9 +120,393 @@
               padding:11px 7px;
               font-size:13px;
             }
+            .cards { grid-template-columns:repeat(2,minmax(0,1fr)); }
+            .vendorRow { grid-template-columns:1fr; }
+            .vendorRowActions { justify-content:stretch; }
+            .vendorRowActions button { flex:1; }
+            .summaryFooter { grid-template-columns:repeat(2,1fr); }
           }
         `;
-        html = html.replace('</style>', otCss + '</style>');
+        html = html.replace('</style>', extensionCss + '</style>');
+
+        const extensionJs = `
+(function () {
+  const BANK_KEY = "moneyPlanBankBalance";
+  const BANK_UPDATED_KEY = "moneyPlanBankBalanceUpdatedAt";
+  const VENDOR_KEY = "moneyPlanVendorAccounts";
+
+  function moneyNumber(value) {
+    return "MVR " + Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 2 });
+  }
+
+  function normalizeVendorName(name) {
+    return String(name || "").trim().toLowerCase();
+  }
+
+  function loadVendorAccounts() {
+    try {
+      const value = JSON.parse(localStorage.getItem(VENDOR_KEY)) || {};
+      return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+    } catch (error) {
+      return {};
+    }
+  }
+
+  let vendorAccounts = loadVendorAccounts();
+
+  function saveVendorAccount(name, accountNumber) {
+    const cleanName = String(name || "").trim();
+    const key = normalizeVendorName(cleanName);
+    if (!key) return;
+    const cleanAccount = String(accountNumber || "").trim();
+    if (cleanAccount) {
+      vendorAccounts[key] = {
+        name: cleanName,
+        accountNumber: cleanAccount,
+        updatedAt: new Date().toISOString()
+      };
+    } else {
+      delete vendorAccounts[key];
+    }
+    localStorage.setItem(VENDOR_KEY, JSON.stringify(vendorAccounts));
+  }
+
+  function accountFor(name) {
+    const entry = vendorAccounts[normalizeVendorName(name)];
+    return entry && entry.accountNumber ? String(entry.accountNumber) : "";
+  }
+
+  function bankBalance() {
+    const value = Number(localStorage.getItem(BANK_KEY));
+    return Number.isFinite(value) && value >= 0 ? value : 0;
+  }
+
+  function bankUpdatedLabel() {
+    const raw = localStorage.getItem(BANK_UPDATED_KEY);
+    if (!raw) return "Manual balance";
+    const date = new Date(raw);
+    if (Number.isNaN(date.getTime())) return "Manual balance";
+    return "Updated " + date.toLocaleDateString(undefined, { day: "numeric", month: "short" });
+  }
+
+  function applyDecimalMoneyInputs() {
+    document.querySelectorAll('input[type="number"]').forEach(function (input) {
+      input.step = "0.01";
+      if (!input.hasAttribute("min")) input.min = "0";
+    });
+  }
+
+  function ensureBankCard() {
+    const cards = document.querySelector("#dashboardView .cards");
+    if (!cards || document.getElementById("bankBalanceTotal")) return;
+    const card = document.createElement("div");
+    card.className = "card metricCard bankMetric";
+    card.innerHTML =
+      '<div class="label">BANK BALANCE</div>' +
+      '<div class="big" id="bankBalanceTotal">MVR 0</div>' +
+      '<div class="bankMetricActions"><small id="bankBalanceUpdated">Manual balance</small>' +
+      '<button type="button" id="updateBankBalance" class="bankUpdateBtn">Update</button></div>';
+    cards.append(card);
+    document.getElementById("updateBankBalance").onclick = openBankModal;
+  }
+
+  function ensureBankFooter() {
+    const footer = document.querySelector(".summaryFooter");
+    if (!footer || document.getElementById("footerBank")) return;
+    const item = document.createElement("div");
+    item.innerHTML = '<span>BANK</span><strong id="footerBank"></strong>';
+    footer.insertBefore(item, footer.children[1] || null);
+  }
+
+  function ensureBankModal() {
+    if (document.getElementById("bankBalanceModal")) return;
+    const modal = document.createElement("div");
+    modal.id = "bankBalanceModal";
+    modal.className = "modalBackdrop hidden";
+    modal.innerHTML =
+      '<section class="modal">' +
+      '<h2>Update bank balance</h2>' +
+      '<p class="sub">Enter what is actually in your bank now. This stays manual and will not change when you mark a bill paid.</p>' +
+      '<form id="bankBalanceForm" class="form" style="margin-top:17px">' +
+      '<label class="fieldLabel">Current bank balance</label>' +
+      '<input id="bankBalanceInput" type="number" inputmode="decimal" step="0.01" min="0" required placeholder="MVR" />' +
+      '<div class="modalActions">' +
+      '<button type="button" id="cancelBankBalance" class="secondary">Cancel</button>' +
+      '<button class="primary">Save balance</button>' +
+      '</div></form></section>';
+    document.body.append(modal);
+    document.getElementById("cancelBankBalance").onclick = closeBankModal;
+    document.getElementById("bankBalanceForm").onsubmit = function (event) {
+      event.preventDefault();
+      const value = Number(document.getElementById("bankBalanceInput").value);
+      if (!Number.isFinite(value) || value < 0) return;
+      localStorage.setItem(BANK_KEY, String(value));
+      localStorage.setItem(BANK_UPDATED_KEY, new Date().toISOString());
+      closeBankModal();
+      renderMoneyExtensions();
+    };
+  }
+
+  function openBankModal() {
+    ensureBankModal();
+    document.getElementById("bankBalanceInput").value = bankBalance() || "";
+    document.getElementById("bankBalanceModal").classList.remove("hidden");
+    setTimeout(function () { document.getElementById("bankBalanceInput").focus(); }, 0);
+  }
+
+  function closeBankModal() {
+    const modal = document.getElementById("bankBalanceModal");
+    if (modal) modal.classList.add("hidden");
+  }
+
+  function ensureVendorFields() {
+    const addName = document.getElementById("name");
+    if (addName && !document.getElementById("vendorAccount")) {
+      const wrap = document.createElement("div");
+      wrap.className = "accountField";
+      wrap.innerHTML =
+        '<label class="fieldLabel" for="vendorAccount">Vendor / payee account number</label>' +
+        '<input id="vendorAccount" autocomplete="off" placeholder="Optional bank account number" />';
+      addName.insertAdjacentElement("afterend", wrap);
+      addName.addEventListener("blur", function () {
+        const accountInput = document.getElementById("vendorAccount");
+        if (accountInput && !accountInput.value.trim()) accountInput.value = accountFor(addName.value);
+      });
+    }
+
+    const editDebtWrap = document.getElementById("editDebtWrap");
+    if (editDebtWrap && !document.getElementById("editVendorAccount")) {
+      const wrap = document.createElement("div");
+      wrap.className = "accountField";
+      wrap.innerHTML =
+        '<label class="fieldLabel" for="editVendorAccount">Vendor / payee account number</label>' +
+        '<input id="editVendorAccount" autocomplete="off" placeholder="Optional bank account number" />';
+      editDebtWrap.insertAdjacentElement("afterend", wrap);
+    }
+  }
+
+  function uniqueVendorNames() {
+    const names = new Map();
+    try {
+      Object.values(months || {}).forEach(function (plan) {
+        if (!plan || !Array.isArray(plan.bills)) return;
+        plan.bills.forEach(function (bill) {
+          const name = String((bill && bill[0]) || "").trim();
+          if (name) names.set(normalizeVendorName(name), name);
+        });
+      });
+    } catch (error) {}
+    try {
+      (s.bills || []).forEach(function (bill) {
+        const name = String((bill && bill[0]) || "").trim();
+        if (name) names.set(normalizeVendorName(name), name);
+      });
+    } catch (error) {}
+    Object.keys(vendorAccounts).forEach(function (key) {
+      const entry = vendorAccounts[key];
+      if (entry && entry.name) names.set(key, entry.name);
+    });
+    return Array.from(names.values()).sort(function (a, b) { return a.localeCompare(b); });
+  }
+
+  function ensureVendorManager() {
+    const stack = document.querySelector("#categoriesView .settingsStack");
+    if (!stack || document.getElementById("vendorManagerCard")) return;
+    const card = document.createElement("section");
+    card.id = "vendorManagerCard";
+    card.className = "card";
+    card.innerHTML =
+      '<h2>Vendor / payee accounts</h2>' +
+      '<p class="sub">Save account numbers once, then copy them directly when paying a bill.</p>' +
+      '<div id="vendorManager" class="vendorManager"></div>';
+    const installCard = stack.children[1];
+    stack.insertBefore(card, installCard || null);
+  }
+
+  function renderVendorManager() {
+    const holder = document.getElementById("vendorManager");
+    if (!holder) return;
+    holder.innerHTML = "";
+    const names = uniqueVendorNames();
+    if (!names.length) {
+      holder.innerHTML = '<div class="emptyState"><div><div class="emptyMark">0</div><strong>No payees yet</strong><span>Add an expense first, then save its account number.</span></div></div>';
+      return;
+    }
+    names.forEach(function (name) {
+      const account = accountFor(name);
+      const row = document.createElement("div");
+      row.className = "vendorRow";
+      const nameEl = document.createElement("strong");
+      nameEl.textContent = name;
+      const accountEl = document.createElement("span");
+      accountEl.textContent = account || "No account number";
+      const actions = document.createElement("div");
+      actions.className = "vendorRowActions";
+
+      const edit = document.createElement("button");
+      edit.type = "button";
+      edit.className = "vendorEditBtn";
+      edit.textContent = account ? "Edit" : "Add account";
+      edit.onclick = function () {
+        const next = prompt("Account number for " + name, account);
+        if (next === null) return;
+        saveVendorAccount(name, next);
+        renderMoneyExtensions();
+      };
+      actions.append(edit);
+
+      if (account) {
+        const copy = document.createElement("button");
+        copy.type = "button";
+        copy.className = "vendorCopyBtn";
+        copy.textContent = "Copy";
+        copy.onclick = function () { copyAccountNumber(account, copy); };
+        actions.append(copy);
+      }
+
+      row.append(nameEl, accountEl, actions);
+      holder.append(row);
+    });
+  }
+
+  function copyAccountNumber(account, button) {
+    const value = String(account || "");
+    if (!value) return;
+    const done = function () {
+      if (!button) return;
+      const old = button.textContent;
+      button.textContent = "Copied";
+      setTimeout(function () { button.textContent = old; }, 1200);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(value).then(done).catch(function () {
+        fallbackCopy(value);
+        done();
+      });
+    } else {
+      fallbackCopy(value);
+      done();
+    }
+  }
+
+  function fallbackCopy(value) {
+    const input = document.createElement("textarea");
+    input.value = value;
+    input.style.position = "fixed";
+    input.style.opacity = "0";
+    document.body.append(input);
+    input.select();
+    try { document.execCommand("copy"); } catch (error) {}
+    input.remove();
+  }
+
+  function renderBillAccounts() {
+    document.querySelectorAll("#bills .bill").forEach(function (row) {
+      const nameEl = row.querySelector(".billInfo strong");
+      const info = row.querySelector(".billInfo");
+      const actions = row.querySelector(".billActions");
+      if (!nameEl || !info || !actions) return;
+      const name = nameEl.textContent.trim();
+      const account = accountFor(name);
+
+      const oldLine = info.querySelector(".vendorAccountLine");
+      if (oldLine) oldLine.remove();
+      const oldButton = actions.querySelector(".copyAccount");
+      if (oldButton) oldButton.remove();
+
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "copyAccount";
+      if (account) {
+        const line = document.createElement("small");
+        line.className = "vendorAccountLine";
+        line.textContent = "A/C " + account;
+        info.append(line);
+        button.textContent = "Copy A/C";
+        button.onclick = function () { copyAccountNumber(account, button); };
+      } else {
+        button.textContent = "Add A/C";
+        button.onclick = function () {
+          const next = prompt("Account number for " + name, "");
+          if (next === null) return;
+          saveVendorAccount(name, next);
+          renderMoneyExtensions();
+        };
+      }
+      actions.insertBefore(button, actions.querySelector(".edit") || null);
+    });
+  }
+
+  function renderBank() {
+    const value = bankBalance();
+    const total = document.getElementById("bankBalanceTotal");
+    const updated = document.getElementById("bankBalanceUpdated");
+    const footer = document.getElementById("footerBank");
+    if (total) total.textContent = moneyNumber(value);
+    if (updated) updated.textContent = bankUpdatedLabel();
+    if (footer) footer.textContent = moneyNumber(value);
+  }
+
+  function fillEditVendorAccount() {
+    if (typeof editingBillIndex === "undefined" || editingBillIndex === null) return;
+    const bill = s && s.bills ? s.bills[editingBillIndex] : null;
+    const input = document.getElementById("editVendorAccount");
+    if (bill && input) input.value = accountFor(bill[0]);
+  }
+
+  function wireVendorPersistence() {
+    const addForm = document.getElementById("form");
+    if (addForm && !addForm.dataset.vendorWire) {
+      addForm.dataset.vendorWire = "1";
+      addForm.addEventListener("submit", function () {
+        const name = document.getElementById("name").value;
+        const account = document.getElementById("vendorAccount").value;
+        if (String(account || "").trim()) saveVendorAccount(name, account);
+      }, true);
+    }
+
+    const editForm = document.getElementById("editForm");
+    if (editForm && !editForm.dataset.vendorWire) {
+      editForm.dataset.vendorWire = "1";
+      editForm.addEventListener("submit", function () {
+        const name = document.getElementById("editName").value;
+        const account = document.getElementById("editVendorAccount").value;
+        saveVendorAccount(name, account);
+      }, true);
+    }
+
+    if (!document.body.dataset.vendorClickWire) {
+      document.body.dataset.vendorClickWire = "1";
+      document.addEventListener("click", function (event) {
+        const edit = event.target.closest && event.target.closest("#bills .edit");
+        if (edit) setTimeout(fillEditVendorAccount, 0);
+      });
+    }
+  }
+
+  function renderMoneyExtensions() {
+    applyDecimalMoneyInputs();
+    ensureBankCard();
+    ensureBankFooter();
+    ensureBankModal();
+    ensureVendorFields();
+    ensureVendorManager();
+    wireVendorPersistence();
+    renderBank();
+    renderBillAccounts();
+    renderVendorManager();
+  }
+
+  const coreRender = render;
+  render = function () {
+    coreRender();
+    renderMoneyExtensions();
+  };
+
+  renderMoneyExtensions();
+})();
+`;
+        html += '<scr' + 'ipt>' + extensionJs + '</scr' + 'ipt>';
 
         document.open();
         document.write(html);
