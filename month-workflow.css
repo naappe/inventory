@@ -1,0 +1,71 @@
+/* Month workflow: explicit save marker, easy month switching, next-month creation. */
+.monthWorkflow{
+  display:grid;
+  gap:9px;
+  margin-top:9px;
+  padding-top:11px;
+  border-top:1px solid rgba(255,255,255,.08);
+  letter-spacing:0;
+}
+.monthWorkflowStatus{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-width:0;
+}
+.monthStateDot{
+  width:8px;
+  height:8px;
+  flex:0 0 auto;
+  border-radius:50%;
+  background:#8995aa;
+  box-shadow:0 0 0 4px rgba(137,149,170,.12);
+}
+.monthStateDot.saved{background:#48bd93;box-shadow:0 0 0 4px rgba(72,189,147,.12);}
+.monthStateDot.modified{background:#e0a340;box-shadow:0 0 0 4px rgba(224,163,64,.13);}
+.monthWorkflowStatus strong,
+.monthWorkflowStatus small{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.monthWorkflowStatus strong{color:#eef2fa;font-size:10px;font-weight:800;}
+.monthWorkflowStatus small{margin-top:1px;color:#8793a8;font-size:8px;font-weight:650;}
+.monthWorkflowActions{display:grid;grid-template-columns:1fr;gap:6px;}
+.monthWorkflowActions button{
+  width:100%;
+  min-height:34px;
+  padding:7px 9px;
+  border-radius:8px;
+  font-size:9px;
+  font-weight:800;
+  text-align:center;
+}
+.saveMonthBtn{border:1px solid rgba(255,255,255,.1)!important;background:#263149!important;color:#e7ecf7!important;}
+.nextMonthBtn{border:1px solid #6c5de0!important;background:#6556d9!important;color:#fff!important;}
+.monthWorkflowHelp{margin:0!important;color:#7f899d!important;font-size:8px!important;line-height:1.4!important;text-transform:none!important;font-weight:600!important;letter-spacing:0!important;}
+.monthWorkflowHelp b{color:#aeb7c9;}
+
+.monthBanner{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:18px;
+  margin:-3px 0 14px;
+  padding:13px 15px;
+  border:1px solid #e1e6ef;
+  border-radius:12px;
+  background:#fff;
+  box-shadow:0 6px 18px rgba(26,34,52,.045);
+}
+.monthBannerMain{min-width:0;}
+.monthBannerEyebrow{display:block;color:#7c8494;font-size:8px;font-weight:900;letter-spacing:.075em;}
+.monthBannerMain strong{display:block;margin-top:2px;color:#172033;font-size:16px;letter-spacing:-.02em;}
+.monthBannerMain small{display:block;margin-top:1px;color:#7c8494;font-size:9px;}
+.monthBannerActions{display:flex;align-items:center;gap:7px;}
+.monthBannerActions button{min-height:34px;padding:7px 11px;border-radius:8px;font-size:10px;font-weight:800;white-space:nowrap;}
+#bannerSaveMonth{border:1px solid #dfe4ed;background:#f5f7fa;color:#4d586c;}
+#bannerNextMonth{border:1px solid #6556d9;background:#6556d9;color:#fff;}
+
+@media(max-width:700px){
+  .monthWorkflow{display:none;}
+  .monthBanner{align-items:stretch;flex-direction:column;gap:10px;padding:12px;}
+  .monthBannerActions{display:grid;grid-template-columns:1fr 1fr;}
+  .monthBannerActions button{width:100%;white-space:normal;}
+}
