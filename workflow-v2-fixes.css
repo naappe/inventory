@@ -1,0 +1,33 @@
+/* Final workflow polish */
+body[data-payment-mode="plan"] #paymentsView #bills .statusPaid{display:none!important;}
+body[data-payment-mode="plan"] #paymentsView .billGroup.workflowNoPlanWork{display:none!important;}
+body[data-payment-mode="pay"] #paymentsView .billGroup.workflowNoPayWork{display:none!important;}
+
+#dashboardView .modernMetric.remaining .modernMetricValue{color:var(--wf-red)!important;}
+#dashboardView .modernMetric.safe .modernMetricValue{color:#fff!important;}
+#dashboardView .modernMetric.paid .modernMetricValue{color:var(--wf-green)!important;}
+
+.workflowFreshSummary{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  margin-left:auto;
+  padding:4px 7px;
+  border-radius:999px;
+  font-size:8px;
+  font-weight:850;
+  white-space:nowrap;
+}
+.workflowFreshSummary.red{background:var(--wf-red-soft);color:var(--wf-red);}
+.workflowFreshSummary.blue{background:var(--wf-blue-soft);color:var(--wf-blue);}
+.workflowFreshSummary.green{background:var(--wf-green-soft);color:var(--wf-green);}
+
+.debtSummaryCard.workflowClickable{cursor:pointer;transition:transform .15s ease,border-color .15s ease,box-shadow .15s ease;}
+.debtSummaryCard.workflowClickable:hover{transform:translateY(-1px);border-color:#c8c3ee;box-shadow:0 10px 24px rgba(48,42,120,.08);}
+
+#historyView .transactionAmount.negative{color:var(--wf-red)!important;}
+#historyView .transactionAmount.positive{color:var(--wf-green)!important;}
+
+@media(max-width:760px){
+  .workflowFreshSummary{max-width:165px;overflow:hidden;text-overflow:ellipsis;}
+}
