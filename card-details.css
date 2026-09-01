@@ -37,7 +37,7 @@
 }
 .cardDetailBackdrop.hidden{display:none;}
 .cardDetailDrawer{
-  width:min(430px,92vw);
+  width:min(470px,94vw);
   height:100%;
   overflow:auto;
   background:#fff;
@@ -131,6 +131,110 @@
   font-size:11px;
   line-height:1.45;
 }
+
+.cardDetailDebt{display:grid;gap:13px;margin:2px 0 4px;}
+.cardDetailDebt.hidden{display:none;}
+.debtDetailSection{
+  overflow:hidden;
+  border:1px solid #e4e8ef;
+  border-radius:13px;
+  background:#fff;
+}
+.debtDetailSectionHead{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:12px 13px;
+  border-bottom:1px solid #e9ecf2;
+  background:#f8f9fc;
+}
+.debtDetailSectionHead span{
+  display:block;
+  color:#7f8796;
+  font-size:8px;
+  font-weight:900;
+  letter-spacing:.06em;
+}
+.debtDetailSectionHead strong{
+  display:block;
+  margin-top:2px;
+  color:#273247;
+  font-size:13px;
+}
+.debtDetailSectionHead b{
+  color:#a83f50;
+  font-size:14px;
+  white-space:nowrap;
+}
+.debtDetailList{display:grid;}
+.debtDetailRow{
+  padding:12px 13px;
+  border-bottom:1px solid #edf0f4;
+  background:#fff;
+}
+.debtDetailRow:last-child{border-bottom:0;}
+.debtDetailMain{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:12px;
+  align-items:start;
+}
+.debtDetailName strong{
+  display:block;
+  color:#222d42;
+  font-size:13px;
+  line-height:1.25;
+}
+.debtDetailName span{
+  display:block;
+  margin-top:2px;
+  color:#9299a7;
+  font-size:9px;
+}
+.debtDetailRemaining{text-align:right;}
+.debtDetailRemaining small{
+  display:block;
+  color:#8a92a0;
+  font-size:7px;
+  font-weight:900;
+  letter-spacing:.06em;
+}
+.debtDetailRemaining strong{
+  display:block;
+  margin-top:2px;
+  color:#b43f51;
+  font-size:14px;
+  white-space:nowrap;
+}
+.debtDetailMeta{
+  display:flex;
+  flex-wrap:wrap;
+  gap:5px 10px;
+  margin-top:8px;
+  color:#6f7888;
+  font-size:9px;
+}
+.debtDetailMeta .account{color:#4e5d74;}
+.debtDetailBar{
+  height:5px;
+  margin-top:9px;
+  overflow:hidden;
+  border-radius:999px;
+  background:#eef0f4;
+}
+.debtDetailBar i{
+  display:block;
+  height:100%;
+  border-radius:inherit;
+  background:#b84253;
+}
+.debtDetailEmpty{
+  padding:15px 13px;
+  color:#7e8796;
+  font-size:11px;
+}
+
 .cardDetailAction{
   width:100%;
   margin-top:15px;
