@@ -1,0 +1,161 @@
+/* Mobile workflow shell — compact header + horizontal bottom navigation */
+@media (max-width:760px){
+  html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!important;background:#f4f6fa!important;}
+  body{padding:0!important;}
+  main{width:100%!important;max-width:100%!important;margin:0!important;padding:12px 12px calc(98px + env(safe-area-inset-bottom))!important;overflow:visible!important;}
+
+  /* Header is content, never a full-screen sidebar on phones. */
+  .head{
+    position:relative!important;
+    inset:auto!important;
+    width:100%!important;
+    max-width:none!important;
+    min-height:0!important;
+    height:auto!important;
+    margin:0 0 12px!important;
+    padding:14px!important;
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:12px!important;
+    border-radius:16px!important;
+    overflow:visible!important;
+    background:linear-gradient(135deg,#172238 0%,#111a2c 100%)!important;
+    box-shadow:0 10px 28px rgba(23,34,56,.12)!important;
+  }
+  .brandBlock{display:flex!important;align-items:center!important;gap:10px!important;min-width:0!important;}
+  .brandMark{width:38px!important;height:38px!important;border-radius:10px!important;flex:0 0 auto!important;}
+  .head h1{font-size:18px!important;line-height:1.1!important;white-space:nowrap!important;}
+  .head .sub{max-width:none!important;margin-top:2px!important;font-size:9px!important;line-height:1.35!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;}
+  .headTools{display:block!important;min-height:0!important;width:100%!important;flex:none!important;}
+  .monthPicker{display:grid!important;width:100%!important;margin:0!important;padding:10px 0 0!important;border-top:1px solid rgba(255,255,255,.08)!important;font-size:8px!important;letter-spacing:.08em!important;}
+  .monthPicker input{width:100%!important;min-height:42px!important;margin-top:5px!important;padding:9px 11px!important;border-radius:10px!important;font-size:13px!important;}
+  .monthWorkflow{display:none!important;}
+
+  /* Navigation becomes a real mobile bottom bar, not a vertical page overlay. */
+  .nav{
+    position:fixed!important;
+    z-index:1000!important;
+    left:0!important;
+    right:0!important;
+    bottom:0!important;
+    top:auto!important;
+    width:100%!important;
+    height:auto!important;
+    min-height:68px!important;
+    max-height:82px!important;
+    margin:0!important;
+    padding:7px 8px calc(7px + env(safe-area-inset-bottom))!important;
+    display:flex!important;
+    flex-direction:row!important;
+    flex-wrap:nowrap!important;
+    align-items:stretch!important;
+    gap:4px!important;
+    overflow-x:auto!important;
+    overflow-y:hidden!important;
+    scroll-snap-type:x proximity!important;
+    overscroll-behavior-x:contain!important;
+    scrollbar-width:none!important;
+    border-top:1px solid #e1e5ed!important;
+    background:rgba(255,255,255,.97)!important;
+    box-shadow:0 -8px 24px rgba(26,34,52,.10)!important;
+    backdrop-filter:blur(14px)!important;
+  }
+  .nav::-webkit-scrollbar{display:none!important;}
+  .workflowNavLabel,.workflowFlowHint,.nav .otNavLink{display:none!important;}
+  .nav .workflowNavBtn{
+    display:flex!important;
+    flex:0 0 76px!important;
+    width:76px!important;
+    min-width:76px!important;
+    min-height:54px!important;
+    padding:5px 4px!important;
+    border:0!important;
+    border-radius:10px!important;
+    flex-direction:column!important;
+    justify-content:center!important;
+    align-items:center!important;
+    gap:3px!important;
+    background:transparent!important;
+    color:#6f7889!important;
+    box-shadow:none!important;
+    font-size:9px!important;
+    line-height:1.1!important;
+    text-align:center!important;
+    scroll-snap-align:center!important;
+  }
+  .nav .workflowNavBtn .workflowNavIcon{width:23px!important;height:23px!important;border-radius:7px!important;background:#f1f3f7!important;color:#6f7889!important;font-size:10px!important;}
+  .nav .workflowNavBtn.active{background:#f0edff!important;color:#6252d6!important;box-shadow:none!important;}
+  .nav .workflowNavBtn.active .workflowNavIcon{background:#ddd7ff!important;color:#6252d6!important;}
+
+  /* Page heads */
+  .workflowPageHead,.workflowPaymentsHead{align-items:flex-start!important;flex-direction:column!important;gap:9px!important;margin-bottom:11px!important;padding:0 2px!important;}
+  .workflowPageHead h2,.workflowPaymentsHead h2{font-size:23px!important;}
+  .workflowPageHead p,.workflowPaymentsHead p{font-size:10px!important;}
+  .workflowQuickActions{display:grid!important;grid-template-columns:1fr 1fr!important;width:100%!important;}
+  .workflowQuickActions button{width:100%!important;}
+  .workflowModeBadge{align-self:flex-start!important;}
+
+  /* Dashboard / overview */
+  #dashboardView .modernMetricGrid{grid-template-columns:1fr 1fr!important;gap:8px!important;}
+  #dashboardView .modernMetric{min-height:96px!important;padding:13px!important;}
+  #dashboardView .modernMetricValue{font-size:18px!important;}
+  #dashboardView #dashboardDetails{gap:10px!important;}
+  #dashboardCashFlow .dashboardCashGrid{grid-template-columns:1fr 1fr!important;gap:7px!important;}
+  #dashboardCashFlow .dashboardCashGrid>div{min-width:0!important;}
+  #upcomingPaymentsCard .upcomingRow{grid-template-columns:minmax(0,1fr) auto!important;gap:8px!important;}
+  #upcomingPaymentsCard .upcomingAmount{grid-column:2!important;}
+  #upcomingPaymentsCard .upcomingRow button{grid-column:2!important;}
+  #dashboardView .balanceSplit{grid-template-columns:1fr!important;}
+
+  /* Plan / Pay */
+  .workflowPayStrip{grid-template-columns:1fr 1fr!important;gap:7px!important;}
+  .workflowPayStat{padding:10px!important;}
+  .workflowPayStat strong{font-size:15px!important;}
+  #paymentsView .paymentTop{grid-template-columns:1fr!important;gap:10px!important;}
+  #paymentsView .salaryPlanNumbers{grid-template-columns:1fr 1fr!important;gap:7px!important;}
+  #paymentsView .salaryAllocation{grid-template-columns:1fr!important;gap:7px!important;}
+  #paymentsView #bills{grid-template-columns:1fr!important;}
+  #paymentsView .billGroup:not(.compactCollapsed){grid-column:auto!important;max-height:none!important;}
+  #paymentsView .bill{grid-template-columns:minmax(0,1fr)!important;gap:8px!important;padding:10px!important;}
+  #paymentsView .billInfo,#paymentsView .friendlyBillAmount,#paymentsView .friendlyBillControl{grid-column:1!important;width:100%!important;min-width:0!important;justify-self:stretch!important;}
+  #paymentsView .friendlyBillControl{display:grid!important;grid-template-columns:1fr auto!important;}
+  #paymentsView .friendlyPrimary{width:100%!important;min-width:0!important;}
+  #paymentsView .filterBar{width:100%!important;display:grid!important;grid-template-columns:repeat(3,1fr)!important;}
+
+  /* Spending */
+  #spendingView .spendingPosition{grid-template-columns:1fr 1fr!important;gap:7px!important;}
+  #spendingView .spendingGrid,#spendingView .spendingGrid.lower{grid-template-columns:1fr!important;gap:10px!important;}
+  #spendingView .purchaseFields{grid-template-columns:1fr!important;}
+  #spendingView .purchaseItemRow{grid-template-columns:minmax(0,1fr) 62px 82px!important;gap:6px!important;}
+  #spendingView .itemLineTotal{grid-column:1/3!important;}
+  #spendingView .itemRemove{grid-column:3!important;grid-row:2!important;justify-self:end!important;}
+
+  /* Debts */
+  .debtSummaryGrid{grid-template-columns:1fr 1fr!important;gap:7px!important;}
+  .debtColumns{grid-template-columns:1fr!important;gap:10px!important;}
+  .debtAccountMeta{grid-template-columns:1fr 1fr 1fr!important;}
+  .debtAccountBottom{align-items:stretch!important;flex-direction:column!important;}
+  .debtManageBtn{width:100%!important;}
+
+  /* Payees / History / Settings */
+  .payeeCreate{grid-template-columns:1fr!important;}
+  .vendorRow{grid-template-columns:1fr!important;}
+  .historySummary{grid-template-columns:1fr 1fr!important;}
+  .transactionRow{grid-template-columns:minmax(0,1fr) auto!important;gap:6px 10px!important;}
+  .transactionBank{grid-column:1/-1!important;text-align:left!important;}
+  #categoriesView .settingsStack{gap:10px!important;}
+  #categoriesView .card{padding:15px!important;}
+
+  /* Drawers and modals fit the viewport. */
+  .detailDrawer,.cardDetailPanel{width:100%!important;max-width:100%!important;}
+  .modalBackdrop,.monthRolloverBackdrop{padding:0!important;align-items:end!important;}
+  .modal,.monthRolloverModal{width:100%!important;max-width:100%!important;max-height:90dvh!important;border-radius:18px 18px 0 0!important;}
+}
+
+@media (max-width:390px){
+  main{padding-left:9px!important;padding-right:9px!important;}
+  .head{padding:12px!important;}
+  .head h1{font-size:17px!important;}
+  #dashboardView .modernMetricGrid,.workflowPayStrip,.debtSummaryGrid,#spendingView .spendingPosition{grid-template-columns:1fr!important;}
+  #paymentsView .salaryPlanNumbers{grid-template-columns:1fr!important;}
+}
