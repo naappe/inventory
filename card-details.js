@@ -214,6 +214,14 @@
   }
   window.moneyPlanOpenDebtDetails=showDebtDrawer;
 
+  document.addEventListener('click',event=>{
+    const tile=event.target.closest?.('#dashboardView .debtOverview .balanceTile');
+    if(!tile)return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    showDebtDrawer(tile.classList.contains('loanBalanceTile')?'loan':'credit');
+  },true);
+
   function routeFor(el){
     const text=cleanText(el.textContent).toLowerCase();
     if(el.matches('.modernMetric')){
@@ -263,9 +271,8 @@
     $('cardDetailTitle').textContent=title;
     const summary=lines.find(t=>t!==title&&!/^MVR\b/i.test(t)&&!/^\d+[%.]?/.test(t));
     $('cardDetailSummary').textContent=summary||'Open this card to review the information connected to it.';
-    const metricBox=$('cardDetailMetrics');
     metrics.forEach(m=>addMetric(m.label,m.value));
-    metricBox.style.display=metrics.length?'grid':'none';
+    $('cardDetailMetrics').style.display=metrics.length?'grid':'none';
     const textBox=$('cardDetailText');
     lines.filter(t=>t!==title&&t!==summary).slice(0,8).forEach(t=>{const d=document.createElement('div');d.textContent=t;textBox.append(d);});
     textBox.style.display=textBox.children.length?'grid':'none';
