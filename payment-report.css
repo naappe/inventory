@@ -1,0 +1,34 @@
+.paymentStatusReport{
+  margin:20px 0 18px;padding:18px;border:1px solid #e3e0ef;border-radius:20px;
+  background:linear-gradient(145deg,#fff 0%,#faf9ff 100%);
+  box-shadow:0 10px 28px rgba(61,49,111,.07)
+}
+.paymentReportHead{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:14px}
+.paymentReportHead span{display:block;color:#6b5bd2;font-size:.72rem;font-weight:900;letter-spacing:.09em}
+.paymentReportHead h3{margin:3px 0 0;color:#192033;font-size:1.05rem;line-height:1.25}
+.paymentReportHead>small{color:#777e90;font-weight:700;white-space:nowrap}
+.paymentReportGrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.paymentReportItem{min-width:0;padding:13px;border:1px solid #e5e7ed;border-radius:15px;background:#fff}
+.paymentReportItem>span,.paymentReportItem>small{display:block}
+.paymentReportItem>span{color:#6d7280;font-size:.74rem;font-weight:850;text-transform:uppercase;letter-spacing:.035em}
+.paymentReportItem>strong{display:block;margin:5px 0 3px;color:#2b3141;font-size:1.08rem;line-height:1.2;overflow-wrap:anywhere}
+.paymentReportItem>small{color:#9298a6;font-size:.72rem;line-height:1.3}
+.paymentReportItem.paid{border-color:#bde4d7;background:#f4fbf8}
+.paymentReportItem.paid strong{color:#168267}
+.paymentReportItem.unpaid{border-color:#f0c5ca;background:#fff6f7}
+.paymentReportItem.unpaid strong{color:#c23f50}
+.paymentReportItem.next{border-color:#d9d2f6;background:#f8f6ff}
+.paymentReportItem.next strong{color:#6552cc}
+.paymentProgress{height:8px;margin-top:15px;overflow:hidden;border-radius:999px;background:#ebe9f1}
+.paymentProgress>div{height:100%;width:0;border-radius:inherit;background:linear-gradient(90deg,#21a17d,#48c49e);transition:width .3s ease}
+.paymentProgressText{margin:7px 1px 0;color:#707687;font-size:.78rem;font-weight:700}
+@media(max-width:700px){
+  .paymentStatusReport{margin:16px 0;padding:14px;border-radius:17px}
+  .paymentReportHead{margin-bottom:11px}
+  .paymentReportHead h3{font-size:1rem}
+  .paymentReportHead>small{font-size:.72rem}
+  .paymentReportGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .paymentReportItem{padding:11px 10px;border-radius:13px}
+  .paymentReportItem>span{font-size:.66rem}
+  .paymentReportItem>strong{font-size:1rem}
+}
