@@ -3,65 +3,24 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <meta name="theme-color" content="#6546c5" />
+  <meta name="theme-color" content="#0f1420" />
   <title>My Money Plan</title>
   <style>
-    html,body{margin:0;min-height:100%;background:#f4f3f8;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-    .boot{min-height:100vh;display:grid;place-items:center;color:#6546c5;font-weight:800}
+    html,body{margin:0;min-height:100%;background:#0f1420;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    .boot{min-height:100vh;display:grid;place-items:center;color:#4aa3ff;font-weight:800}
   </style>
 </head>
 <body>
   <div class="boot">Loading My Money Plan…</div>
   <script>
-    (async () => {
-      try {
-        const response = await fetch('./money-core.html?v=20260830-otnav', { cache: 'no-store' });
-        if (!response.ok) throw new Error('Could not load Money Plan');
-        let html = await response.text();
-
-        const categoryButton = '<button data-page="categories">Categories</button>';
-        const otLink = '<a class="otNavLink" href="./ot.html">OT Work</a>';
-        if (!html.includes('class="otNavLink"')) {
-          html = html.replace(categoryButton, categoryButton + otLink);
-        }
-
-        const otCss = `
-          .nav .otNavLink {
-            display:inline-flex;
-            align-items:center;
-            justify-content:center;
-            border:1px solid rgba(255,255,255,.14);
-            border-radius:9px;
-            background:rgba(255,255,255,.1);
-            color:rgba(255,255,255,.82);
-            padding:9px 11px;
-            font:inherit;
-            font-weight:800;
-            text-decoration:none;
-            white-space:nowrap;
-            transition:transform .15s ease,box-shadow .18s ease,filter .18s ease,background .18s ease;
-          }
-          .nav .otNavLink:hover { filter:brightness(1.05); }
-          .nav .otNavLink:active { transform:translateY(1px) scale(.985); }
-          @media (max-width:700px) {
-            .nav { grid-template-columns:repeat(4,1fr) !important; }
-            .nav .otNavLink {
-              border:0;
-              background:transparent;
-              color:var(--m);
-              box-shadow:none;
-              padding:11px 7px;
-              font-size:13px;
-            }
-          }
-        `;
-        html = html.replace('</style>', otCss + '</style>');
-
-        document.open();
-        document.write(html);
-        document.close();
-      } catch (error) {
-        document.body.innerHTML = '<div class="boot">Could not load My Money Plan. Please refresh.</div>';
+    (async()=>{
+      try{
+        const response=await fetch('./money-core.html?v=20260908-advanced-v1',{cache:'no-store'});
+        if(!response.ok)throw new Error('Could not load Money Plan');
+        const html=await response.text();
+        document.open();document.write(html);document.close();
+      }catch(error){
+        document.body.innerHTML='<div class="boot">Could not load My Money Plan. Please refresh.</div>';
         console.error(error);
       }
     })();
