@@ -1,4 +1,4 @@
-const CACHE_NAME = "money-plan-v7";
+const CACHE_NAME = "money-plan-v8-advanced-20260908";
 const APP_FILES = [
   "./",
   "./index.html",
@@ -37,6 +37,9 @@ self.addEventListener("fetch", (event) => {
         }
         return response;
       })
-      .catch(() => caches.match(event.request).then((cached) => cached || caches.match("./")))
+      .catch(() =>
+        caches.match(event.request, { ignoreSearch: true })
+          .then((cached) => cached || caches.match("./index.html") || caches.match("./"))
+      )
   );
 });
