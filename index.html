@@ -3,11 +3,11 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <meta name="theme-color" content="#0f1420" />
-  <title>My Money Plan</title>
+  <meta name="theme-color" content="#0b1220" />
+  <title>My Money Plan · Personal Finance Manager</title>
   <style>
-    html,body{margin:0;min-height:100%;background:#0f1420;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-    .boot{min-height:100vh;display:grid;place-items:center;color:#4aa3ff;font-weight:800}
+    html,body{margin:0;min-height:100%;background:#0b1220;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    .boot{min-height:100vh;display:grid;place-items:center;color:#4f8cff;font-weight:800}
   </style>
 </head>
 <body>
@@ -15,9 +15,14 @@
   <script>
     (async()=>{
       try{
-        const response=await fetch('./money-core.html?v=20260908-advanced-v1',{cache:'no-store'});
+        const response=await fetch('./money-core.html?v=20260908-professional-v1',{cache:'no-store'});
         if(!response.ok)throw new Error('Could not load Money Plan');
-        const html=await response.text();
+        let html=await response.text();
+        html=html.replace(/<title>[\s\S]*?<\/title>/i,'<title>My Money Plan · Personal Finance Manager</title>');
+        html=html.replace('<meta name="theme-color" content="#0f1420">','<meta name="theme-color" content="#0b1220">');
+        html=html.replace('</style>','</style><link rel="stylesheet" href="./professional-v3.css?v=20260908-1">');
+        html=html.replace('<h1>💰 My Money Plan</h1>','<div class="professional-brand"><span class="professional-mark">💰</span><span>My Money Plan<small>Plan · Pay · Know what\'s left</small></span></div>');
+        html=html.replace('<main id="app"></main>','<main id="app"></main><footer class="professionalFooter"><div class="inner"><b>My Money Plan</b> — your finance data stays in this browser. Download a backup regularly.<br>Plan → Pay → See what is truly left → Review the month.</div></footer>');
         document.open();document.write(html);document.close();
       }catch(error){
         document.body.innerHTML='<div class="boot">Could not load My Money Plan. Please refresh.</div>';
