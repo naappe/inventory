@@ -2,13 +2,13 @@
   "id": "/inventory/",
   "name": "My Money Plan",
   "short_name": "Money Plan",
-  "description": "Track monthly income, paid expenses, credit and loan balances in MVR.",
+  "description": "Plan monthly expenses, record actual payments, and track credit and loan balances in MVR.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#f4f3f8",
-  "theme_color": "#6546c5",
+  "background_color": "#0f1420",
+  "theme_color": "#0f1420",
   "categories": ["finance", "productivity"],
   "icons": [
     {
