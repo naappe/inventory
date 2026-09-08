@@ -15,14 +15,32 @@
   <script>
     (async()=>{
       try{
-        const response=await fetch('./money-core.html?v=20260908-professional-v1',{cache:'no-store'});
+        const response=await fetch('./money-core.html?v=20260908-professional-v2',{cache:'no-store'});
         if(!response.ok)throw new Error('Could not load Money Plan');
         let html=await response.text();
         html=html.replace(/<title>[\s\S]*?<\/title>/i,'<title>My Money Plan · Personal Finance Manager</title>');
         html=html.replace('<meta name="theme-color" content="#0f1420">','<meta name="theme-color" content="#0b1220">');
-        html=html.replace('</style>','</style><link rel="stylesheet" href="./professional-v3.css?v=20260908-1">');
+        html=html.replace('</style>','</style><link rel="stylesheet" href="./professional-v3.css?v=20260908-2"><style>dialog{max-height:calc(100dvh - 24px)!important;overflow:auto!important}dialog form{display:flex!important;flex-direction:column!important;min-height:0}.dialogContent{min-height:0}.foot{position:sticky;bottom:-20px;z-index:5;display:flex!important;gap:8px!important;justify-content:flex-end!important;margin:18px -20px -20px!important;padding:14px 20px!important;background:var(--surface)!important;border-top:1px solid var(--line)!important}.foot button{min-width:96px}@media(max-width:640px){dialog{width:calc(100vw - 20px)!important;max-height:calc(100dvh - 20px)!important}.foot{bottom:-20px}.foot button{flex:1}}</style>');
         html=html.replace('<h1>💰 My Money Plan</h1>','<div class="professional-brand"><span class="professional-mark">💰</span><span>My Money Plan<small>Plan · Pay · Know what\'s left</small></span></div>');
         html=html.replace('<main id="app"></main>','<main id="app"></main><footer class="professionalFooter"><div class="inner"><b>My Money Plan</b> — your finance data stays in this browser. Download a backup regularly.<br>Plan → Pay → See what is truly left → Review the month.</div></footer>');
+        html=html.replace('</body>',`<script>
+(function(){
+  window.openDialog=function(content,onSubmit){
+    const dlg=document.getElementById('dlg');
+    const form=document.getElementById('dlgForm');
+    form.innerHTML='<div class="dialogContent">'+content+'</div><div class="foot"><button type="button" class="ghost" id="dlgCancel">Cancel</button><button type="submit" class="primary">Save</button></div>';
+    dlg.showModal();
+    const cancel=form.querySelector('#dlgCancel');
+    if(cancel)cancel.onclick=()=>dlg.close();
+    form.onsubmit=ev=>{
+      ev.preventDefault();
+      const data=Object.fromEntries(new FormData(form).entries());
+      if(onSubmit(data)!==false)dlg.close();
+    };
+    return form;
+  };
+})();
+<\/script></body>`);
         document.open();document.write(html);document.close();
       }catch(error){
         document.body.innerHTML='<div class="boot">Could not load My Money Plan. Please refresh.</div>';
