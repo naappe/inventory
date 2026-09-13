@@ -6,6 +6,7 @@ on:
       - rf-cell-sensor-v0.1-build
     paths:
       - 'rf-build-src/**'
+      - 'rf-build-overrides/**'
       - '.github/workflows/rf-cell-sensor-build.yml'
   workflow_dispatch:
 
@@ -36,6 +37,7 @@ jobs:
           mkdir -p rf-cell-sensor
           cat rf-build-src/part-* | base64 -d > /tmp/rf-cell-sensor-src.tar.gz
           tar -xzf /tmp/rf-cell-sensor-src.tar.gz -C rf-cell-sensor
+          cp rf-build-overrides/RadioMonitor.kt rf-cell-sensor/app/src/main/java/com/rfcellsensor/RadioMonitor.kt
           test -f rf-cell-sensor/settings.gradle.kts
 
       - name: Set up Gradle 8.7
