@@ -147,7 +147,11 @@ class RadioMonitor(
                     val id = normalizeTelephonyInt(registered.cellIdentity.ci)
                     id?.let { "LTE CI $it" }
                 }
-                else -> registered?.cellIdentity?.toString()?.take(80)
+                else -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    registered?.cellIdentity?.toString()?.take(80)
+                } else {
+                    null
+                }
             }
         } catch (_: SecurityException) {
             null
