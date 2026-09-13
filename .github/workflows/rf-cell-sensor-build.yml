@@ -38,6 +38,21 @@ jobs:
           cat rf-build-src/part-* | base64 -d > /tmp/rf-cell-sensor-src.tar.gz
           tar -xzf /tmp/rf-cell-sensor-src.tar.gz -C rf-cell-sensor
           cp rf-build-overrides/RadioMonitor.kt rf-cell-sensor/app/src/main/java/com/rfcellsensor/RadioMonitor.kt
+          sed -i '/READ_PHONE_STATE/a\    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />' rf-cell-sensor/app/src/main/AndroidManifest.xml
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('rf-cell-sensor/app/src/main/java/com/rfcellsensor/MainActivity.kt')
+          text = path.read_text()
+          old = 'arrayOf(Manifest.permission.READ_PHONE_STATE, Manifest.permission.ACCESS_FINE_LOCATION)'
+          new = '''arrayOf(
+                          Manifest.permission.READ_PHONE_STATE,
+                          Manifest.permission.ACCESS_COARSE_LOCATION,
+                          Manifest.permission.ACCESS_FINE_LOCATION
+                      )'''
+          if old not in text:
+              raise SystemExit('Expected permission request not found')
+          path.write_text(text.replace(old, new))
+          PY
           test -f rf-cell-sensor/settings.gradle.kts
 
       - name: Set up Gradle 8.7
