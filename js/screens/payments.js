@@ -1,15 +1,18 @@
-import { itemPaymentTotal, paymentStatus } from '../money-calculations.js';
+import { itemPaymentTotal, debtPaymentTotal, paymentStatus } from '../money-calculations.js';
 
 const money = (n) => `MVR ${Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const dateLabel = (value) => value ? new Date(`${value}T00:00:00`).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
 
 export function renderPayments(bundle) {
-  const { monthItems = [], payments = [] } = bundle;
+  const { monthItems = [], payments = [], debts = [] } = bundle;
+  const debtById = new Map(debts.map((debt) => [debt.id, debt]));
   const rows = monthItems.map((item) => {
-    const paid = itemPaymentTotal(item.id, payments);
-    const remaining = Math.max(0, Number(item.planned_amount || 0) - paid);
-    const status = paymentStatus(item.planned_amount, paid);
-    return { ...item, paid, remaining, status };
+    const linkedDebt = item.debt_id ? debtById.get(item.debt_id) : null;
+    const paid = linkedDebt ? debtPaymentTotal(linkedDebt.id, payments) : itemPaymentTotal(item.id, payments);
+    const planned = linkedDebt ? Number(linkedDebt.monthly_plan || item.planned_amount || 0) : Number(item.planned_amount || 0);
+    const remaining = Math.max(0, planned - paid);
+    const status = paymentStatus(planned, paid);
+    return { ...item, linkedDebt, planned, paid, remaining, status };
   });
   const recent = payments.filter((p) => !p.reversed_at).slice(0, 12);
 
@@ -18,10 +21,10 @@ export function renderPayments(bundle) {
     <article class="panel table-panel">
       <div class="money-table-head"><span>Name</span><span>Planned</span><span>Paid</span><span>Remaining</span><span>Status</span><span></span></div>
       <div class="money-table">${rows.length ? rows.map((row) => `<div class="money-table-row">
-        <div class="table-name"><b>${row.name_snapshot}</b><span>${row.category_snapshot}${row.due_date ? ` · due ${dateLabel(row.due_date)}` : ''}</span></div>
-        <span>${money(row.planned_amount)}</span><span>${money(row.paid)}</span><strong>${money(row.remaining)}</strong>
+        <div class="table-name"><b>${row.name_snapshot}</b><span>${row.category_snapshot}${row.due_date ? ` · due ${dateLabel(row.due_date)}` : ''}${row.linkedDebt ? ` · Outstanding loan ${money(row.linkedDebt.current_balance)}` : ''}</span></div>
+        <span>${money(row.planned)}</span><span>${money(row.paid)}</span><strong>${money(row.remaining)}</strong>
         <span><i class="status ${row.status.toLowerCase().replace(/\s+/g, '-')}">${row.status}</i></span>
-        <span class="row-end"><button class="text-button" data-action="edit-item" data-id="${row.item_id}">Edit</button>${row.remaining > 0 ? `<button class="button compact" data-action="pay-item" data-id="${row.id}">Record payment</button>` : '<span class="paid-check">✓</span>'}</span>
+        <span class="row-end"><button class="text-button" data-action="${row.linkedDebt ? 'edit-debt' : 'edit-item'}" data-id="${row.linkedDebt ? row.linkedDebt.id : row.item_id}">${row.linkedDebt ? 'Loan details' : 'Edit'}</button>${row.remaining > 0 ? `<button class="button compact" data-action="${row.linkedDebt ? 'pay-debt' : 'pay-item'}" data-id="${row.linkedDebt ? row.linkedDebt.id : row.id}">Record payment</button>` : '<span class="paid-check">✓</span>'}</span>
       </div>`).join('') : '<div class="empty-state roomy">No payment items yet. Add your first monthly payment item.</div>'}</div>
     </article>
 
