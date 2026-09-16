@@ -10,3 +10,12 @@ export function formModeForBehavior(behavior) {
   if (behavior === 'receivable') return 'receivable';
   return 'expense-payment';
 }
+
+export function deletionPolicyForExpenseItem({ paymentCount = 0 } = {}) {
+  const hasHistory = Number(paymentCount || 0) > 0;
+  return {
+    deactivateMaster: true,
+    removeCurrentSnapshot: !hasHistory,
+    preserveHistory: hasHistory,
+  };
+}
