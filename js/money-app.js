@@ -20,8 +20,6 @@ const state = {
   months: [],
   historyModel: null,
   setupMode: false,
-  setupDismissed: false,
-  busy: false,
 };
 
 const app = document.getElementById('app');
@@ -74,7 +72,8 @@ function renderChrome() {
   sidebar.hidden = false;
   topbar.hidden = false;
   document.getElementById('month-title').textContent = monthLabel(state.monthKey);
-  document.getElementById('prev-month').disabled = state.monthKey <= FIRST_MONTH;
+  document.getElementById('prev-month').disabled = state.monthKey <= FIRST_MONTH || state.setupMode;
+  document.getElementById('next-month').disabled = state.setupMode;
   document.querySelectorAll('[data-view]').forEach((el) => el.classList.toggle('active', el.dataset.view === state.view));
   const email = document.getElementById('account-email');
   if (email) email.textContent = state.user?.email || '';
@@ -83,7 +82,7 @@ function renderChrome() {
 function render() {
   if (!state.session) return renderLogin();
   renderChrome();
-  if (state.setupMode && !state.setupDismissed) {
+  if (state.setupMode) {
     app.innerHTML = renderSetup({ month: state.bundle.month, categories: state.bundle.categories, items: state.items, debts: state.bundle.debts });
     return;
   }
@@ -94,13 +93,11 @@ function render() {
   if (state.view === 'history') app.innerHTML = state.historyModel ? renderHistory(state.historyModel) : `<div class="loading-state"><div class="spinner"></div><p>Building history…</p></div>`;
 }
 
-async function loadMonth({ allowSetup = true } = {}) {
+async function loadMonth() {
   state.bundle = await api.getMonthBundle(state.monthKey);
   state.items = await api.listItems();
   state.months = await api.listMonths();
-  if (allowSetup && state.monthKey === FIRST_MONTH && !state.setupDismissed) {
-    state.setupMode = state.items.length === 0 && state.bundle.debts.length === 0;
-  } else state.setupMode = false;
+  state.setupMode = state.monthKey === FIRST_MONTH && state.bundle.month.setup_complete !== true;
   state.historyModel = null;
 }
 
@@ -120,13 +117,9 @@ async function enterApp(session) {
 }
 
 async function reload(message) {
-  await loadMonth({ allowSetup: true });
+  await loadMonth();
   render();
   if (message) toast(message);
-}
-
-function categoryOptions(selected = '') {
-  return state.bundle.categories.map((c) => ({ value: c.id, label: c.name, selected: c.id === selected }));
 }
 
 function openIncomeSheet() {
@@ -163,8 +156,8 @@ function openAddDebtSheet(debt = null) {
     body: `${field.text('name', 'Debt name', debt?.name || '', 'required')}${field.select('type', 'Type', [{ value: 'loan', label: 'Loan' }, { value: 'credit', label: 'Credit' }], debt?.debt_type || 'loan')}${debt ? '' : field.money('balance', 'Current balance', '', 'required')}${field.money('monthlyPlan', 'Planned payment each month', debt?.monthly_plan || '', 'required')}${field.number('apr', 'APR / interest % (optional)', debt?.apr ?? '', 'min="0" step="0.01"')}`,
     submitLabel: debt ? 'Save debt plan' : 'Add debt',
     onSubmit: async (values) => {
-      if (debt) await api.updateDebt(debt.id, values);
-      else await api.createDebt(values);
+      if (debt) await api.updateDebt(debt.id, values, state.monthKey);
+      else await api.createDebt({ ...values, startMonthKey: state.monthKey });
       await reload(debt ? 'Debt plan updated' : 'Debt added');
     },
   });
@@ -253,10 +246,16 @@ async function buildHistoryModel() {
     for (const p of bundle.payments.filter((p) => !p.reversed_at && p.payment_type === 'debt')) {
       cumulativeDebtPayments.set(p.debt_id, (cumulativeDebtPayments.get(p.debt_id) || 0) + Number(p.amount || 0));
     }
-    const monthDebts = raw.debts.filter((d) => String(d.created_at || '').slice(0, 7) <= bundle.month.month_key).map((d) => ({
-      ...d,
-      current_balance: Math.max(0, Number(d.opening_balance || 0) - (cumulativeDebtPayments.get(d.id) || 0)),
-    }));
+    const monthDebts = raw.debts
+      .filter((d) => String(d.start_month_key || FIRST_MONTH) <= bundle.month.month_key)
+      .map((d) => {
+        const planHistory = d.monthly_plan_history && typeof d.monthly_plan_history === 'object' ? d.monthly_plan_history : {};
+        return {
+          ...d,
+          current_balance: Math.max(0, Number(d.opening_balance || 0) - (cumulativeDebtPayments.get(d.id) || 0)),
+          monthly_plan: Number(planHistory[bundle.month.month_key] ?? d.monthly_plan ?? 0),
+        };
+      });
     const summary = calculateMonthSummary({ income: bundle.month.income, monthItems: bundle.monthItems, payments: bundle.payments, debts: monthDebts });
     const label = monthLabel(bundle.month.month_key).replace(' 20', ' ’');
     rows.push({ label: monthLabel(bundle.month.month_key), income: summary.income, paid: summary.paid, stillToPay: summary.stillToPay, safeToSave: summary.safeToSave, paymentCount: bundle.payments.filter((p) => !p.reversed_at).length });
@@ -267,8 +266,11 @@ async function buildHistoryModel() {
 }
 
 async function selectView(view) {
+  if (state.setupMode) {
+    toast('Finish September setup first.', 'error');
+    return;
+  }
   state.view = view;
-  state.setupDismissed = true;
   if (view === 'history' && !state.historyModel) {
     render();
     state.historyModel = await buildHistoryModel();
@@ -277,13 +279,16 @@ async function selectView(view) {
 }
 
 async function changeMonth(delta) {
+  if (state.setupMode) {
+    toast('Finish September setup first.', 'error');
+    return;
+  }
   const next = shiftKey(state.monthKey, delta);
   if (next < FIRST_MONTH) return;
   showBusy('Opening month…');
   await api.createMonth(next);
   state.monthKey = next;
-  state.setupDismissed = true;
-  await loadMonth({ allowSetup: false });
+  await loadMonth();
   render();
 }
 
@@ -294,7 +299,14 @@ async function handleAction(action, source) {
   if (action === 'add-category') return openCategorySheet();
   if (action === 'quick-add') return openQuickAdd();
   if (action === 'sign-out') { await signOut(); state.session = null; state.user = null; return renderLogin(); }
-  if (action === 'finish-setup') { await api.createMonth(FIRST_MONTH); state.setupDismissed = true; state.setupMode = false; await reload('September plan started'); return; }
+  if (action === 'finish-setup') {
+    await api.createMonth(FIRST_MONTH);
+    await api.markSetupComplete(state.bundle.month.id);
+    state.setupMode = false;
+    state.view = 'overview';
+    await reload('September plan started');
+    return;
+  }
   if (action === 'pay-item') { const item = state.bundle.monthItems.find((x) => x.id === source.dataset.id); if (item) return openItemPaymentSheet(item); }
   if (action === 'pay-debt') { const debt = state.bundle.debts.find((x) => x.id === source.dataset.id); if (debt) return openDebtPaymentSheet(debt); }
   if (action === 'edit-debt') { const debt = state.bundle.debts.find((x) => x.id === source.dataset.id); if (debt) return openAddDebtSheet(debt); }
