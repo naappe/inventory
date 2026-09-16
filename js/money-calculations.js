@@ -50,13 +50,35 @@ export function paymentStatus(planned, paid) {
   return 'Waiting';
 }
 
-export function calculateMonthSummary({ income = 0, monthItems = [], payments = [], debts = [] } = {}) {
+export function calculateMonthSummary({
+  income = 0,
+  monthItems = [],
+  payments = [],
+  debts = [],
+  receivables = [],
+  receivableTransactions = [],
+} = {}) {
   const activePayments = payments.filter((p) => !p.reversed_at);
-  const paid = round2(activePayments.reduce((sum, p) => sum + Number(p.amount || 0), 0));
-  const availableNow = round2(Number(income || 0) - paid);
+  const activeReceivableTransactions = receivableTransactions.filter((t) => !t.reversed_at && t.transaction_type !== 'reversal');
 
-  // Payment rows linked to a debt are display shortcuts for the debt plan.
-  // Exclude them here so the same Council/Agro payment is not counted twice.
+  const ordinaryPaid = round2(activePayments
+    .filter((p) => p.payment_type === 'expense')
+    .reduce((sum, p) => sum + Number(p.amount || 0), 0));
+  const liabilityPaid = round2(activePayments
+    .filter((p) => p.payment_type === 'debt')
+    .reduce((sum, p) => sum + Number(p.amount || 0), 0));
+  const moneyLent = round2(activeReceivableTransactions
+    .filter((t) => t.transaction_type === 'lend')
+    .reduce((sum, t) => sum + Number(t.amount || 0), 0));
+  const receivableRepayments = round2(activeReceivableTransactions
+    .filter((t) => t.transaction_type === 'repayment')
+    .reduce((sum, t) => sum + Number(t.amount || 0), 0));
+
+  const cashIn = round2(Number(income || 0) + receivableRepayments);
+  const cashOut = round2(ordinaryPaid + liabilityPaid + moneyLent);
+  const paid = cashOut;
+  const availableNow = round2(cashIn - cashOut);
+
   const expenseItems = monthItems.filter((item) => !item.debt_id);
   const expensePlan = round2(expenseItems.reduce((sum, item) => sum + positive(item.planned_amount), 0));
   const expenseStillToPay = round2(expenseItems.reduce((sum, item) => {
@@ -88,15 +110,25 @@ export function calculateMonthSummary({ income = 0, monthItems = [], payments = 
   loansLeft = round2(loansLeft);
   creditLeft = round2(creditLeft);
 
+  const receivablesLeft = round2(receivables
+    .filter((r) => r.is_active !== false)
+    .reduce((sum, r) => sum + positive(r.current_balance), 0));
   const stillToPay = round2(expenseStillToPay + debtStillToPay);
   const safeToSave = round2(Math.max(0, availableNow - stillToPay));
   const totalPlanned = round2(expensePlan + debtPlan);
-  const projectedAfterPlan = round2(Number(income || 0) - totalPlanned);
+  const projectedAfterPlan = round2(cashIn - totalPlanned - moneyLent);
 
   return {
     income: round2(income),
     paid,
+    cashIn,
+    cashOut,
     availableNow,
+    ordinaryPaid,
+    liabilityPaid,
+    moneyLent,
+    receivableRepayments,
+    receivablesLeft,
     expensePlan,
     debtPlan,
     totalPlanned,
