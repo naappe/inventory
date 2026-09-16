@@ -1,8 +1,9 @@
-const CACHE_NAME = "money-plan-v9-professional-20260908";
+const CACHE_NAME = "money-plan-v10-debt-center-20260916";
 const APP_FILES = [
   "./",
   "./index.html",
   "./money-core.html",
+  "./debt-center.js",
   "./professional-v3.css",
   "./ot.html",
   "./manifest.webmanifest",
