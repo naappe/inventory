@@ -9,7 +9,8 @@
   <link rel="icon" href="./icons/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="./icons/icon-192.png">
   <link rel="preconnect" href="https://cdn.jsdelivr.net">
-  <link rel="stylesheet" href="./money-plan.css?v=20260916-cloud-v1">
+  <link rel="stylesheet" href="./money-plan.css?v=20260916-cloud-v2">
+  <link rel="stylesheet" href="./money-plan-v2.css?v=20260916-category-v1">
   <title>My Money Plan</title>
 </head>
 <body>
@@ -19,7 +20,8 @@
       <nav class="side-nav" aria-label="Money Plan">
         <button class="nav-button active" data-view="overview"><span class="nav-icon">⌂</span>Overview</button>
         <button class="nav-button" data-view="payments"><span class="nav-icon">▣</span>Payments</button>
-        <button class="nav-button" data-view="debts"><span class="nav-icon">◫</span>Debts</button>
+        <button class="nav-button" data-view="debts"><span class="nav-icon">◫</span>Loans & Credits</button>
+        <button class="nav-button" data-view="receivables"><span class="nav-icon">⇄</span>Money Lent</button>
         <button class="nav-button" data-view="history"><span class="nav-icon">▥</span>History</button>
         <button class="nav-button" data-view="settings"><span class="nav-icon">⚙</span>Settings</button>
       </nav>
@@ -36,7 +38,7 @@
   </div>
   <div id="sheet-root"></div>
   <div id="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="./js/money-app.js?v=20260916-cloud-v1"></script>
+  <script type="module" src="./js/money-app.js?v=20260916-category-v1"></script>
   <script>
     if ('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(console.warn));
   </script>
