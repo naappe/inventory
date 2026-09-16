@@ -1,0 +1,45 @@
+name: Money Plan verify
+
+on:
+  push:
+    branches:
+      - main
+      - feature/money-plan-supabase-v1
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Run Money Plan unit tests
+        run: node --test tests/money-calculations.test.mjs tests/money-ui-models.test.mjs
+
+      - name: Check JavaScript syntax
+        run: |
+          set -e
+          find js -name '*.js' -print0 | while IFS= read -r -d '' file; do
+            node --check "$file"
+          done
+
+      - name: Verify cloud-only finance frontend
+        run: |
+          set -e
+          ! grep -R -E 'localStorage\.(getItem|setItem|removeItem|clear)' js index.html
+          ! grep -R -E 'service[_-]?role' js index.html
+          test ! -e money-core.html
+          test ! -e debt-center.js
+          test ! -e professional-v3.css
+          test -e ot.html
+          grep -q 'js/money-app.js' index.html
+          grep -q 'money-plan.css' index.html
+          grep -q 'supabase-js@2' js/supabase-client.js
