@@ -57,9 +57,14 @@ export function openSheet({ title, subtitle = '', body = '', submitLabel = 'Save
     submit.textContent = 'Saving…';
     try {
       const values = Object.fromEntries(new FormData(form).entries());
-      await onSubmit(values, form);
-      closeSheet();
+      const result = await onSubmit(values, form);
+      if (result !== false) closeSheet();
+      else if (document.body.contains(submit)) {
+        submit.disabled = false;
+        submit.textContent = submitLabel;
+      }
     } catch (error) {
+      if (!document.body.contains(errorBox)) return;
       errorBox.textContent = error?.message || 'Not saved — retry.';
       errorBox.hidden = false;
       submit.disabled = false;
