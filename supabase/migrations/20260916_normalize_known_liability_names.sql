@@ -1,0 +1,5 @@
+update public.money_debts set name='Agro', monthly_plan=0, monthly_plan_history=jsonb_set(coalesce(monthly_plan_history,'{}'::jsonb), '{2026-09}', '0'::jsonb, true) where lower(name) in ('agro credit','agro');
+update public.money_debts set name='Council', monthly_plan=0, monthly_plan_history=jsonb_set(coalesce(monthly_plan_history,'{}'::jsonb), '{2026-09}', '0'::jsonb, true) where lower(name) in ('council credit','council');
+update public.money_debts set name='Naseembe', monthly_plan=0, monthly_plan_history=jsonb_set(coalesce(monthly_plan_history,'{}'::jsonb), '{2026-09}', '0'::jsonb, true) where lower(name) in ('naseembe credit','naseembe');
+update public.money_debts set name='Alikko', monthly_plan=0, monthly_plan_history=jsonb_set(coalesce(monthly_plan_history,'{}'::jsonb), '{2026-09}', '0'::jsonb, true) where lower(name) in ('alikko cycle credit','alikko');
+update public.money_debts set name='BML', monthly_plan=0, monthly_plan_history=jsonb_set(coalesce(monthly_plan_history,'{}'::jsonb), '{2026-09}', '0'::jsonb, true) where lower(name) in ('loan bank credit','bml');
