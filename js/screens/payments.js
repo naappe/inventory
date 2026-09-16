@@ -21,7 +21,7 @@ export function renderPayments(bundle) {
         <div class="table-name"><b>${row.name_snapshot}</b><span>${row.category_snapshot}${row.due_date ? ` · due ${dateLabel(row.due_date)}` : ''}</span></div>
         <span>${money(row.planned_amount)}</span><span>${money(row.paid)}</span><strong>${money(row.remaining)}</strong>
         <span><i class="status ${row.status.toLowerCase().replace(/\s+/g, '-')}">${row.status}</i></span>
-        <span>${row.remaining > 0 ? `<button class="button compact" data-action="pay-item" data-id="${row.id}">Record payment</button>` : '<span class="paid-check">✓</span>'}</span>
+        <span class="row-end"><button class="text-button" data-action="edit-item" data-id="${row.item_id}">Edit</button>${row.remaining > 0 ? `<button class="button compact" data-action="pay-item" data-id="${row.id}">Record payment</button>` : '<span class="paid-check">✓</span>'}</span>
       </div>`).join('') : '<div class="empty-state roomy">No payment items yet. Add your first monthly payment item.</div>'}</div>
     </article>
 
