@@ -15,7 +15,7 @@
   <script>
     (async()=>{
       try{
-        const response=await fetch('./money-core.html?v=20260908-professional-v2',{cache:'no-store'});
+        const response=await fetch('./money-core.html?v=20260916-debt-center-v1',{cache:'no-store'});
         if(!response.ok)throw new Error('Could not load Money Plan');
         let html=await response.text();
         html=html.replace(/<title>[\s\S]*?<\/title>/i,'<title>My Money Plan · Personal Finance Manager</title>');
@@ -41,6 +41,7 @@
   };
 })();
 <\/script></body>`);
+        html=html.replace('</body>','<script src="./debt-center.js?v=20260916-1"><\/script></body>');
         document.open();document.write(html);document.close();
       }catch(error){
         document.body.innerHTML='<div class="boot">Could not load My Money Plan. Please refresh.</div>';
