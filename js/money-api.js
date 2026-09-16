@@ -45,6 +45,11 @@ export async function setIncome(monthId, income) {
   return unwrap(await supabase.from('money_months').update({ income: value }).eq('id', monthId).select().single());
 }
 
+export async function markSetupComplete(monthId) {
+  await requireUser();
+  return unwrap(await supabase.from('money_months').update({ setup_complete: true }).eq('id', monthId).select().single());
+}
+
 export async function listCategories() {
   await requireUser();
   return unwrap(await supabase.from('money_categories').select('*').eq('is_active', true).order('display_order').order('name')) || [];
@@ -101,31 +106,64 @@ export async function listDebts({ includeCompleted = true } = {}) {
   return unwrap(await query) || [];
 }
 
-export async function createDebt({ name, type, balance, monthlyPlan = 0, apr = null, focusOrder = null }) {
+export async function listDebtsAsOf(monthKey) {
+  const [debts, months] = await Promise.all([listDebts({ includeCompleted: true }), listMonths()]);
+  const monthIds = months.filter((m) => m.month_key <= monthKey).map((m) => m.id);
+  let debtPayments = [];
+  if (monthIds.length) {
+    debtPayments = unwrap(await supabase.from('money_payments').select('debt_id,amount,reversed_at,month_id').eq('payment_type', 'debt').in('month_id', monthIds)) || [];
+  }
+  return debts
+    .filter((debt) => String(debt.start_month_key || FIRST_MONTH) <= monthKey)
+    .map((debt) => {
+      const paidThroughMonth = debtPayments
+        .filter((payment) => !payment.reversed_at && payment.debt_id === debt.id)
+        .reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
+      const planHistory = debt.monthly_plan_history && typeof debt.monthly_plan_history === 'object' ? debt.monthly_plan_history : {};
+      const balance = Math.max(0, Number(debt.opening_balance || 0) - paidThroughMonth);
+      return {
+        ...debt,
+        current_balance: Number(balance.toFixed(2)),
+        monthly_plan: Number(planHistory[monthKey] ?? debt.monthly_plan ?? 0),
+        is_active: balance > 0,
+      };
+    });
+}
+
+export async function createDebt({ name, type, balance, monthlyPlan = 0, apr = null, focusOrder = null, startMonthKey = FIRST_MONTH }) {
   const user = await requireUser();
   const clean = String(name || '').trim();
   const opening = Math.max(0, Number(balance || 0));
+  const plan = Math.max(0, Number(monthlyPlan || 0));
   if (!clean) throw new Error('Debt name is required.');
   if (!['loan', 'credit'].includes(type)) throw new Error('Choose loan or credit.');
+  if (startMonthKey < FIRST_MONTH) throw new Error('Debt tracking starts in September 2026 or later.');
   return unwrap(await supabase.from('money_debts').insert({
     user_id: user.id,
     name: clean,
     debt_type: type,
     opening_balance: opening,
     current_balance: opening,
-    monthly_plan: Math.max(0, Number(monthlyPlan || 0)),
+    monthly_plan: plan,
+    monthly_plan_history: { [startMonthKey]: plan },
+    start_month_key: startMonthKey,
     apr: apr === '' || apr == null ? null : Math.max(0, Number(apr)),
     focus_order: focusOrder == null ? null : Number(focusOrder),
     is_active: opening > 0,
   }).select().single());
 }
 
-export async function updateDebt(id, changes) {
+export async function updateDebt(id, changes, monthKey = FIRST_MONTH) {
   await requireUser();
   const payload = {};
   if (changes.name != null) payload.name = String(changes.name).trim();
   if (changes.type != null) payload.debt_type = changes.type;
-  if (changes.monthlyPlan != null) payload.monthly_plan = Math.max(0, Number(changes.monthlyPlan || 0));
+  if (changes.monthlyPlan != null) {
+    const plan = Math.max(0, Number(changes.monthlyPlan || 0));
+    const current = unwrap(await supabase.from('money_debts').select('monthly_plan_history').eq('id', id).single());
+    payload.monthly_plan = plan;
+    payload.monthly_plan_history = { ...(current?.monthly_plan_history || {}), [monthKey]: plan };
+  }
   if (changes.apr !== undefined) payload.apr = changes.apr === '' || changes.apr == null ? null : Math.max(0, Number(changes.apr));
   if (changes.focusOrder !== undefined) payload.focus_order = changes.focusOrder == null ? null : Number(changes.focusOrder);
   if (changes.active !== undefined) payload.is_active = Boolean(changes.active);
@@ -141,7 +179,7 @@ export async function getMonthBundle(monthKey) {
   const [monthItems, payments, debts, categories] = await Promise.all([
     unwrap(await supabase.from('money_month_items').select('*').eq('month_id', month.id).order('due_date', { ascending: true, nullsFirst: false }).order('name_snapshot')),
     unwrap(await supabase.from('money_payments').select('*').eq('month_id', month.id).order('payment_date', { ascending: false }).order('created_at', { ascending: false })),
-    listDebts({ includeCompleted: true }),
+    listDebtsAsOf(monthKey),
     listCategories(),
   ]);
   return { month, monthItems: monthItems || [], payments: payments || [], debts, categories };
