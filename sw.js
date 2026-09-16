@@ -1,8 +1,9 @@
-const CACHE_NAME = 'money-plan-cloud-shell-v2';
+const CACHE_NAME = 'money-plan-dashboard-v3';
 const SHELL = [
   './',
   './index.html',
   './money-plan.css',
+  './money-plan-v2.css',
   './manifest.webmanifest',
   './icons/icon.svg',
   './icons/icon-192.png',
@@ -15,6 +16,7 @@ const SHELL = [
   './js/money-charts.js',
   './js/money-sheets.js',
   './js/money-app.js',
+  './js/bank-opening-ui.js',
   './js/undo-payment-actions.js',
   './js/screens/setup.js',
   './js/screens/overview.js',
