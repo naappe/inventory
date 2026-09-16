@@ -55,8 +55,11 @@ export function calculateMonthSummary({ income = 0, monthItems = [], payments = 
   const paid = round2(activePayments.reduce((sum, p) => sum + Number(p.amount || 0), 0));
   const availableNow = round2(Number(income || 0) - paid);
 
-  const expensePlan = round2(monthItems.reduce((sum, item) => sum + positive(item.planned_amount), 0));
-  const expenseStillToPay = round2(monthItems.reduce((sum, item) => {
+  // Payment rows linked to a debt are display shortcuts for the debt plan.
+  // Exclude them here so the same Council/Agro payment is not counted twice.
+  const expenseItems = monthItems.filter((item) => !item.debt_id);
+  const expensePlan = round2(expenseItems.reduce((sum, item) => sum + positive(item.planned_amount), 0));
+  const expenseStillToPay = round2(expenseItems.reduce((sum, item) => {
     const itemPaid = itemPaymentTotal(item.id, activePayments);
     return sum + Math.max(0, positive(item.planned_amount) - itemPaid);
   }, 0));
