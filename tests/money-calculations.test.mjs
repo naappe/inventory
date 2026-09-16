@@ -12,7 +12,7 @@ test('separates available now, still to pay, and safe to save', () => {
     income: 25000,
     monthItems: [
       { id: 'electric', planned_amount: 1000 },
-      { id: 'food', planned_amount: 7000 },
+      { id: 'food', planned_amount: 17000 },
     ],
     debts: [{ id: 'loan', monthly_plan: 2000, current_balance: 34500, apr: null }],
     payments: [
