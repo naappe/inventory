@@ -2,6 +2,9 @@ import { buildPaymentsPageModel } from '../payments-page-model.js';
 
 const money = (n) => n == null ? 'Not entered' : `MVR ${Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const dateLabel = (value) => value ? new Date(`${value}T00:00:00`).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+const undoButton = (row, name) => row.canUndoPayment
+  ? `<button class="button secondary compact" data-action="undo-row-payments" data-payment-ids="${row.activePaymentIds.join(',')}" data-name="${name}">Undo payment</button>`
+  : '';
 
 function expenseTable(rows) {
   return `<article class="panel table-panel monthly-control-section">
@@ -11,7 +14,7 @@ function expenseTable(rows) {
       <div class="table-name"><b>${row.name_snapshot}</b><span>${row.category_snapshot}${row.due_date ? ` · due ${dateLabel(row.due_date)}` : ''}</span></div>
       <span>${money(row.planned)}</span><span>${money(row.paid)}</span><strong>${money(row.remaining)}</strong>
       <span><i class="status ${row.status.toLowerCase().replace(/\s+/g, '-')}">${row.status}</i></span>
-      <span class="row-end payment-actions"><button class="text-button" data-action="edit-item" data-id="${row.item_id}">Edit</button><button class="text-button danger-text" data-action="delete-item" data-id="${row.item_id}" data-month-item-id="${row.id}" data-name="${row.name_snapshot}">Delete</button>${row.remaining > 0 ? `<button class="button compact" data-action="pay-item" data-id="${row.id}">Record payment</button>` : '<span class="paid-check">✓</span>'}</span>
+      <span class="row-end payment-actions"><button class="text-button" data-action="edit-item" data-id="${row.item_id}">Edit</button><button class="text-button danger-text" data-action="delete-item" data-id="${row.item_id}" data-month-item-id="${row.id}" data-name="${row.name_snapshot}">Delete</button>${undoButton(row, row.name_snapshot)}${row.remaining > 0 ? `<button class="button compact" data-action="pay-item" data-id="${row.id}">${row.paid > 0 ? 'Pay more' : 'Record payment'}</button>` : '<span class="paid-check">✓</span>'}</span>
     </div>`).join('') : '<div class="empty-state roomy">No Home or Other expenses in this month yet.</div>'}</div>
   </article>`;
 }
@@ -27,7 +30,7 @@ function liabilityTable(title, rows, type) {
       <span><small>Paid</small>${money(row.paidThisMonth)}</span>
       <strong><small>Left</small>${money(row.balanceLeft)}</strong>
       <span><small>Target</small>${money(row.target)}</span>
-      <span class="row-end payment-actions"><button class="text-button" data-action="edit-debt" data-id="${row.id}">Edit</button>${row.balanceLeft > 0 ? `<button class="button compact" data-action="pay-debt" data-id="${row.id}">Pay ${label}</button>` : '<span class="paid-check">✓ Paid off</span>'}</span>
+      <span class="row-end payment-actions"><button class="text-button" data-action="edit-debt" data-id="${row.id}">Edit</button>${undoButton(row, row.name)}${row.balanceLeft > 0 ? `<button class="button compact" data-action="pay-debt" data-id="${row.id}">${row.paidThisMonth > 0 ? `Pay ${label} again` : `Pay ${label}`}</button>` : '<span class="paid-check">✓ Paid off</span>'}</span>
     </div>`).join('') : `<div class="empty-state roomy">No ${title.toLowerCase()} entered yet.</div>`}</div>
   </article>`;
 }
