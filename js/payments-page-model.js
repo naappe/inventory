@@ -2,6 +2,10 @@ import { calculateMonthSummary, debtPaymentTotal, itemPaymentTotal, paymentStatu
 
 const round2 = (value) => Math.round((Number(value || 0) + Number.EPSILON) * 100) / 100;
 
+function activePaymentIds(payments, predicate) {
+  return payments.filter((payment) => !payment.reversed_at && predicate(payment)).map((payment) => payment.id);
+}
+
 function liabilityRows(debts, payments, type) {
   return debts
     .filter((debt) => debt.debt_type === type)
@@ -11,6 +15,7 @@ function liabilityRows(debts, payments, type) {
       const openingBalance = round2(balanceLeft + paidThisMonth);
       const target = Math.max(0, Number(debt.monthly_plan || 0));
       const targetRemaining = Math.max(0, round2(target - paidThisMonth));
+      const paymentIds = activePaymentIds(payments, (payment) => payment.payment_type === 'debt' && payment.debt_id === debt.id);
       return {
         ...debt,
         openingBalance,
@@ -18,6 +23,8 @@ function liabilityRows(debts, payments, type) {
         balanceLeft,
         target,
         targetRemaining,
+        activePaymentIds: paymentIds,
+        canUndoPayment: paymentIds.length > 0,
       };
     });
 }
@@ -45,7 +52,16 @@ export function buildPaymentsPageModel(bundle = {}) {
     const paid = itemPaymentTotal(item.id, payments);
     const planned = Math.max(0, Number(item.planned_amount || 0));
     const remaining = Math.max(0, round2(planned - paid));
-    return { ...item, planned, paid, remaining, status: paymentStatus(planned, paid) };
+    const paymentIds = activePaymentIds(payments, (payment) => payment.payment_type === 'expense' && payment.month_item_id === item.id);
+    return {
+      ...item,
+      planned,
+      paid,
+      remaining,
+      status: paymentStatus(planned, paid),
+      activePaymentIds: paymentIds,
+      canUndoPayment: paymentIds.length > 0,
+    };
   });
 
   return {
