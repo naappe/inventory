@@ -58,8 +58,9 @@ export function openSheet({ title, subtitle = '', body = '', submitLabel = 'Save
     try {
       const values = Object.fromEntries(new FormData(form).entries());
       const result = await onSubmit(values, form);
-      if (result !== false) closeSheet();
-      else if (document.body.contains(submit)) {
+      const sameSheetStillOpen = node.querySelector('form') === form;
+      if (result !== false && sameSheetStillOpen) closeSheet();
+      else if (sameSheetStillOpen) {
         submit.disabled = false;
         submit.textContent = submitLabel;
       }
