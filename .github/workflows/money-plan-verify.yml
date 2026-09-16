@@ -1,4 +1,4 @@
-# Re-run this workflow after the final Money Plan branch changes.
+# Money Plan verification
 name: Money Plan verify
 
 on:
@@ -6,6 +6,7 @@ on:
     branches:
       - main
       - feature/money-plan-supabase-v1
+      - feature/category-driven-money-logic
   pull_request:
     branches:
       - main
@@ -23,7 +24,7 @@ jobs:
           node-version: '22'
 
       - name: Run Money Plan unit tests
-        run: node --test tests/money-calculations.test.mjs tests/money-ui-models.test.mjs
+        run: node --test tests/*.test.mjs
 
       - name: Check JavaScript syntax
         run: |
@@ -32,7 +33,7 @@ jobs:
             node --check "$file"
           done
 
-      - name: Verify cloud-only finance frontend
+      - name: Verify category-driven cloud finance frontend
         run: |
           set -e
           ! grep -R -E 'localStorage\.(getItem|setItem|removeItem|clear)' js index.html
@@ -42,5 +43,8 @@ jobs:
           test ! -e professional-v3.css
           test -e ot.html
           grep -q 'js/money-app.js' index.html
-          grep -q 'money-plan.css' index.html
+          grep -q 'money-plan-v2.css' index.html
+          grep -q 'receivables' js/money-app.js
+          grep -q 'behavior_type' supabase/migrations/20260916_category_behavior.sql
+          grep -q 'bank_balance' supabase/migrations/20260916_money_plan_bank_balance.sql
           grep -q 'supabase-js@2' js/supabase-client.js
