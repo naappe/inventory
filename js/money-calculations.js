@@ -11,6 +11,10 @@ export function calculateDebtPreview(currentBalance, enteredAmount) {
   };
 }
 
+export function calculateCorrectedDebtBalance(openingBalance, paidAmount) {
+  return round2(Math.max(0, positive(openingBalance) - positive(paidAmount)));
+}
+
 export function monthsRemaining(balance, monthlyPlan) {
   const left = positive(balance);
   const plan = positive(monthlyPlan);
