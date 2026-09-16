@@ -1,4 +1,4 @@
-const CACHE_NAME = 'money-plan-cloud-shell-v1';
+const CACHE_NAME = 'money-plan-cloud-shell-v2';
 const SHELL = [
   './',
   './index.html',
@@ -15,6 +15,7 @@ const SHELL = [
   './js/money-charts.js',
   './js/money-sheets.js',
   './js/money-app.js',
+  './js/undo-payment-actions.js',
   './js/screens/setup.js',
   './js/screens/overview.js',
   './js/screens/payments.js',
@@ -36,7 +37,7 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
-  if (url.origin !== self.location.origin) return; // Never cache Supabase/API responses.
+  if (url.origin !== self.location.origin) return;
   event.respondWith(
     fetch(event.request).then((response) => {
       if (response.ok) caches.open(CACHE_NAME).then((cache) => cache.put(event.request, response.clone()));
