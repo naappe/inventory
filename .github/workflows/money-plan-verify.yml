@@ -1,3 +1,4 @@
+# Re-run this workflow after the final Money Plan branch changes.
 name: Money Plan verify
 
 on:
