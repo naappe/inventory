@@ -106,13 +106,18 @@ function expensePanel(rows) {
 function liabilityCards(title, rows, type) {
   const label = type === 'loan' ? 'loan' : 'credit';
   return `<article class="panel monthly-control-section liability-payment-section">
-    <div class="panel-head"><div><h2>${title}</h2><p>Opening balance − paid this month = balance left.</p></div><button class="button secondary compact" data-action="add-debt">+ Add ${label}</button></div>
-    <div class="liability-card-grid">${rows.length ? rows.map((row) => `<div class="liability-card">
+    <div class="panel-head"><div><h2>${title}</h2><p>Opening balance − actual payments this month = balance left.</p></div><button class="button secondary compact" data-action="add-debt">+ Add ${label}</button></div>
+    <div class="liability-card-grid">${rows.length ? rows.map((row) => {
+      const paid = Number(row.paidThisMonth || 0);
+      const statusLabel = paid > 0 ? `Paid this month` : 'Not paid yet';
+      const statusValue = paid > 0 ? money(paid) : 'MVR 0.00';
+      return `<div class="liability-card">
       <div class="liability-card-head"><div><b>${row.name}</b><span>${type === 'loan' ? 'Loan' : 'Credit'}${row.apr ? ` · ${Number(row.apr).toFixed(2)}% APR` : ''}</span></div><button class="text-button" data-action="edit-debt" data-id="${row.id}">Edit</button></div>
-      <div class="liability-math"><div><small>Opening</small><strong>${money(row.openingBalance)}</strong></div><i>−</i><div><small>Paid this month</small><strong>${money(row.paidThisMonth)}</strong></div><i>=</i><div class="liability-left"><small>Balance left</small><strong>${money(row.balanceLeft)}</strong></div></div>
-      ${row.target > 0 ? `<div class="target-note">Monthly target ${money(row.target)} · ${money(row.targetRemaining)} still targeted</div>` : ''}
+      <div class="liability-math"><div><small>Opening</small><strong>${money(row.openingBalance)}</strong></div><i>−</i><div class="${paid > 0 ? '' : 'is-unpaid'}"><small>${statusLabel}</small><strong>${statusValue}</strong></div><i>=</i><div class="liability-left"><small>Balance left</small><strong>${money(row.balanceLeft)}</strong></div></div>
+      ${row.target > 0 ? `<div class="target-note">Planned this month ${money(row.target)} · ${money(row.targetRemaining)} still unpaid</div>` : '<div class="target-note">No payment planned for this month</div>'}
       <div class="liability-actions">${undoButton(row, row.name)}${row.balanceLeft > 0 ? `<button class="button compact" data-action="pay-debt" data-id="${row.id}">${row.paidThisMonth > 0 ? `Pay ${label} again` : `Pay ${label}`}</button>` : '<span class="paid-check">✓ Paid off</span>'}</div>
-    </div>`).join('') : `<div class="empty-state roomy">No ${title.toLowerCase()} entered yet.</div>`}</div>
+    </div>`;
+    }).join('') : `<div class="empty-state roomy">No ${title.toLowerCase()} entered yet.</div>`}</div>
   </article>`;
 }
 
