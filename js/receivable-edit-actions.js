@@ -26,26 +26,64 @@ async function saveReceivable(id, values) {
   if (error) throw error;
 }
 
+async function deleteReceivable(id) {
+  const { error: txError } = await supabase
+    .from('money_receivable_transactions')
+    .delete()
+    .eq('receivable_id', id);
+  if (txError) throw txError;
+
+  const { error: rowError } = await supabase
+    .from('money_receivables')
+    .delete()
+    .eq('id', id);
+  if (rowError) throw rowError;
+}
+
 document.addEventListener('click', async (event) => {
-  const trigger = event.target.closest('[data-action="edit-receivable"]');
-  if (!trigger) return;
+  const editTrigger = event.target.closest('[data-action="edit-receivable"]');
+  if (editTrigger) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    try {
+      const row = await loadReceivable(editTrigger.dataset.id);
+      openSheet({
+        title: 'Edit money lent',
+        subtitle: `Original amount MVR ${Number(row.opening_balance || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+        body: `${field.text('name','Person / borrower',row.name || '','required')}${field.date('expectedRepaymentDate','Expected repayment date',row.expected_repayment_date || '')}${field.text('remarks','Remarks',row.remarks || '')}<p class="helper">The original amount and transaction history are kept unchanged so your audit trail stays accurate.</p>`,
+        submitLabel: 'Save changes',
+        onSubmit: async (values) => {
+          await saveReceivable(row.id, values);
+          window.location.reload();
+        },
+      });
+    } catch (error) {
+      console.error(error);
+      alert(error?.message || 'Could not open this record for editing.');
+    }
+    return;
+  }
+
+  const deleteTrigger = event.target.closest('[data-action="delete-receivable"]');
+  if (!deleteTrigger) return;
   event.preventDefault();
   event.stopPropagation();
 
   try {
-    const row = await loadReceivable(trigger.dataset.id);
+    const row = await loadReceivable(deleteTrigger.dataset.id);
     openSheet({
-      title: 'Edit money lent',
-      subtitle: `Original amount MVR ${Number(row.opening_balance || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-      body: `${field.text('name','Person / borrower',row.name || '','required')}${field.date('expectedRepaymentDate','Expected repayment date',row.expected_repayment_date || '')}${field.text('remarks','Remarks',row.remarks || '')}<p class="helper">The original amount and transaction history are kept unchanged so your audit trail stays accurate.</p>`,
-      submitLabel: 'Save changes',
-      onSubmit: async (values) => {
-        await saveReceivable(row.id, values);
+      title: 'Delete money lent record?',
+      subtitle: row.name,
+      body: `<div class="confirm-copy">This permanently removes this Money Lent record and its transaction history from the app. Use this only for a wrong or unwanted record.</div><p class="helper">Original amount: MVR ${Number(row.opening_balance || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>`,
+      submitLabel: 'Delete permanently',
+      onSubmit: async () => {
+        await deleteReceivable(row.id);
         window.location.reload();
       },
     });
   } catch (error) {
     console.error(error);
-    alert(error?.message || 'Could not open this record for editing.');
+    alert(error?.message || 'Could not delete this record.');
   }
 }, true);
