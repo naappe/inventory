@@ -1,10 +1,15 @@
 const money = (n) => `MVR ${Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const behaviorLabel = (b) => ({ liability: 'Loan / Credit', expense: 'Expense', receivable: 'Money Lent' }[b] || 'Expense');
 
-export function renderSettings({ user, categories = [], items = [] }) {
+export function renderSettings({ user, categories = [], items = [], preferences = {} }) {
   return `
-    <section class="page-head"><div><p class="eyebrow">PREFERENCES</p><h1>Settings</h1><p>Categories now control the accounting logic.</p></div></section>
+    <section class="page-head"><div><p class="eyebrow">PREFERENCES</p><h1>Settings</h1><p>Categories and safety reserves control how your monthly plan is calculated.</p></div></section>
     <section class="settings-grid">
+      <article class="panel">
+        <div class="panel-head"><div><h2>Emergency reserve</h2><p>Keep this amount untouched before the app suggests extra debt payments or savings.</p></div><button class="button secondary compact" data-action="set-emergency-reserve">Edit</button></div>
+        <div class="balance-card"><span>Reserve target</span><strong>${money(preferences.emergency_reserve_target || 0)}</strong></div>
+      </article>
+
       <article class="panel">
         <div class="panel-head"><div><h2>Categories</h2><p>The behavior decides whether an entry is a liability, expense, or receivable.</p></div><button class="button secondary compact" data-action="add-category">+ Add</button></div>
         <div class="simple-list">${categories.map((c) => `<div class="simple-row"><div><b>${c.name}</b><span>${behaviorLabel(c.behavior_type)}</span></div><span class="status no-plan">${c.behavior_type}</span></div>`).join('')}</div>
