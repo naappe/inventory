@@ -1,8 +1,11 @@
 import { supabase } from './supabase-client.js';
-import { getMonthBundle } from './money-api.js';
+import { getMonthBundle, markMonthDirty } from './money-api.js';
 import { renderPayments } from './screens/payments.js';
 import { openSheet, field } from './money-sheets.js';
 import { applyLocalPaymentReversal } from './instant-payment-reversal.js';
+
+const currentMonthId = () => document.getElementById('app')?.dataset.monthId || null;
+async function dirtyCurrentMonth(){const id=currentMonthId();if(id)await markMonthDirty(id);}
 
 function selectedMonthKey() {
   const title = document.getElementById('month-title')?.textContent?.trim();
@@ -29,10 +32,8 @@ function paintPayments(bundle) {
 document.addEventListener('click', (event) => {
   const button = event.target.closest('[data-action="undo-row-payments"]');
   if (!button) return;
-
   event.preventDefault();
   event.stopImmediatePropagation();
-
   const ids = String(button.dataset.paymentIds || '').split(',').map((id) => id.trim()).filter(Boolean);
   if (!ids.length) return;
   const name = button.dataset.name || 'this item';
@@ -42,18 +43,16 @@ document.addEventListener('click', (event) => {
   openSheet({
     title: 'Undo payment?',
     subtitle: `${name} · restore this month’s recorded payment`,
-    body: `${field.text('reason', 'Reason', 'Adjust monthly payment', 'required')}
-      <div class="warning-box">The payment stays in History as reversed. Loan or credit balances are restored automatically. After undo, choose Pay again and enter the amount you actually want to pay this month.</div>`,
+    body: `${field.text('reason', 'Reason', 'Adjust monthly payment', 'required')}<div class="warning-box">The payment stays in History as reversed. Loan or credit balances are restored automatically. After undo, choose Pay again and enter the amount you actually want to pay this month.</div>`,
     submitLabel: 'Undo payment',
     onSubmit: async (values) => {
       let bundle = await bundlePromise;
       const reversedAt = new Date().toISOString();
-
       for (const id of ids) {
         const debtBalance = await reversePayment(id, values.reason);
         if (bundle) bundle = applyLocalPaymentReversal(bundle, id, { reversedAt, debtBalance });
       }
-
+      await dirtyCurrentMonth();
       if (bundle) {
         paintPayments(bundle);
         document.getElementById('toast')?.classList.remove('show');
