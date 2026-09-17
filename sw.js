@@ -1,4 +1,4 @@
-const CACHE_NAME = 'money-plan-dashboard-v3';
+const CACHE_NAME = 'money-plan-receivable-edit-v1';
 const SHELL = [
   './',
   './index.html',
@@ -18,10 +18,12 @@ const SHELL = [
   './js/money-app.js',
   './js/bank-opening-ui.js',
   './js/undo-payment-actions.js',
+  './js/receivable-edit-actions.js',
   './js/screens/setup.js',
   './js/screens/overview.js',
   './js/screens/payments.js',
   './js/screens/debts.js',
+  './js/screens/receivables.js',
   './js/screens/history.js',
   './js/screens/settings.js',
   './ot.html'
