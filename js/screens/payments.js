@@ -13,6 +13,53 @@ function kpiCard({ tone, label, value, hint, detail, action = '' }) {
   </details>`;
 }
 
+function groupedSpendingRows(bundle, expectedTotal) {
+  const payments = (bundle.payments || []).filter((p) => !p.reversed_at);
+  const items = new Map((bundle.monthItems || []).map((x) => [x.id, x]));
+  const debts = new Map((bundle.debts || []).map((x) => [x.id, x]));
+  const receivables = new Map((bundle.receivables || []).map((x) => [x.id, x]));
+  const groups = new Map();
+
+  const add = (group, label, amount, date = '') => {
+    const value = Number(amount || 0);
+    if (value <= 0) return;
+    if (!groups.has(group)) groups.set(group, []);
+    groups.get(group).push({ label, amount: value, date });
+  };
+
+  payments.forEach((p) => {
+    if (p.payment_type === 'expense') {
+      const item = items.get(p.month_item_id);
+      add('Expenses', item?.name_snapshot || 'Expense', p.amount, p.payment_date);
+    } else if (p.payment_type === 'debt') {
+      const debt = debts.get(p.debt_id);
+      const group = debt?.debt_type === 'credit' ? 'Credit payments' : 'Loan payments';
+      add(group, debt?.name || (group === 'Credit payments' ? 'Credit payment' : 'Loan payment'), p.amount, p.payment_date);
+    }
+  });
+
+  (bundle.receivableTransactions || [])
+    .filter((t) => t.transaction_type === 'lend' && !t.reversed_at)
+    .forEach((t) => add('Money lent', receivables.get(t.receivable_id)?.name || 'Money lent', t.amount, t.transaction_date));
+
+  const detailedTotal = [...groups.values()].flat().reduce((sum, row) => sum + row.amount, 0);
+  const residual = Math.max(0, Number(expectedTotal || 0) - detailedTotal);
+  if (residual > 0.005) add('Other', 'Other recorded money out', residual);
+
+  if (!groups.size) return '<p>No spending has been recorded yet.</p>';
+
+  return [...groups.entries()].map(([group, rows]) => {
+    const total = rows.reduce((sum, row) => sum + row.amount, 0);
+    return `<div class="spending-detail-group"><div class="detail-row spending-group-head"><span>${group}</span><strong>${money(total)}</strong></div>${rows.map((row) => `<div class="detail-row spending-line"><span>${row.label}${row.date ? `<small>${dateLabel(row.date)}</small>` : ''}</span><strong>− ${money(row.amount)}</strong></div>`).join('')}</div>`;
+  }).join('') + `<div class="detail-equation spending-total"><span>Total spent this month</span><strong>− ${money(expectedTotal)}</strong></div>`;
+}
+
+function paymentName(bundle, payment) {
+  if (payment.payment_type === 'expense') return (bundle.monthItems || []).find((x) => x.id === payment.month_item_id)?.name_snapshot || 'Expense payment';
+  if (payment.payment_type === 'debt') return (bundle.debts || []).find((x) => x.id === payment.debt_id)?.name || 'Loan / Credit payment';
+  return 'Payment';
+}
+
 function expenseRow(row) {
   return `<div class="expense-line ${row.remaining <= 0 ? 'is-paid' : 'is-unpaid'}">
     <div class="expense-main"><b>${row.name_snapshot}</b><span>${row.due_date ? `Due ${dateLabel(row.due_date)}` : 'No due date'}</span></div>
@@ -78,6 +125,7 @@ function tipsPanel(model) {
 
 export function renderPayments(bundle) {
   const model = buildPaymentsPageModel(bundle);
+  const spendingDetails = groupedSpendingRows(bundle, model.spentThisMonth);
 
   return `
     <section class="page-head"><div><p class="eyebrow">MONTHLY MONEY CONTROL</p><h1>Payments</h1><p>Your salary is counted as money entering the bank. Recorded payments reduce the bank automatically.</p></div><button class="button primary" data-action="add-by-category">+ Add</button></section>
@@ -89,7 +137,7 @@ export function renderPayments(bundle) {
 
     <section class="payment-summary-grid dashboard-click-grid">
       ${kpiCard({ tone: 'tone-income', label: 'Salary Received', value: money(model.salaryGot), hint: 'Added to your bank this month', detail: `<div class="detail-equation"><span>Salary deposited</span><strong>+ ${money(model.salaryGot)}</strong></div>`, action: '<button class="text-button kpi-action" data-action="set-income">Edit salary</button>' })}
-      ${kpiCard({ tone: 'tone-paid', label: 'Spent This Month', value: money(model.spentThisMonth), hint: 'Actual recorded money out', detail: `<div class="detail-equation"><span>Expenses + loan/credit payments + money lent</span><strong>− ${money(model.spentThisMonth)}</strong></div>` })}
+      ${kpiCard({ tone: 'tone-paid', label: 'Spent This Month', value: money(model.spentThisMonth), hint: 'Click to see exactly where your money went', detail: spendingDetails })}
       ${kpiCard({ tone: 'tone-pending', label: 'Still To Pay', value: money(model.stillToPay), hint: 'Planned payments not completed yet', detail: `<div class="detail-equation"><span>Reserve this amount for upcoming plans</span><strong>${money(model.stillToPay)}</strong></div>` })}
       ${kpiCard({ tone: 'tone-saving', label: 'Expected Month-End', value: money(model.expectedMonthEnd), hint: 'Bank after everything still planned', detail: `<div class="detail-equation"><span>${money(model.bankBalance)} bank − ${money(model.stillToPay)} still due</span><strong>${money(model.expectedMonthEnd)}</strong></div>` })}
       ${kpiCard({ tone: 'tone-debt', label: 'Loans Remaining', value: money(model.loansLeft), hint: `${model.loans.length} loan account${model.loans.length === 1 ? '' : 's'}`, detail: model.loans.length ? model.loans.map((loan) => `<div class="detail-row"><span>${loan.name}</span><strong>${money(loan.balanceLeft)}</strong></div>`).join('') : '<p>No loans.</p>' })}
@@ -103,6 +151,6 @@ export function renderPayments(bundle) {
 
     <article class="panel recent-panel monthly-control-section">
       <div class="panel-head"><div><h2>Recent Payments</h2><p>Your latest recorded money-out activity.</p></div></div>
-      <div class="simple-list">${model.recentPayments.length ? model.recentPayments.map((p) => `<div class="simple-row"><div><b>${p.payment_type === 'debt' ? 'Loan / Credit payment' : 'Expense payment'}</b><span>${dateLabel(p.payment_date)}</span></div><div class="row-end"><strong>${money(p.amount)}</strong><button class="text-button danger-text" data-action="reverse-payment" data-id="${p.id}">Reverse</button></div></div>`).join('') : '<div class="empty-state">No payments recorded yet.</div>'}</div>
+      <div class="simple-list">${model.recentPayments.length ? model.recentPayments.map((p) => `<div class="simple-row"><div><b>${paymentName(bundle, p)}</b><span>${p.payment_type === 'debt' ? 'Loan / Credit · ' : ''}${dateLabel(p.payment_date)}</span></div><div class="row-end"><strong>${money(p.amount)}</strong><button class="text-button danger-text" data-action="reverse-payment" data-id="${p.id}">Reverse</button></div></div>`).join('') : '<div class="empty-state">No payments recorded yet.</div>'}</div>
     </article>`;
 }
