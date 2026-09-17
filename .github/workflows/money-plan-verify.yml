@@ -52,3 +52,7 @@ jobs:
           grep -q 'saved_snapshot' supabase/migrations/20260917_month_save_debt_guidance.sql
           grep -q 'money_save_month' supabase/migrations/20260917_month_save_debt_guidance.sql
           grep -q 'emergency_reserve_target' supabase/migrations/20260917_month_save_debt_guidance.sql
+          grep -q 'month-save-model.js' sw.js
+          grep -q 'debt-guidance-model.js' sw.js
+          grep -q 'save-month' js/screens/overview.js
+          grep -q 'Emergency reserve' js/screens/settings.js
