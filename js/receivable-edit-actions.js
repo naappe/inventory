@@ -1,42 +1,31 @@
 import { supabase } from './supabase-client.js';
+import { markMonthDirty } from './money-api.js';
 import { openSheet, field } from './money-sheets.js';
+
+const currentMonthId = () => document.getElementById('app')?.dataset.monthId || null;
+async function dirtyCurrentMonth(){const id=currentMonthId();if(id)await markMonthDirty(id);}
 
 function cleanText(value) {
   return String(value ?? '').trim();
 }
 
 async function loadReceivable(id) {
-  const { data, error } = await supabase
-    .from('money_receivables')
-    .select('id,name,opening_balance,current_balance,expected_repayment_date,remarks,is_active')
-    .eq('id', id)
-    .single();
+  const { data, error } = await supabase.from('money_receivables').select('id,name,opening_balance,current_balance,expected_repayment_date,remarks,is_active').eq('id', id).single();
   if (error) throw error;
   return data;
 }
 
 async function saveReceivable(id, values) {
-  const payload = {
-    name: cleanText(values.name),
-    expected_repayment_date: values.expectedRepaymentDate || null,
-    remarks: cleanText(values.remarks) || null,
-  };
+  const payload = { name: cleanText(values.name), expected_repayment_date: values.expectedRepaymentDate || null, remarks: cleanText(values.remarks) || null };
   if (!payload.name) throw new Error('Name is required.');
   const { error } = await supabase.from('money_receivables').update(payload).eq('id', id);
   if (error) throw error;
 }
 
 async function deleteReceivable(id) {
-  const { error: txError } = await supabase
-    .from('money_receivable_transactions')
-    .delete()
-    .eq('receivable_id', id);
+  const { error: txError } = await supabase.from('money_receivable_transactions').delete().eq('receivable_id', id);
   if (txError) throw txError;
-
-  const { error: rowError } = await supabase
-    .from('money_receivables')
-    .delete()
-    .eq('id', id);
+  const { error: rowError } = await supabase.from('money_receivables').delete().eq('id', id);
   if (rowError) throw rowError;
 }
 
@@ -45,7 +34,6 @@ document.addEventListener('click', async (event) => {
   if (editTrigger) {
     event.preventDefault();
     event.stopPropagation();
-
     try {
       const row = await loadReceivable(editTrigger.dataset.id);
       openSheet({
@@ -53,15 +41,9 @@ document.addEventListener('click', async (event) => {
         subtitle: `Original amount MVR ${Number(row.opening_balance || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
         body: `${field.text('name','Person / borrower',row.name || '','required')}${field.date('expectedRepaymentDate','Expected repayment date',row.expected_repayment_date || '')}${field.text('remarks','Remarks',row.remarks || '')}<p class="helper">The original amount and transaction history are kept unchanged so your audit trail stays accurate.</p>`,
         submitLabel: 'Save changes',
-        onSubmit: async (values) => {
-          await saveReceivable(row.id, values);
-          window.location.reload();
-        },
+        onSubmit: async (values) => { await saveReceivable(row.id, values); await dirtyCurrentMonth(); window.location.reload(); },
       });
-    } catch (error) {
-      console.error(error);
-      alert(error?.message || 'Could not open this record for editing.');
-    }
+    } catch (error) { console.error(error); alert(error?.message || 'Could not open this record for editing.'); }
     return;
   }
 
@@ -69,7 +51,6 @@ document.addEventListener('click', async (event) => {
   if (!deleteTrigger) return;
   event.preventDefault();
   event.stopPropagation();
-
   try {
     const row = await loadReceivable(deleteTrigger.dataset.id);
     openSheet({
@@ -77,13 +58,7 @@ document.addEventListener('click', async (event) => {
       subtitle: row.name,
       body: `<div class="confirm-copy">This permanently removes this Money Lent record and its transaction history from the app. Use this only for a wrong or unwanted record.</div><p class="helper">Original amount: MVR ${Number(row.opening_balance || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>`,
       submitLabel: 'Delete permanently',
-      onSubmit: async () => {
-        await deleteReceivable(row.id);
-        window.location.reload();
-      },
+      onSubmit: async () => { await deleteReceivable(row.id); await dirtyCurrentMonth(); window.location.reload(); },
     });
-  } catch (error) {
-    console.error(error);
-    alert(error?.message || 'Could not delete this record.');
-  }
+  } catch (error) { console.error(error); alert(error?.message || 'Could not delete this record.'); }
 }, true);
