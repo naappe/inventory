@@ -1,4 +1,4 @@
-const CACHE_NAME = 'money-plan-receivable-delete-v1';
+const CACHE_NAME = 'money-plan-spending-details-v1';
 const SHELL = [
   './',
   './index.html',
