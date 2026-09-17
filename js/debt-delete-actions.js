@@ -46,23 +46,33 @@ document.addEventListener('click', async (event) => {
       .single();
     if (debtError) throw debtError;
 
-    const { count, error: countError } = await supabase
+    const { data: payments, error: paymentsError } = await supabase
       .from('money_payments')
-      .select('id', { count: 'exact', head: true })
-      .eq('debt_id', debtId)
-      .is('reversed_at', null);
-    if (countError) throw countError;
+      .select('id,amount,reversed_at')
+      .eq('debt_id', debtId);
+    if (paymentsError) throw paymentsError;
 
-    if (Number(count || 0) > 0) {
-      alert(`${debt.name} has recorded payments. Reverse those payments first if you really want to delete this ${debt.debt_type}. This protects your payment history.`);
-      return;
-    }
+    const allPayments = payments || [];
+    const activePayments = allPayments.filter((p) => !p.reversed_at);
+    const activeTotal = activePayments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
 
-    const ok = confirm(`Delete ${debt.name}?\n\nThis will permanently remove this ${debt.debt_type} account. Use this only for a wrong or unwanted entry.`);
+    const warning = allPayments.length
+      ? `\n\nThis account has ${allPayments.length} payment record${allPayments.length === 1 ? '' : 's'}${activePayments.length ? `, including ${activePayments.length} active payment${activePayments.length === 1 ? '' : 's'} totaling MVR ${activeTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : ' (all reversed)'}.\n\nDeleting will permanently remove the account AND those payment records. This will also remove them from spending/history calculations.`
+      : '';
+
+    const ok = confirm(`Delete ${debt.name}?${warning}\n\nUse Delete only when this ${debt.debt_type} entry is wrong or no longer wanted.`);
     if (!ok) return;
 
-    const { error } = await supabase.from('money_debts').delete().eq('id', debtId);
-    if (error) throw error;
+    if (allPayments.length) {
+      const { error: deletePaymentsError } = await supabase
+        .from('money_payments')
+        .delete()
+        .eq('debt_id', debtId);
+      if (deletePaymentsError) throw deletePaymentsError;
+    }
+
+    const { error: deleteDebtError } = await supabase.from('money_debts').delete().eq('id', debtId);
+    if (deleteDebtError) throw deleteDebtError;
     window.location.reload();
   } catch (error) {
     console.error(error);
