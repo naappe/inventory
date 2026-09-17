@@ -1,4 +1,4 @@
-const CACHE_NAME = 'money-plan-spending-details-v1';
+const CACHE_NAME = 'money-plan-debt-delete-v1';
 const SHELL = [
   './',
   './index.html',
@@ -19,6 +19,7 @@ const SHELL = [
   './js/bank-opening-ui.js',
   './js/undo-payment-actions.js',
   './js/receivable-edit-actions.js',
+  './js/debt-delete-actions.js',
   './js/screens/setup.js',
   './js/screens/overview.js',
   './js/screens/payments.js',
