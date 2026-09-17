@@ -7,6 +7,7 @@ on:
       - main
       - feature/money-plan-supabase-v1
       - feature/category-driven-money-logic
+      - feature/month-save-debt-savings
   pull_request:
     branches:
       - main
@@ -48,3 +49,6 @@ jobs:
           grep -q 'behavior_type' supabase/migrations/20260916_category_behavior.sql
           grep -q 'bank_balance' supabase/migrations/20260916_money_plan_bank_balance.sql
           grep -q 'supabase-js@2' js/supabase-client.js
+          grep -q 'saved_snapshot' supabase/migrations/20260917_month_save_debt_guidance.sql
+          grep -q 'money_save_month' supabase/migrations/20260917_month_save_debt_guidance.sql
+          grep -q 'emergency_reserve_target' supabase/migrations/20260917_month_save_debt_guidance.sql
