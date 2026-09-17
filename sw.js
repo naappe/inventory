@@ -1,4 +1,4 @@
-const CACHE_NAME = 'money-plan-debt-delete-v1';
+const CACHE_NAME = 'money-plan-20260917-month-save-v1';
 const SHELL = [
   './',
   './index.html',
@@ -13,6 +13,9 @@ const SHELL = [
   './js/auth.js',
   './js/money-api.js',
   './js/money-calculations.js',
+  './js/money-dashboard-model.js',
+  './js/month-save-model.js',
+  './js/debt-guidance-model.js',
   './js/money-charts.js',
   './js/money-sheets.js',
   './js/money-app.js',
@@ -20,6 +23,8 @@ const SHELL = [
   './js/undo-payment-actions.js',
   './js/receivable-edit-actions.js',
   './js/debt-delete-actions.js',
+  './js/debt-total-editor.js',
+  './js/debt-month-edit.js',
   './js/screens/setup.js',
   './js/screens/overview.js',
   './js/screens/payments.js',
