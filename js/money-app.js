@@ -3,7 +3,7 @@ import { getAllowedSession, signIn, signOut } from './auth.js';
 import * as api from './money-api.js';
 import { calculateDebtPreview, calculateMonthSummary, itemPaymentTotal } from './money-calculations.js';
 import { buildDashboardModel } from './money-dashboard-model.js';
-import { buildMonthSnapshot } from './month-save-model.js';
+import { buildMonthSnapshot, buildMonthSaveState, historyValuesForMonth } from './month-save-model.js';
 import { buildDebtGuidance } from './debt-guidance-model.js';
 import { behaviorForCategory } from './category-behavior.js';
 import { openSheet, field, setSheetPreview } from './money-sheets.js';
@@ -52,7 +52,7 @@ function render(){
   if(state.view==='payments')app.innerHTML=renderPayments(state.bundle);
   if(state.view==='debts')app.innerHTML=renderDebts(state.bundle);
   if(state.view==='receivables')app.innerHTML=renderReceivables(state.bundle);
-  if(state.view==='settings')app.innerHTML=renderSettings({user:state.user,categories:state.bundle.categories,items:state.items});
+  if(state.view==='settings')app.innerHTML=renderSettings({user:state.user,categories:state.bundle.categories,items:state.items,preferences:state.bundle.preferences});
   if(state.view==='history')app.innerHTML=state.historyModel?renderHistory(state.historyModel):`<div class="loading-state"><div class="spinner"></div><p>Building history…</p></div>`;
 }
 
@@ -81,6 +81,7 @@ async function saveCurrentMonth(){
 
 function openIncomeSheet(){openSheet({title:'Salary received',subtitle:monthLabel(state.monthKey),body:`${field.money('income','Salary / income received',state.bundle.month.income,'required')}<p class="helper">This is your income for the selected month.</p>`,submitLabel:'Save salary',onSubmit:async(v)=>{await api.setIncome(state.bundle.month.id,v.income);await markCurrentMonthDirty();await reload('Salary updated');}});}
 function openBankBalanceSheet(){openSheet({title:'Current bank balance',subtitle:`Manual balance · ${monthLabel(state.monthKey)}`,body:`${field.money('bankBalance','Actual bank balance',state.bundle.month.bank_balance??'','min="0"')}<p class="helper">Enter the balance you actually see in your bank. This value is kept separate from calculated spending.</p>`,submitLabel:'Save bank balance',onSubmit:async(v)=>{await api.setBankBalance(state.bundle.month.id,v.bankBalance);await markCurrentMonthDirty();await reload('Bank balance updated');}});}
+function openEmergencyReserveSheet(){openSheet({title:'Emergency reserve',subtitle:'Money to keep untouched before extra debt payments or savings.',body:field.money('amount','Reserve target',state.bundle.preferences?.emergency_reserve_target||0,'required min="0"'),submitLabel:'Save reserve',onSubmit:async(v)=>{await api.setEmergencyReserveTarget(v.amount);await reload('Emergency reserve updated');}});}
 
 function expenseCategories(){return state.bundle.categories.filter((c)=>behaviorForCategory(c)==='expense');}
 function openAddItemSheet(item=null,preselectedCategoryId=null){
@@ -120,8 +121,13 @@ async function buildHistoryModel(){
     const monthDebts=raw.debts.filter((d)=>String(d.start_month_key||FIRST_MONTH)<=bundle.month.month_key).map((d)=>{const h=d.monthly_plan_history&&typeof d.monthly_plan_history==='object'?d.monthly_plan_history:{};return{...d,current_balance:Math.max(0,Number(d.opening_balance||0)-(cumulativeDebt.get(d.id)||0)),monthly_plan:Number(h[bundle.month.month_key]??d.monthly_plan??0)};});
     const monthReceivables=raw.receivables.filter((r)=>String(r.start_month_key||FIRST_MONTH)<=bundle.month.month_key).map((r)=>({...r,current_balance:Math.max(0,Number(r.opening_balance||0)-(cumulativeRepay.get(r.id)||0))}));
     const summary=calculateMonthSummary({income:bundle.month.income,monthItems:bundle.monthItems,payments:bundle.payments,debts:monthDebts,receivables:monthReceivables,receivableTransactions:bundle.receivableTransactions});
+    const dashboard=buildDashboardModel({month:bundle.month,summary});
+    const debtReduced=bundle.payments.filter((p)=>!p.reversed_at&&p.payment_type==='debt').reduce((s,p)=>s+Number(p.amount||0),0);
+    const liveValues={income:summary.income,paid:summary.paid,stillToPay:summary.stillToPay,safeToSave:summary.safeToSave,availableNow:dashboard.availableNow,debtReduced,loansRemaining:summary.loansLeft,creditsRemaining:summary.creditLeft};
+    const confirmed=historyValuesForMonth({month:bundle.month,live:liveValues});
     const label=monthLabel(bundle.month.month_key).replace(' 20',' ’');
-    rows.push({label:monthLabel(bundle.month.month_key),income:summary.income,paid:summary.paid,stillToPay:summary.stillToPay,safeToSave:summary.safeToSave,bankBalance:bundle.month.bank_balance,paymentCount:bundle.payments.filter((p)=>!p.reversed_at).length});
+    const saveState=buildMonthSaveState(bundle.month);
+    rows.push({label:monthLabel(bundle.month.month_key),...confirmed,bankBalance:bundle.month.bank_balance,paymentCount:bundle.payments.filter((p)=>!p.reversed_at).length,saveStatus:saveState.label,savedAt:bundle.month.saved_at,isDirty:Boolean(bundle.month.dirty_since_save),snapshot:bundle.month.saved_snapshot});
     debtTrend.push({label,value:monthDebts.reduce((s,d)=>s+Number(d.current_balance||0),0)});savingsTrend.push({label,value:summary.safeToSave});
   }
   return{rows,debtTrend,savingsTrend};
@@ -134,6 +140,7 @@ async function handleAction(action,source){
   if(action==='save-month')return saveCurrentMonth();
   if(action==='set-income')return openIncomeSheet();
   if(action==='set-bank-balance')return openBankBalanceSheet();
+  if(action==='set-emergency-reserve')return openEmergencyReserveSheet();
   if(action==='add-item'||action==='add-by-category'||action==='quick-add')return openCategoryDrivenAdd();
   if(action==='add-debt')return openAddDebtSheet();
   if(action==='add-receivable')return openAddReceivableSheet();
