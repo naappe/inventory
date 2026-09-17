@@ -10,7 +10,7 @@
   <link rel="apple-touch-icon" href="./icons/icon-192.png">
   <link rel="preconnect" href="https://cdn.jsdelivr.net">
   <link rel="stylesheet" href="./money-plan.css?v=20260916-cloud-v2">
-  <link rel="stylesheet" href="./money-plan-v2.css?v=20260917-spending-details-v1">
+  <link rel="stylesheet" href="./money-plan-v2.css?v=20260917-debt-delete-v1">
   <title>My Money Plan</title>
 </head>
 <body>
@@ -37,13 +37,14 @@
   </div>
   <div id="sheet-root"></div>
   <div id="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="./js/money-app.js?v=20260917-spending-details-v1"></script>
+  <script type="module" src="./js/money-app.js?v=20260917-debt-delete-v1"></script>
   <script type="module" src="./js/debt-total-editor.js?v=20260916-loan-total-v1"></script>
   <script type="module" src="./js/undo-payment-actions.js?v=20260916-undo-v1"></script>
   <script type="module" src="./js/bank-opening-ui.js?v=20260916-dashboard-v4"></script>
   <script type="module" src="./js/receivable-edit-actions.js?v=20260917-receivable-delete-v1"></script>
+  <script type="module" src="./js/debt-delete-actions.js?v=20260917-debt-delete-v1"></script>
   <script>
-    if ('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=20260917-spending-details-v1').catch(console.warn));
+    if ('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=20260917-debt-delete-v1').catch(console.warn));
   </script>
 </body>
 </html>
