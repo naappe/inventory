@@ -23,9 +23,12 @@ test('builds monthly control totals and separates loans from credits', () => {
   });
 
   assert.equal(model.salaryGot, 25000);
-  assert.equal(model.bankBalance, 8700);
+  assert.equal(model.openingBankBalance, 8700);
   assert.equal(model.spentThisMonth, 3250);
-  assert.equal(model.salaryBalance, 21750);
+  assert.equal(model.bankBalance, 30450);
+  assert.equal(model.stillToPay, 4750);
+  assert.equal(model.expectedMonthEnd, 25700);
+  assert.equal(model.safeToSpend, 25700);
   assert.equal(model.loansLeft, 7750);
   assert.equal(model.creditsLeft, 2500);
   assert.equal(model.loans[0].openingBalance, 9000);
@@ -46,6 +49,7 @@ test('does not count reversed payments in spent or liability paid', () => {
     debts: [{ id: 'loan', name: 'BML', debt_type: 'loan', current_balance: 5000, monthly_plan: 0 }],
   });
   assert.equal(model.spentThisMonth, 0);
+  assert.equal(model.bankBalance, 14000);
   assert.equal(model.loans[0].paidThisMonth, 0);
   assert.equal(model.loans[0].openingBalance, 5000);
 });
