@@ -52,6 +52,38 @@ export async function setBankBalance(monthId, value) {
   return unwrap(await supabase.from('money_months').update({ bank_balance: clean }).eq('id', monthId).select().single());
 }
 
+export async function saveMonth(monthId, snapshot) {
+  await requireUser();
+  const { data, error } = await supabase.rpc('money_save_month', { p_month_id: monthId, p_snapshot: snapshot });
+  if (error) throw error;
+  return data;
+}
+
+export async function markMonthDirty(monthId) {
+  await requireUser();
+  if (!monthId) return false;
+  const { data, error } = await supabase.rpc('money_mark_month_dirty', { p_month_id: monthId });
+  if (error) throw error;
+  return Boolean(data);
+}
+
+export async function getMoneyPreferences() {
+  const user = await requireUser();
+  const { data, error } = await supabase.from('money_preferences').select('*').eq('user_id', user.id).maybeSingle();
+  if (error) throw error;
+  return data || { user_id: user.id, emergency_reserve_target: 0 };
+}
+
+export async function setEmergencyReserveTarget(amount) {
+  const user = await requireUser();
+  const value = nonNegative(amount);
+  const { data, error } = await supabase.from('money_preferences')
+    .upsert({ user_id: user.id, emergency_reserve_target: value }, { onConflict: 'user_id' })
+    .select().single();
+  if (error) throw error;
+  return data;
+}
+
 export async function markSetupComplete(monthId) {
   await requireUser();
   return unwrap(await supabase.from('money_months').update({ setup_complete: true }).eq('id', monthId).select().single());
@@ -278,15 +310,16 @@ export async function getMonthBundle(monthKey) {
     await createMonth(monthKey);
     month = await getMonth(monthKey);
   }
-  const [monthItems, payments, debts, categories, receivables, receivableTransactions] = await Promise.all([
+  const [monthItems, payments, debts, categories, receivables, receivableTransactions, preferences] = await Promise.all([
     unwrap(await supabase.from('money_month_items').select('*').eq('month_id', month.id).order('due_date', { ascending: true, nullsFirst: false }).order('name_snapshot')),
     unwrap(await supabase.from('money_payments').select('*').eq('month_id', month.id).order('payment_date', { ascending: false }).order('created_at', { ascending: false })),
     listDebtsAsOf(monthKey),
     listCategories(),
     listReceivablesAsOf(monthKey),
     unwrap(await supabase.from('money_receivable_transactions').select('*').eq('month_id', month.id).order('transaction_date', { ascending: false }).order('created_at', { ascending: false })),
+    getMoneyPreferences(),
   ]);
-  return { month, monthItems: monthItems || [], payments: payments || [], debts, categories, receivables, receivableTransactions: receivableTransactions || [] };
+  return { month, monthItems: monthItems || [], payments: payments || [], debts, categories, receivables, receivableTransactions: receivableTransactions || [], preferences };
 }
 
 export async function recordPayment({ monthId, type, amount, date, monthItemId = null, debtId = null, note = '' }) {
