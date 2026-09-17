@@ -33,3 +33,19 @@ export function buildMonthSnapshot({ month = {}, dashboard = {}, debtReduced = 0
     savedAt,
   };
 }
+
+export function historyValuesForMonth({ month = {}, live = {} } = {}) {
+  const snapshot = month.saved_snapshot && typeof month.saved_snapshot === 'object' ? month.saved_snapshot : null;
+  if (!snapshot) return { ...live, source:'live' };
+  return {
+    income:Number(snapshot.salaryReceived || 0),
+    paid:Number(snapshot.spentThisMonth || 0),
+    stillToPay:Number(snapshot.stillToPay || 0),
+    safeToSave:Number(snapshot.safeToSave || 0),
+    availableNow:Number(snapshot.availableNow || 0),
+    debtReduced:Number(snapshot.debtReduced || 0),
+    loansRemaining:Number(snapshot.loansRemaining || 0),
+    creditsRemaining:Number(snapshot.creditsRemaining || 0),
+    source:'saved',
+  };
+}
