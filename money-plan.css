@@ -41,3 +41,6 @@ body.auth-mode .login-card .field input{min-height:48px}
   body.auth-mode .login-page{padding:18px}
   body.auth-mode .login-card{padding:30px 22px;border-radius:20px}
 }
+
+.forgot-password{border:0;background:transparent;color:var(--blue);font-weight:750;padding:5px 8px;justify-self:center}
+.forgot-password:hover{text-decoration:underline}
