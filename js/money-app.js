@@ -1,5 +1,5 @@
 import { ALLOWED_EMAIL, FIRST_MONTH } from './config.js';
-import { getAllowedSession, signIn, signOut } from './auth.js';
+import { getAllowedSession, signIn, signOut, sendPasswordReset, updatePassword, onAuthChange } from './auth.js';
 import * as api from './money-api.js';
 import { calculateDebtPreview, calculateMonthSummary, itemPaymentTotal } from './money-calculations.js';
 import { buildDashboardModel } from './money-dashboard-model.js';
@@ -15,7 +15,7 @@ import { renderReceivables } from './screens/receivables.js';
 import { renderHistory } from './screens/history.js';
 import { renderSettings } from './screens/settings.js';
 
-const state = { session:null,user:null,view:'overview',monthKey:FIRST_MONTH,bundle:null,items:[],months:[],historyModel:null,setupMode:false };
+const state = { session:null,user:null,view:'overview',monthKey:FIRST_MONTH,bundle:null,items:[],months:[],historyModel:null,setupMode:false,recoveryMode:false };
 const app = document.getElementById('app');
 const sidebar = document.getElementById('sidebar');
 const topbar = document.getElementById('topbar');
@@ -32,7 +32,14 @@ function renderLogin(error=''){
   document.body.classList.add('auth-mode');
   sidebar.hidden=true;
   topbar.hidden=true;
-  app.innerHTML=`<section class="login-page"><div class="login-card"><div class="brand-mark large-mark">◒</div><p class="eyebrow">PRIVATE MONEY PLAN</p><h1>Welcome back</h1><p>Sign in with your Supabase account. Only ${ALLOWED_EMAIL} is allowed.</p><form data-login-form><label class="field"><span>Email</span><input type="email" value="${ALLOWED_EMAIL}" disabled></label><label class="field"><span>Password</span><input name="password" type="password" autocomplete="current-password" required></label>${error?`<p class="form-error">${error}</p>`:''}<button class="button primary full large" type="submit">Sign in</button></form><small class="privacy-note">Finance data is stored in Supabase. It is not kept in browser localStorage.</small></div></section>`;
+  app.innerHTML=`<section class="login-page"><div class="login-card"><div class="brand-mark large-mark">◒</div><p class="eyebrow">PRIVATE MONEY PLAN</p><h1>Welcome back</h1><p>Sign in with your Supabase account. Only ${ALLOWED_EMAIL} is allowed.</p><form data-login-form><label class="field"><span>Email</span><input type="email" value="${ALLOWED_EMAIL}" disabled></label><label class="field"><span>Password</span><input name="password" type="password" autocomplete="current-password" required></label>${error?`<p class="form-error">${error}</p>`:''}<button class="button primary full large" type="submit">Sign in</button><button class="forgot-password" type="button" data-auth-action="forgot-password">Forgot password?</button></form><small class="privacy-note">Finance data is stored in Supabase. It is not kept in browser localStorage.</small></div></section>`;
+}
+
+function renderResetPassword(error=''){
+  document.body.classList.add('auth-mode');
+  sidebar.hidden=true;
+  topbar.hidden=true;
+  app.innerHTML=`<section class="login-page"><div class="login-card"><div class="brand-mark large-mark">◒</div><p class="eyebrow">PASSWORD RECOVERY</p><h1>Set a new password</h1><p>Create a new password for ${ALLOWED_EMAIL}.</p><form data-reset-password-form><label class="field"><span>New password</span><input name="password" type="password" autocomplete="new-password" minlength="8" required></label><label class="field"><span>Confirm password</span><input name="confirmPassword" type="password" autocomplete="new-password" minlength="8" required></label>${error?`<p class="form-error">${error}</p>`:''}<button class="button primary full large" type="submit">Update password</button></form></div></section>`;
 }
 
 function renderChrome(){
@@ -161,8 +168,56 @@ async function handleAction(action,source){
   if(action==='reverse-receivable-transaction'){const tx=state.bundle.receivableTransactions.find((x)=>x.id===source.dataset.id);if(tx)return openReverseReceivableSheet(tx);}
 }
 
-document.addEventListener('click',async(event)=>{const viewTarget=event.target.closest('[data-view]');if(viewTarget){event.preventDefault();try{await selectView(viewTarget.dataset.view);}catch(e){toast(e.message,'error');}return;}const actionTarget=event.target.closest('[data-action]');if(actionTarget){event.preventDefault();try{await handleAction(actionTarget.dataset.action,actionTarget);}catch(e){toast(e.message||'Something went wrong.','error');}}});
-document.addEventListener('submit',async(event)=>{const form=event.target.closest('[data-login-form]');if(!form)return;event.preventDefault();const button=form.querySelector('button[type="submit"]');button.disabled=true;button.textContent='Signing in…';try{const session=await signIn(new FormData(form).get('password'));await enterApp(session);}catch(error){renderLogin(error?.message||'Could not sign in.');}});
+document.addEventListener('click',async(event)=>{
+  const authTarget=event.target.closest('[data-auth-action]');
+  if(authTarget){
+    event.preventDefault();
+    if(authTarget.dataset.authAction==='forgot-password'){
+      const button=authTarget;button.disabled=true;button.textContent='Sending reset link…';
+      try{await sendPasswordReset();renderLogin();toast('Password reset email sent to '+ALLOWED_EMAIL);}
+      catch(e){renderLogin(e.message||'Could not send reset email.');}
+    }
+    return;
+  }const viewTarget=event.target.closest('[data-view]');if(viewTarget){event.preventDefault();try{await selectView(viewTarget.dataset.view);}catch(e){toast(e.message,'error');}return;}const actionTarget=event.target.closest('[data-action]');if(actionTarget){event.preventDefault();try{await handleAction(actionTarget.dataset.action,actionTarget);}catch(e){toast(e.message||'Something went wrong.','error');}}});
+document.addEventListener('submit',async(event)=>{
+  const resetForm=event.target.closest('[data-reset-password-form]');
+  if(resetForm){
+    event.preventDefault();
+    const password=new FormData(resetForm).get('password');
+    const confirmPassword=new FormData(resetForm).get('confirmPassword');
+    if(password!==confirmPassword){renderResetPassword('Passwords do not match.');return;}
+    const button=resetForm.querySelector('button[type="submit"]');button.disabled=true;button.textContent='Updating…';
+    try{await updatePassword(password);state.recoveryMode=false;await signOut();history.replaceState({},document.title,location.pathname);renderLogin();toast('Password updated. Sign in with your new password.');}
+    catch(error){renderResetPassword(error?.message||'Could not update password.');}
+    return;
+  }
+  const form=event.target.closest('[data-login-form]');if(!form)return;event.preventDefault();const button=form.querySelector('button[type="submit"]');button.disabled=true;button.textContent='Signing in…';try{const session=await signIn(new FormData(form).get('password'));await enterApp(session);}catch(error){renderLogin(error?.message||'Could not sign in.');}});
 document.getElementById('prev-month').addEventListener('click',()=>changeMonth(-1).catch((e)=>toast(e.message,'error')));
 document.getElementById('next-month').addEventListener('click',()=>changeMonth(1).catch((e)=>toast(e.message,'error')));
-(async function start(){try{const session=await getAllowedSession();if(!session)renderLogin();else await enterApp(session);}catch(error){renderLogin(error?.message||'Could not start My Money Plan.');}})();
+onAuthChange((eventSession)=>{
+  // Supabase emits PASSWORD_RECOVERY after the reset-email link opens this page.
+  // The URL also contains recovery parameters, so start() handles the initial race safely.
+});
+
+(async function start(){
+  try{
+    const recoveryHint = location.hash.includes('type=recovery') || location.search.includes('type=recovery');
+    if(recoveryHint){
+      state.recoveryMode=true;
+      renderResetPassword();
+      return;
+    }
+    const session=await getAllowedSession();
+    if(!session)renderLogin();else await enterApp(session);
+  }catch(error){renderLogin(error?.message||'Could not start My Money Plan.');}
+})();
+
+onAuthChange((session)=>{
+  const recoveryHint = location.hash.includes('type=recovery') || location.search.includes('type=recovery');
+  if(recoveryHint && session){
+    state.recoveryMode=true;
+    state.session=session;
+    state.user=session.user;
+    renderResetPassword();
+  }
+});
