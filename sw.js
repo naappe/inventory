@@ -1,4 +1,4 @@
-const CACHE_NAME = 'money-plan-20260919-authfix-v2';
+const CACHE_NAME = 'money-plan-20260919-password-reset-v1';
 const SHELL = [
   './',
   './index.html',
