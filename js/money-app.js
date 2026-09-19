@@ -29,12 +29,16 @@ function toast(message,tone='success'){toastNode.textContent=message;toastNode.d
 function showBusy(message='Loading your money plan…'){app.innerHTML=`<div class="loading-state"><div class="spinner"></div><p>${message}</p></div>`;}
 
 function renderLogin(error=''){
-  sidebar.hidden=true;topbar.hidden=true;
+  document.body.classList.add('auth-mode');
+  sidebar.hidden=true;
+  topbar.hidden=true;
   app.innerHTML=`<section class="login-page"><div class="login-card"><div class="brand-mark large-mark">◒</div><p class="eyebrow">PRIVATE MONEY PLAN</p><h1>Welcome back</h1><p>Sign in with your Supabase account. Only ${ALLOWED_EMAIL} is allowed.</p><form data-login-form><label class="field"><span>Email</span><input type="email" value="${ALLOWED_EMAIL}" disabled></label><label class="field"><span>Password</span><input name="password" type="password" autocomplete="current-password" required></label>${error?`<p class="form-error">${error}</p>`:''}<button class="button primary full large" type="submit">Sign in</button></form><small class="privacy-note">Finance data is stored in Supabase. It is not kept in browser localStorage.</small></div></section>`;
 }
 
 function renderChrome(){
-  sidebar.hidden=false;topbar.hidden=false;
+  document.body.classList.remove('auth-mode');
+  sidebar.hidden=false;
+  topbar.hidden=false;
   document.getElementById('month-title').textContent=monthLabel(state.monthKey);
   document.getElementById('prev-month').disabled=state.monthKey<=FIRST_MONTH||state.setupMode;
   document.getElementById('next-month').disabled=state.setupMode;
