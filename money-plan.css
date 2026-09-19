@@ -20,3 +20,23 @@ main#app{max-width:1460px;margin:0 auto;padding:42px clamp(24px,4vw,64px) 72px}.
 @media(max-width:1180px){.kpi-grid{grid-template-columns:repeat(3,1fr)}.charts-grid{grid-template-columns:1fr}.debt-card-grid{grid-template-columns:1fr}.money-table-head,.money-table-row{grid-template-columns:minmax(170px,1.7fr) repeat(3,1fr) 100px}.money-table-head span:nth-child(5),.money-table-row>span:nth-child(5){display:none}}
 @media(max-width:860px){.app-shell{display:block}.sidebar{position:fixed;left:0;right:0;bottom:0;top:auto;height:auto;z-index:50;border-right:0;border-top:1px solid var(--line);padding:8px 10px;background:rgba(255,255,255,.96);backdrop-filter:blur(14px)}.sidebar .brand,.side-account{display:none}.side-nav{grid-template-columns:repeat(5,1fr);gap:3px}.nav-button{padding:9px 4px;display:grid;place-items:center;gap:2px;text-align:center;font-size:10px}.nav-icon{font-size:17px}.topbar{height:76px;padding:14px 18px}.topbar-note{display:none}.month-control{width:100%;justify-content:space-between}.month-control h2{min-width:0;font-size:19px}main#app{padding:30px 18px 100px}.page-head{align-items:flex-start}.kpi-grid{grid-template-columns:1fr 1fr}.lower-grid,.settings-grid{grid-template-columns:1fr}.account-panel{grid-column:auto}.setup-grid{grid-template-columns:1fr}.setup-wide{grid-column:auto}.setup-step{flex-wrap:wrap}.setup-step .button{margin-left:50px}.money-table-head{display:none}.money-table-row{grid-template-columns:1fr auto;gap:8px;padding:16px 2px}.money-table-row>span{display:none!important}.money-table-row>span:last-child{display:block!important}.money-table-row strong{justify-self:end}.history-row{grid-template-columns:1fr auto}.history-row>span{display:none!important}.history-row strong{display:block}.focus-hero{align-items:flex-start;flex-direction:column}.focus-number{text-align:left}.donut-wrap{grid-template-columns:150px 1fr}.donut-chart{width:150px}}
 @media(max-width:560px){.kpi-grid{grid-template-columns:1fr}.kpi-card{min-height:104px}.page-head{display:grid}.charts-grid{gap:14px}.panel{padding:18px;border-radius:17px}.donut-wrap{grid-template-columns:1fr;text-align:center}.donut-chart{margin:auto}.debt-stats{grid-template-columns:1fr 1fr}.setup-finish{align-items:flex-start;flex-direction:column}.setup-step .button{margin-left:50px}.money-sheet{top:auto;bottom:0;width:100%;height:auto;max-height:92dvh;border-radius:24px 24px 0 0;padding:20px}.sheet-handle{display:block;width:42px;height:5px;border-radius:999px;background:#dfe5e8;margin:0 auto 16px}.sheet-header h2{font-size:23px}.sheet-footer .button{flex:1}.simple-row{align-items:flex-start}.row-end{align-items:flex-end;flex-direction:column;gap:6px}}
+
+
+/* Authentication shell: never show dashboard chrome while logged out */
+body.auth-mode .app-shell{display:block;min-height:100vh}
+body.auth-mode .sidebar,
+body.auth-mode .topbar{display:none!important}
+body.auth-mode .workspace{min-height:100vh;width:100%}
+body.auth-mode main#app{max-width:none;margin:0;padding:0;min-height:100vh}
+body.auth-mode .login-page{min-height:100vh;padding:32px 20px;background:
+  radial-gradient(circle at 15% 10%,rgba(21,155,114,.10),transparent 30%),
+  radial-gradient(circle at 88% 15%,rgba(53,126,246,.10),transparent 28%),
+  var(--bg)}
+body.auth-mode .login-card{width:min(430px,100%);padding:42px 38px;border-radius:24px;box-shadow:0 24px 70px rgba(25,48,70,.12)}
+body.auth-mode .login-card h1{font-size:32px}
+body.auth-mode .login-card>p{max-width:330px;margin:10px auto 26px}
+body.auth-mode .login-card .field input{min-height:48px}
+@media(max-width:560px){
+  body.auth-mode .login-page{padding:18px}
+  body.auth-mode .login-card{padding:30px 22px;border-radius:20px}
+}
