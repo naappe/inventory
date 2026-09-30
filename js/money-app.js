@@ -16,6 +16,7 @@ import { renderHistory } from './screens/history.js';
 import { renderSettings } from './screens/settings.js';
 import { renderCategories } from './screens/categories.js';
 import { renderInsights } from './screens/insights.js';
+import { renderAccounts } from './screens/accounts.js';
 import { renderTransactions, renderBudget } from './screens/transactions-budget.js';
 
 const state = { session:null,user:null,view:'overview',monthKey:FIRST_MONTH,bundle:null,items:[],months:[],historyModel:null,setupMode:false,recoveryMode:false };
@@ -63,6 +64,7 @@ function render(){
   renderChrome();
   if(state.setupMode){app.innerHTML=renderSetup({month:state.bundle.month,categories:state.bundle.categories,items:state.items,debts:state.bundle.debts});return;}
   if(state.view==='overview')app.innerHTML=renderOverview(state.bundle);
+  if(state.view==='accounts')app.innerHTML=renderAccounts(state.bundle);
   if(state.view==='transactions')app.innerHTML=renderTransactions(state.bundle);
   if(state.view==='budget')app.innerHTML=renderBudget(state.bundle);
   if(state.view==='payments')app.innerHTML=renderPayments(state.bundle);
@@ -80,6 +82,7 @@ async function loadMonth(){
   state.months=await api.listMonths();
   state.bundle.bankHistory=state.months;
   state.bundle.items=state.items;
+  state.bundle.accounts=await api.listAccounts();
   state.setupMode=state.monthKey===FIRST_MONTH&&state.bundle.month.setup_complete!==true;
   state.historyModel=null;
 }
