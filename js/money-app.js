@@ -83,6 +83,7 @@ async function loadMonth(){
   state.bundle.bankHistory=state.months;
   state.bundle.items=state.items;
   state.bundle.accounts=await api.listAccounts();
+  state.bundle.accountTransfers=await api.listAccountTransfers(state.bundle.month.id);
   state.setupMode=state.monthKey===FIRST_MONTH&&state.bundle.month.setup_complete!==true;
   state.historyModel=null;
 }
