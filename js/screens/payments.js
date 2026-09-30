@@ -156,32 +156,54 @@ function tipsPanel(model) {
 
 export function renderPayments(bundle) {
   const model = buildPaymentsPageModel(bundle);
-  const spendingDetails = groupedSpendingRows(bundle, model.spentThisMonth);
+  const allDue = [
+    ...model.expenses.filter(x => x.remaining > 0).map(x => ({ kind:'expense', id:x.id, name:x.name_snapshot, due:x.remaining, paid:x.paid, label:x.due_date ? `Due ${dateLabel(x.due_date)}` : 'Monthly expense' })),
+    ...model.loans.filter(x => x.targetRemaining > 0).map(x => ({ kind:'debt', id:x.id, name:x.name, due:x.targetRemaining, paid:x.paidThisMonth, label:'Loan payment' })),
+    ...model.credits.filter(x => x.targetRemaining > 0).map(x => ({ kind:'debt', id:x.id, name:x.name, due:x.targetRemaining, paid:x.paidThisMonth, label:'Credit payment' }))
+  ].sort((a,b) => b.due-a.due);
+  const completed = [
+    ...model.expenses.filter(x => x.paid > 0 && x.remaining <= 0).map(x => ({name:x.name_snapshot, paid:x.paid})),
+    ...model.loans.filter(x => x.paidThisMonth > 0 && x.targetRemaining <= 0).map(x => ({name:x.name, paid:x.paidThisMonth})),
+    ...model.credits.filter(x => x.paidThisMonth > 0 && x.targetRemaining <= 0).map(x => ({name:x.name, paid:x.paidThisMonth}))
+  ];
+  const unplanned = [...model.loans, ...model.credits].filter(x => x.balanceLeft > 0 && x.target <= 0);
+  const dueRows = allDue.length ? allDue.map((x,i)=>`<div class="action-payment-row">
+    <div class="action-number">${String(i+1).padStart(2,'0')}</div>
+    <div class="action-name"><b>${x.name}</b><span>${x.label}${x.paid>0 ? ` · ${money(x.paid)} already paid` : ''}</span></div>
+    <div class="action-amount"><small>TO PAY</small><strong>${money(x.due)}</strong></div>
+    <button class="button pay-action" data-action="${x.kind==='expense'?'pay-item':'pay-debt'}" data-id="${x.id}">Pay now</button>
+  </div>`).join('') : '<div class="all-clear-state"><b>Nothing is waiting for payment.</b><span>Your currently planned payments are complete.</span></div>';
 
   return `
-    <section class="page-head"><div><p class="eyebrow">MONTHLY MONEY CONTROL</p><h1>Payments</h1><p>Your salary is counted as money entering the bank. Recorded payments reduce the bank automatically.</p></div><button class="button primary" data-action="add-by-category">+ Add</button></section>
-
-    <section class="bank-hero">
-      <div><span>AVAILABLE IN BANK</span><strong>${money(model.bankBalance)}</strong><p>Opening ${money(model.openingBankBalance)} + salary ${money(model.salaryGot)} − spent ${money(model.spentThisMonth)}</p></div>
-      <button class="button secondary compact" data-action="set-bank-balance">Set opening bank balance</button>
+    <section class="paydesk-head">
+      <div><p class="eyebrow">SEPTEMBER PAYMENT DESK</p><h1>What needs to be paid?</h1><p>One place for this month’s payments. Work from the list below.</p></div>
+      <button class="button primary" data-action="add-by-category">+ Add payment</button>
     </section>
 
-    <section class="payment-summary-grid dashboard-click-grid">
-      ${kpiCard({ tone: 'tone-income', label: 'Salary Received', value: money(model.salaryGot), hint: 'Added to your bank this month', detail: `<div class="detail-equation"><span>Salary deposited</span><strong>+ ${money(model.salaryGot)}</strong></div>`, action: '<button class="text-button kpi-action" data-action="set-income">Edit salary</button>' })}
-      ${kpiCard({ tone: 'tone-paid', label: 'Spent This Month', value: money(model.spentThisMonth), hint: 'Click to see exactly where your money went', detail: spendingDetails })}
-      ${kpiCard({ tone: 'tone-pending', label: 'Still To Pay', value: money(model.stillToPay), hint: 'Planned payments not completed yet', detail: `<div class="detail-equation"><span>Reserve this amount for upcoming plans</span><strong>${money(model.stillToPay)}</strong></div>` })}
-      ${kpiCard({ tone: 'tone-saving', label: 'Expected Month-End', value: money(model.expectedMonthEnd), hint: 'Bank after everything still planned', detail: `<div class="detail-equation"><span>${money(model.bankBalance)} bank − ${money(model.stillToPay)} still due</span><strong>${money(model.expectedMonthEnd)}</strong></div>` })}
-      ${kpiCard({ tone: 'tone-debt', label: 'Loans Remaining', value: money(model.loansLeft), hint: `${model.loans.length} loan account${model.loans.length === 1 ? '' : 's'}`, detail: model.loans.length ? model.loans.map((loan) => `<div class="detail-row"><span>${loan.name}</span><strong>${money(loan.balanceLeft)}</strong></div>`).join('') : '<p>No loans.</p>' })}
-      ${kpiCard({ tone: 'tone-credit', label: 'Credits Remaining', value: money(model.creditsLeft), hint: `${model.credits.length} credit account${model.credits.length === 1 ? '' : 's'}`, detail: model.credits.length ? model.credits.map((credit) => `<div class="detail-row"><span>${credit.name}</span><strong>${money(credit.balanceLeft)}</strong></div>`).join('') : '<p>No credits.</p>' })}
+    <section class="paydesk-strip">
+      <div class="paydesk-money"><small>AVAILABLE NOW</small><strong>${money(model.bankBalance)}</strong></div>
+      <div class="paydesk-arrow">−</div>
+      <div class="paydesk-money due"><small>TO PAY</small><strong>${money(model.stillToPay)}</strong></div>
+      <div class="paydesk-arrow">=</div>
+      <div class="paydesk-money left"><small>LEFT AFTER PLANS</small><strong>${money(model.expectedMonthEnd)}</strong></div>
     </section>
 
-    ${tipsPanel(model)}
-    ${expensePanel(model.expenses)}
-    ${liabilityCards('Loans', model.loans, 'loan')}
-    ${liabilityCards('Credits', model.credits, 'credit')}
+    <section class="paydesk-work">
+      <div class="paydesk-main">
+        <div class="work-title"><div><span class="work-kicker">ACTION LIST</span><h2>Pay now</h2></div><strong>${allDue.length} waiting</strong></div>
+        <div class="action-payment-list">${dueRows}</div>
+      </div>
+      <aside class="paydesk-side">
+        <section><span>MONTH PROGRESS</span><strong>${money(model.spentThisMonth)}</strong><p>paid so far</p><div class="progress-track"><i style="width:${Math.min(100, model.spentThisMonth/(model.spentThisMonth+model.stillToPay||1)*100)}%"></i></div></section>
+        <section><span>TOTAL DEBT</span><strong>${money(model.loansLeft + model.creditsLeft)}</strong><p>${model.loans.length} loans · ${model.credits.length} credits</p></section>
+        <button class="side-link" data-action="set-bank-balance">Set opening bank balance</button>
+      </aside>
+    </section>
 
-    <article class="panel recent-panel monthly-control-section">
-      <div class="panel-head"><div><h2>Recent Payments</h2><p>Your latest recorded money-out activity.</p></div></div>
-      <div class="simple-list">${model.recentPayments.length ? model.recentPayments.map((p) => `<div class="simple-row"><div><b>${paymentName(bundle, p)}</b><span>${p.payment_type === 'debt' ? 'Loan / Credit · ' : ''}${dateLabel(p.payment_date)}</span></div><div class="row-end"><strong>${money(p.amount)}</strong><button class="text-button danger-text" data-action="reverse-payment" data-id="${p.id}">Reverse</button></div></div>`).join('') : '<div class="empty-state">No payments recorded yet.</div>'}</div>
-    </article>`;
+    <section class="paydesk-lower">
+      <details class="desk-fold" ${completed.length?'':'open'}><summary><b>Completed this month</b><span>${completed.length}</span></summary><div class="desk-fold-body">${completed.length ? completed.map(x=>`<div><span>✓ ${x.name}</span><strong>${money(x.paid)}</strong></div>`).join('') : '<p>No completed payments yet.</p>'}</div></details>
+      <details class="desk-fold"><summary><b>Loans & credits with no monthly payment set</b><span>${unplanned.length}</span></summary><div class="desk-fold-body">${unplanned.length ? unplanned.map(x=>`<div><span>${x.name}</span><strong>${money(x.balanceLeft)}</strong><button class="text-button" data-action="edit-debt" data-id="${x.id}">Set plan</button></div>`).join('') : '<p>Every active debt has a plan.</p>'}</div></details>
+      <details class="desk-fold"><summary><b>Manage all expenses, loans & credits</b><span>Open</span></summary><div class="desk-fold-body manage-fold">${expensePanel(model.expenses)}${liabilityCards('Loans',model.loans,'loan')}${liabilityCards('Credits',model.credits,'credit')}</div></details>
+    </section>`;
 }
+
