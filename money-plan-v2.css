@@ -39,3 +39,16 @@
 @media(max-width:1200px){.standard-payments{width:calc(100vw - 270px)}.standard-layout{grid-template-columns:minmax(560px,1fr) 240px}.payment-table th:nth-child(2),.payment-table td:nth-child(2){width:140px}}
 @media(max-width:980px){.standard-payments{width:auto;margin:0 20px}.standard-layout{grid-template-columns:1fr}.standard-side{grid-template-columns:1fr 1fr}}
 @media(max-width:760px){.standard-payments{width:auto;margin:0 14px}.standard-layout{display:block}.standard-side{display:grid;margin-top:12px}.payment-table{table-layout:auto}.payment-table td:first-child{display:table-cell}.payment-table th:nth-child(2),.payment-table td:nth-child(2){width:auto}}
+
+/* v7 shell alignment + remove duplicate payment presentation */
+main#app{max-width:none;margin:0;padding:0 32px 48px}
+.loading-state{min-height:calc(100vh - 92px);width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center}
+.standard-payments{width:100%;max-width:1320px;margin:0 auto;padding:28px 0 36px}
+.standard-layout{grid-template-columns:minmax(0,1fr) 270px}
+.standard-summary{width:100%}
+.payment-table td,.payment-table th{vertical-align:middle}
+.payment-table td:first-child{white-space:normal}
+.manage-details{display:none}
+@media(max-width:1180px){main#app{padding-left:24px;padding-right:24px}.standard-payments{width:100%}.standard-layout{grid-template-columns:minmax(0,1fr) 230px}}
+@media(max-width:980px){main#app{padding-left:18px;padding-right:18px}.standard-layout{grid-template-columns:1fr}.standard-side{grid-template-columns:1fr 1fr}}
+@media(max-width:760px){main#app{padding-left:12px;padding-right:12px}.loading-state{min-height:70vh}.standard-side{grid-template-columns:1fr}}
