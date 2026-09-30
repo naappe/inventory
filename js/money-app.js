@@ -14,6 +14,7 @@ import { renderDebts } from './screens/debts.js';
 import { renderReceivables } from './screens/receivables.js';
 import { renderHistory } from './screens/history.js';
 import { renderSettings } from './screens/settings.js';
+import { renderCategories } from './screens/categories.js';
 import { renderTransactions, renderBudget } from './screens/transactions-budget.js';
 
 const state = { session:null,user:null,view:'overview',monthKey:FIRST_MONTH,bundle:null,items:[],months:[],historyModel:null,setupMode:false,recoveryMode:false };
@@ -66,6 +67,7 @@ function render(){
   if(state.view==='payments')app.innerHTML=renderPayments(state.bundle);
   if(state.view==='debts')app.innerHTML=renderDebts(state.bundle);
   if(state.view==='receivables')app.innerHTML=renderReceivables(state.bundle);
+  if(state.view==='categories')app.innerHTML=renderCategories(state.bundle);
   if(state.view==='settings')app.innerHTML=renderSettings({user:state.user,categories:state.bundle.categories,items:state.items,preferences:state.bundle.preferences});
   if(state.view==='history')app.innerHTML=state.historyModel?renderHistory(state.historyModel):`<div class="loading-state"><div class="spinner"></div><p>Building history…</p></div>`;
 }
