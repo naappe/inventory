@@ -355,7 +355,7 @@ export async function getMonthBundle(monthKey) {
   return { month, monthItems: monthItems || [], payments: payments || [], debts, categories, receivables, receivableTransactions: receivableTransactions || [], preferences };
 }
 
-export async function recordPayment({ monthId, type, amount, date, monthItemId = null, debtId = null, note = '' }) {
+export async function recordPayment({ monthId, type, amount, date, monthItemId = null, debtId = null, note = '', accountId = null }) {
   await requireUser();
   if (Number(amount) <= 0) throw new Error('Amount must be greater than zero.');
   const { data, error } = await supabase.rpc('money_record_payment', {
@@ -368,7 +368,18 @@ export async function recordPayment({ monthId, type, amount, date, monthItemId =
     p_note: note || null,
   });
   if (error) throw error;
-  return Array.isArray(data) ? data[0] : data;
+  const row=Array.isArray(data)?data[0]:data;
+  if(accountId && row?.payment_id){
+    const linked=await supabase.from('money_payments').update({account_id:accountId}).eq('id',row.payment_id);
+    if(linked.error && linked.error.code!=='42703') throw linked.error;
+  }
+  return row;
+}
+
+export async function setIncomeAccount(monthId, accountId) {
+  await requireUser();
+  const { data, error }=await supabase.from('money_months').update({income_account_id:accountId||null}).eq('id',monthId).select().single();
+  if(error) throw error; return data;
 }
 
 export async function reversePayment(paymentId, reason = 'Correction') {
