@@ -161,11 +161,7 @@ export function renderPayments(bundle) {
     ...model.loans.filter(x=>x.targetRemaining>0).map(x=>({kind:'debt',id:x.id,name:x.name,type:'Loan',amount:x.targetRemaining})),
     ...model.credits.filter(x=>x.targetRemaining>0).map(x=>({kind:'debt',id:x.id,name:x.name,type:'Credit',amount:x.targetRemaining}))
   ].sort((a,b)=>b.amount-a.amount);
-  const completed=[
-    ...model.expenses.filter(x=>x.paid>0&&x.remaining<=0).map(x=>({id:x.id,kind:'expense',name:x.name_snapshot,amount:x.paid})),
-    ...model.loans.filter(x=>x.paidThisMonth>0&&x.targetRemaining<=0).map(x=>({id:x.id,kind:'debt',name:x.name,amount:x.paidThisMonth})),
-    ...model.credits.filter(x=>x.paidThisMonth>0&&x.targetRemaining<=0).map(x=>({id:x.id,kind:'debt',name:x.name,amount:x.paidThisMonth}))
-  ];
+  const completed=(model.recentPayments || []).map(p=>({id:p.id,name:paymentName(bundle,p),amount:Number(p.amount||0),date:p.payment_date||''}));
   const noPlan=[...model.loans,...model.credits].filter(x=>x.balanceLeft>0&&x.target<=0);
   const dueRows=due.length?due.map(x=>`<tr><td><b>${x.name}</b><small>${x.type}</small></td><td class="amount-cell">${money(x.amount)}</td><td class="row-actions"><button class="text-button edit-row" data-action="${x.kind==='expense'?'edit-item':'edit-debt'}" data-id="${x.id}">Edit</button><button class="button compact" data-action="${x.kind==='expense'?'pay-item':'pay-debt'}" data-id="${x.id}">Pay</button></td></tr>`).join(''):'<tr><td colspan="3" class="empty-cell">No payments waiting.</td></tr>';
   const noPlanRows=noPlan.map(x=>`<tr><td><b>${x.name}</b><small>${x.debt_type==='credit'?'Credit':'Loan'}</small></td><td class="amount-cell">${money(x.balanceLeft)}</td><td class="row-actions"><button class="text-button edit-row" data-action="edit-debt" data-id="${x.id}">Edit / Set plan</button></td></tr>`).join('');
@@ -193,7 +189,7 @@ export function renderPayments(bundle) {
       <aside class="standard-side">
         <section class="standard-panel side-panel"><h3>Month status</h3><div class="status-line"><span>Waiting</span><strong>${due.length}</strong></div><div class="status-line"><span>Completed</span><strong>${completed.length}</strong></div><div class="status-line"><span>No plan</span><strong>${noPlan.length}</strong></div></section>
         <section class="standard-panel side-panel"><h3>Debt balance</h3><div class="big-side-number">${money(model.loansLeft+model.creditsLeft)}</div><p>${model.loans.length} loans · ${model.credits.length} credits</p><button class="text-button" data-action="set-bank-balance">Set opening bank balance</button></section>
-        ${completed.length?`<details class="standard-panel completed-fold" open><summary>Completed <span>${completed.length}</span></summary><div>${completed.map(x=>`<p><span>✓ ${x.name}</span><b>${money(x.amount)}</b><button class="text-button undo-row" data-action="${x.kind==='expense'?'undo-item-payment':'undo-debt-payment'}" data-id="${x.id}">Undo</button></p>`).join('')}</div></details>`:''}
+        ${completed.length?`<details class="standard-panel completed-fold" open><summary>Paid / Undo <span>${completed.length}</span></summary><div>${completed.map(x=>`<p><span>✓ ${x.name}${x.date?`<small>${dateLabel(x.date)}</small>`:''}</span><b>${money(x.amount)}</b><button class="text-button undo-row" data-action="reverse-payment" data-id="${x.id}">Undo</button></p>`).join('')}</div></details>`:''}
       </aside>
     </div>
   </section>`;
