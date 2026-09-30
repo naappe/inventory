@@ -58,3 +58,8 @@ main#app{max-width:none;margin:0;padding:0 32px 48px}
 .payment-table .row-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;white-space:nowrap}
 .payment-table .edit-row{font-size:11px;font-weight:750;color:#1769e0;padding:6px 2px}
 @media(max-width:760px){.payment-table th:last-child,.payment-table td:last-child{width:112px}.payment-table .row-actions{gap:5px}}
+
+/* v9 visible undo history */
+.completed-fold>div p{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:10px}
+.completed-fold p>span{display:grid;gap:1px}.completed-fold p>span small{font-size:9px;color:var(--muted)}
+.completed-fold .undo-row{color:#c33b4a;font-weight:800;padding:5px 2px}
