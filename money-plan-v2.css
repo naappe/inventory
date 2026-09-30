@@ -86,3 +86,23 @@ main#app{max-width:none;margin:0;padding:0 32px 48px}
 /* v12 month close action */
 .page-head-actions{display:flex;align-items:center;gap:8px}.save-month-button{min-width:126px}
 @media(max-width:760px){.standard-page-head{gap:12px}.page-head-actions{flex-direction:column;align-items:stretch}.save-month-button{min-width:0}}
+
+/* v13 PERSONAL FINANCE ARCHITECTURE — airy ledger, not admin dashboard */
+:root{--pf-accent:#ef536d;--pf-ink:#20242d;--pf-soft:#f7f8fa;--pf-rule:#e7e9ee}
+body{background:#fff;color:var(--pf-ink)}
+.app-shell{background:#fff}.sidebar{width:210px;background:#fff;border-right:1px solid var(--pf-rule);padding:26px 18px}.workspace{margin-left:210px;background:#fff}
+.brand{padding:0 4px 24px}.brand-mark{background:#fff1f4;color:var(--pf-accent);border:1px solid #ffd9e0}.brand b{font-size:17px}.brand small{font-size:10px}
+.side-nav{gap:5px}.nav-button{border-radius:10px;padding:11px 12px;font-size:12px;color:#6e7480}.nav-button.active{background:#fff1f4;color:#d73d59}.nav-icon{color:inherit}
+.side-account{border:0;border-top:1px solid var(--pf-rule);border-radius:0;padding:16px 4px;background:transparent}
+.topbar{height:76px;border-bottom:1px solid var(--pf-rule);padding:0 36px;background:#fff}.month-control h2{text-transform:uppercase;letter-spacing:.12em;font-size:12px}.icon-button{border:0;background:transparent;font-size:20px}.topbar-note{display:none}
+main#app{padding:30px 42px 54px}.standard-payments{max-width:1160px;padding:0}.standard-page-head{align-items:center;margin-bottom:22px}.standard-page-head h1{font-size:25px;font-weight:650}.standard-page-head p{font-size:11px}.page-head-actions .button{border-radius:999px}
+.standard-summary{border:0;border-top:1px solid var(--pf-rule);border-bottom:1px solid var(--pf-rule);border-radius:0;margin-bottom:24px}.standard-summary>div{border-right:1px dashed var(--pf-rule);padding:16px 20px}.standard-summary span{text-transform:uppercase;letter-spacing:.08em;font-size:8px}.standard-summary strong{font-size:18px;font-weight:650}
+.standard-layout{grid-template-columns:minmax(0,1fr) 250px;gap:28px}.standard-main,.standard-side{gap:18px}
+.standard-panel{border:0;border-radius:0;box-shadow:none;background:#fff}.standard-panel-head{padding:0 0 12px;border-bottom:1px solid var(--pf-rule)}.standard-panel-head h2{font-size:16px;font-weight:650}.count-pill{background:#fff1f4;color:#d73d59}
+.payment-table th{background:#fff;padding:9px 10px;color:#9a9faa}.payment-table td{padding:11px 10px;border-color:var(--pf-rule)}.payment-table .amount-cell{font-weight:650}.payment-table .row-actions{width:126px}.payment-table .button.compact{border-radius:999px;background:#fff1f4;color:#d73d59;border:0}.payment-table .edit-row{color:#777d88}
+.compact-panel{padding-top:4px}.status-details,.debt-details,.completed-fold{border:1px solid var(--pf-rule);border-radius:12px;overflow:hidden}.status-details>summary,.debt-details>summary,.completed-fold>summary{padding:14px}.status-details summary>span,.debt-details summary>span{color:var(--pf-accent)}
+.debt-details summary strong{font-size:18px}.completed-fold .undo-row{color:#d73d59}.bank-balance-link{color:#777d88!important;font-size:10px!important}
+.button.primary{background:var(--pf-accent);border-color:var(--pf-accent)}.text-button{color:#d73d59}
+.page-head{max-width:1160px;margin:0 auto 22px}.page-head h1{font-size:25px}.panel{border:1px solid var(--pf-rule);box-shadow:none;border-radius:12px}.receivable-grid,.settings-grid,.history-layout,.debt-grid{max-width:1160px;margin-left:auto;margin-right:auto}
+@media(max-width:980px){.sidebar{width:176px}.workspace{margin-left:176px}main#app{padding:24px}.standard-layout{grid-template-columns:1fr}.standard-side{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:760px){.workspace{margin-left:0}.sidebar{width:auto}.topbar{height:64px;padding:0 14px}main#app{padding:18px 14px 86px}.standard-summary{grid-template-columns:1fr 1fr}.standard-layout{display:block}.standard-side{display:grid;grid-template-columns:1fr;margin-top:20px}}
