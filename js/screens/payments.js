@@ -167,7 +167,7 @@ export function renderPayments(bundle) {
   const noPlanRows=noPlan.map(x=>`<tr><td><b>${x.name}</b><small>${x.debt_type==='credit'?'Credit':'Loan'}</small></td><td class="amount-cell">${money(x.balanceLeft)}</td><td class="row-actions"><button class="text-button edit-row" data-action="edit-debt" data-id="${x.id}">Edit / Set plan</button></td></tr>`).join('');
   return `
   <section class="standard-payments">
-    <header class="standard-page-head"><div><h1>Payments</h1><p>September 2026 · Manage this month’s bills and debt payments.</p></div><button class="button primary compact" data-action="add-by-category">+ Add</button></header>
+    <header class="standard-page-head"><div><h1>Payments</h1><p>September 2026 · Manage this month’s bills and debt payments.</p></div><div class="page-head-actions"><button class="button secondary compact" data-action="add-by-category">+ Add</button><button class="button primary compact save-month-button" data-action="save-month">Save September</button></div></header>
     <section class="standard-summary">
       <div><span>Available</span><strong>${money(model.bankBalance)}</strong></div>
       <div><span>Still to pay</span><strong>${money(model.stillToPay)}</strong></div>
