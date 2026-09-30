@@ -63,3 +63,15 @@ main#app{max-width:none;margin:0;padding:0 32px 48px}
 .completed-fold>div p{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:10px}
 .completed-fold p>span{display:grid;gap:1px}.completed-fold p>span small{font-size:9px;color:var(--muted)}
 .completed-fold .undo-row{color:#c33b4a;font-weight:800;padding:5px 2px}
+
+/* v10 debt detail drill-down */
+.debt-details>summary{list-style:none;cursor:pointer;padding:15px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.debt-details>summary::-webkit-details-marker{display:none}.debt-details>summary>div{display:grid;gap:3px}
+.debt-details h3{font-size:13px;margin:0}.debt-details summary strong{font-size:20px}.debt-details summary small{font-size:9px;color:var(--muted)}
+.debt-details>summary>span{font-size:10px;color:#1769e0;font-weight:800}
+.debt-detail-list{border-top:1px solid var(--line);padding:5px 14px 10px}
+.debt-detail-head,.debt-detail-row,.debt-detail-total{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center}
+.debt-detail-head{padding:7px 0 5px;font-size:8px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.debt-detail-row{padding:8px 0;border-top:1px solid var(--line)}.debt-detail-row>span{display:grid;gap:1px}.debt-detail-row b{font-size:10px}.debt-detail-row small{font-size:8px;color:var(--muted)}.debt-detail-row strong{font-size:10px;white-space:nowrap}
+.debt-detail-total{padding:10px 0 2px;border-top:1px solid var(--line);font-size:10px}.debt-detail-total strong{font-size:12px}
+.bank-balance-link{padding:2px 4px;text-align:left}
