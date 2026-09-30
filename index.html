@@ -9,8 +9,8 @@
   <link rel="icon" href="./icons/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="./icons/icon-192.png">
   <link rel="preconnect" href="https://cdn.jsdelivr.net">
-  <link rel="stylesheet" href="./money-plan.css?v=20260930-finance-core-v16">
-  <link rel="stylesheet" href="./money-plan-v2.css?v=20260930-finance-core-v16">
+  <link rel="stylesheet" href="./money-plan.css?v=20260930-categories-v17">
+  <link rel="stylesheet" href="./money-plan-v2.css?v=20260930-categories-v17">
   <title>My Money Plan</title>
 </head>
 <body>
@@ -24,6 +24,7 @@
         <button class="nav-button" data-view="payments"><span class="nav-icon">▣</span>Payments</button>
         <button class="nav-button" data-view="debts"><span class="nav-icon">◎</span>Debts</button>
         <button class="nav-button" data-view="receivables"><span class="nav-icon">⇄</span>Money Lent</button>
+        <button class="nav-button" data-view="categories"><span class="nav-icon">◌</span>Categories</button>
         <button class="nav-button" data-view="history"><span class="nav-icon">▥</span>History</button>
         <button class="nav-button" data-view="settings"><span class="nav-icon">⚙</span>Settings</button>
       </nav>
@@ -40,14 +41,14 @@
   </div>
   <div id="sheet-root"></div>
   <div id="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="./js/money-app.js?v=20260930-finance-core-v16"></script>
-  <script type="module" src="./js/debt-total-editor.js?v=20260930-finance-core-v16"></script>
-  <script type="module" src="./js/undo-payment-actions.js?v=20260930-finance-core-v16"></script>
-  <script type="module" src="./js/bank-opening-ui.js?v=20260930-finance-core-v16"></script>
-  <script type="module" src="./js/receivable-edit-actions.js?v=20260930-finance-core-v16"></script>
-  <script type="module" src="./js/debt-delete-actions.js?v=20260930-finance-core-v16"></script>
+  <script type="module" src="./js/money-app.js?v=20260930-categories-v17"></script>
+  <script type="module" src="./js/debt-total-editor.js?v=20260930-categories-v17"></script>
+  <script type="module" src="./js/undo-payment-actions.js?v=20260930-categories-v17"></script>
+  <script type="module" src="./js/bank-opening-ui.js?v=20260930-categories-v17"></script>
+  <script type="module" src="./js/receivable-edit-actions.js?v=20260930-categories-v17"></script>
+  <script type="module" src="./js/debt-delete-actions.js?v=20260930-categories-v17"></script>
   <script>
-    if ('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=20260930-finance-core-v16').catch(console.warn));
+    if ('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=20260930-categories-v17').catch(console.warn));
   </script>
 </body>
 </html>
