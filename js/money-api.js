@@ -87,6 +87,19 @@ export async function updateAccount(id, changes) {
   return unwrap(await supabase.from('money_accounts').update(payload).eq('id',id).select().single());
 }
 
+
+export async function listAccountTransfers(monthId) {
+  await requireUser();
+  const { data, error } = await supabase.from('money_account_transfers').select('*').eq('month_id', monthId).is('reversed_at', null).order('transfer_date');
+  if (error && (error.code === '42P01' || /money_account_transfers/i.test(error.message || ''))) return [];
+  if (error) throw error; return data || [];
+}
+export async function createAccountTransfer({ monthId, fromAccountId, toAccountId, amount, transferDate, note = '' }) {
+  const user=await requireUser(); const value=nonNegative(amount); if(!value) throw new Error('Transfer amount must be greater than zero.');
+  if(fromAccountId===toAccountId) throw new Error('Choose two different accounts.');
+  return unwrap(await supabase.from('money_account_transfers').insert({user_id:user.id,month_id:monthId,from_account_id:fromAccountId,to_account_id:toAccountId,amount:value,transfer_date:transferDate,note:String(note||'').trim()||null}).select().single());
+}
+
 export async function getMoneyPreferences() {
   const user = await requireUser();
   const { data, error } = await supabase.from('money_preferences').select('*').eq('user_id', user.id).maybeSingle();
