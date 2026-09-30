@@ -118,3 +118,25 @@ main#app{padding:30px 42px 54px}.standard-payments{max-width:1160px;padding:0}.s
 .dashboard-grid{gap:20px}.charts-grid{grid-template-columns:1fr 1fr;margin-top:24px}.chart-panel{border:1px solid var(--pf-rule);border-radius:12px}.history-table{margin-top:22px;border:0;border-top:1px solid var(--pf-rule);border-radius:0}.history-row{padding:13px 8px}
 .overview-page,.dashboard-page{max-width:1160px!important;margin-left:auto!important;margin-right:auto!important}.month-save-card{border:1px solid var(--pf-rule);box-shadow:none}.overview-page .panel,.dashboard-page .panel{box-shadow:none}
 @media(max-width:900px){.debt-card-grid,.receivable-grid,.settings-grid,.charts-grid{grid-template-columns:1fr}.settings-grid>.panel{grid-column:auto!important}}
+
+
+/* v15 monthly summary — information hierarchy */
+.summary-head{align-items:center}
+.summary-actions{display:flex;align-items:center;gap:8px}
+.summary-saved{font-size:11px;font-weight:750;color:#16825d}
+.summary-hero{max-width:1160px;margin:0 auto 18px;display:grid;grid-template-columns:1.45fr repeat(3,1fr);border-top:1px solid var(--pf-rule);border-bottom:1px solid var(--pf-rule)}
+.summary-hero>div{min-width:0;padding:22px 20px;border-right:1px solid var(--pf-rule)}
+.summary-hero>div:last-child{border-right:0}
+.summary-hero span,.summary-ledger span{display:block;font-size:8px;font-weight:800;letter-spacing:.09em;color:#8a909b}
+.summary-hero strong{display:block;margin:6px 0 4px;font-size:22px;font-weight:700;letter-spacing:-.02em}
+.summary-balance strong{font-size:34px}
+.summary-hero small{font-size:9px;color:var(--muted)}
+.summary-ledger{max-width:1160px;margin:0 auto 24px;display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.summary-ledger article{position:relative;padding:14px 15px;background:var(--pf-soft);border-radius:10px}
+.summary-ledger strong{display:block;margin-top:5px;font-size:15px}
+.summary-ledger .text-button{position:absolute;right:12px;top:12px;font-size:9px}
+.summary-warning{max-width:1160px;margin:-10px auto 22px;padding:10px 13px;border-radius:8px;background:#fff7e8;color:#8b5a00;font-size:10px}
+.debt-guidance-panel{max-width:1160px;margin:0 auto 22px}
+.lower-grid{margin-top:20px}
+@media(max-width:900px){.summary-hero{grid-template-columns:1fr 1fr}.summary-hero>div:nth-child(2){border-right:0}.summary-ledger{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.summary-head{align-items:flex-start}.summary-actions{width:100%}.summary-hero{grid-template-columns:1fr}.summary-hero>div{border-right:0;border-bottom:1px solid var(--pf-rule)}.summary-hero>div:last-child{border-bottom:0}.summary-ledger{grid-template-columns:1fr}.summary-balance strong{font-size:28px}}
