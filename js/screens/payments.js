@@ -167,8 +167,8 @@ export function renderPayments(bundle) {
     ...model.credits.filter(x=>x.paidThisMonth>0&&x.targetRemaining<=0).map(x=>({name:x.name,amount:x.paidThisMonth}))
   ];
   const noPlan=[...model.loans,...model.credits].filter(x=>x.balanceLeft>0&&x.target<=0);
-  const dueRows=due.length?due.map(x=>`<tr><td><b>${x.name}</b><small>${x.type}</small></td><td class="amount-cell">${money(x.amount)}</td><td><button class="button compact" data-action="${x.kind==='expense'?'pay-item':'pay-debt'}" data-id="${x.id}">Pay</button></td></tr>`).join(''):'<tr><td colspan="3" class="empty-cell">No payments waiting.</td></tr>';
-  const noPlanRows=noPlan.map(x=>`<tr><td><b>${x.name}</b><small>${x.debt_type==='credit'?'Credit':'Loan'}</small></td><td class="amount-cell">${money(x.balanceLeft)}</td><td><button class="text-button" data-action="edit-debt" data-id="${x.id}">Set plan</button></td></tr>`).join('');
+  const dueRows=due.length?due.map(x=>`<tr><td><b>${x.name}</b><small>${x.type}</small></td><td class="amount-cell">${money(x.amount)}</td><td class="row-actions"><button class="text-button edit-row" data-action="${x.kind==='expense'?'edit-item':'edit-debt'}" data-id="${x.id}">Edit</button><button class="button compact" data-action="${x.kind==='expense'?'pay-item':'pay-debt'}" data-id="${x.id}">Pay</button></td></tr>`).join(''):'<tr><td colspan="3" class="empty-cell">No payments waiting.</td></tr>';
+  const noPlanRows=noPlan.map(x=>`<tr><td><b>${x.name}</b><small>${x.debt_type==='credit'?'Credit':'Loan'}</small></td><td class="amount-cell">${money(x.balanceLeft)}</td><td class="row-actions"><button class="text-button edit-row" data-action="edit-debt" data-id="${x.id}">Edit / Set plan</button></td></tr>`).join('');
   return `
   <section class="standard-payments">
     <header class="standard-page-head"><div><h1>Payments</h1><p>September 2026 · Manage this month’s bills and debt payments.</p></div><button class="button primary compact" data-action="add-by-category">+ Add</button></header>
