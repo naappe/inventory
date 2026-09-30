@@ -62,28 +62,23 @@ export function renderOverview(bundle) {
   const bankPoints = bankHistory.filter((m)=>m.bank_balance != null).map((m)=>({ label: m.month_key.slice(5), value: Number(m.bank_balance) + Number(m.income || 0) }));
 
   return `
-    <section class="page-head"><div><p class="eyebrow">MONTHLY OVERVIEW</p><h1>Your money this month</h1><p>Opening bank money and salary are combined first, then actual payments are deducted.</p></div><button class="button primary" data-action="add-by-category">+ Add</button></section>
+    <section class="page-head summary-head"><div><p class="eyebrow">MONTHLY SUMMARY</p><h1>${month.month_key ? new Date(`${month.month_key}-01T00:00:00`).toLocaleDateString("en-US",{month:"long",year:"numeric"}) : "This month"}</h1><p>One clear view of what came in, what went out, what remains, and your debt position.</p></div><div class="summary-actions"><button class="button" data-action="add-by-category">+ Add</button>${saveState.buttonLabel ? `<button class="button primary" data-action="save-month">${saveState.buttonLabel}</button>` : `<span class="summary-saved">✓ Month saved</span>`}</div></section>
 
-    ${monthSaveCard(month, model)}
-
-    <section class="primary-kpi-grid">
-      <article class="kpi-card tone-income"><span>Total Money This Month</span><strong>${money(model.totalMoneyThisMonth)}</strong><small>${money(model.openingBankBalance)} opening bank + ${money(model.salaryReceived)} salary</small></article>
-      <article class="kpi-card tone-paid"><span>Paid This Month</span><strong>${money(model.paidThisMonth)}</strong><small>Actual recorded cash out</small></article>
-      <article class="kpi-card tone-bank"><span>Available Now</span><strong>${money(model.availableNow)}</strong><small>${money(model.totalMoneyThisMonth)} total − ${money(model.paidThisMonth)} paid</small></article>
-      <article class="kpi-card tone-pending"><span>Still Left to Pay</span><strong>${money(model.stillLeftToPay)}</strong><small>Planned expenses + chosen debt targets</small><button class="text-button kpi-action" data-view="payments">View details</button></article>
+    <section class="summary-hero">
+      <div class="summary-balance"><span>AVAILABLE NOW</span><strong>${money(model.availableNow)}</strong><small>${money(model.totalMoneyThisMonth)} received/starting money − ${money(model.paidThisMonth)} paid</small></div>
+      <div class="summary-hero-stat"><span>STILL TO PAY</span><strong>${money(model.stillLeftToPay)}</strong><small>Planned payments remaining</small></div>
+      <div class="summary-hero-stat"><span>EXPECTED MONTH-END</span><strong>${money(model.expectedAfterBills)}</strong><small>After remaining plans</small></div>
+      <div class="summary-hero-stat"><span>TOTAL DEBT</span><strong>${money(summary.totalDebt)}</strong><small>${money(model.loansLeft)} loans · ${money(model.creditsLeft)} credits</small></div>
     </section>
 
-    <section class="secondary-balance-grid">
-      <article class="balance-card"><span>Opening Bank Balance</span><strong>${money(model.openingBankBalance)}</strong><button class="text-button" data-action="set-bank-balance">Update</button></article>
-      <article class="balance-card"><span>Salary Received</span><strong>${money(model.salaryReceived)}</strong><button class="text-button" data-action="set-income">Edit</button></article>
-      <article class="balance-card"><span>Expected After Bills</span><strong>${money(model.expectedAfterBills)}</strong></article>
+    <section class="summary-ledger">
+      <article><span>Opening bank</span><strong>${money(model.openingBankBalance)}</strong><button class="text-button" data-action="set-bank-balance">Edit</button></article>
+      <article><span>Salary / income</span><strong>${money(model.salaryReceived)}</strong><button class="text-button" data-action="set-income">Edit</button></article>
+      <article><span>Paid this month</span><strong>${money(model.paidThisMonth)}</strong><button class="text-button" data-view="payments">Details</button></article>
+      <article><span>Money owed to me</span><strong>${money(model.moneyOwedToMe)}</strong><button class="text-button" data-view="receivables">Details</button></article>
     </section>
 
-    <section class="secondary-balance-grid">
-      <article class="balance-card"><span>Loans Left</span><strong>${money(model.loansLeft)}</strong></article>
-      <article class="balance-card"><span>Credits Left</span><strong>${money(model.creditsLeft)}</strong></article>
-      <article class="balance-card"><span>Money Owed to Me</span><strong>${money(model.moneyOwedToMe)}</strong></article>
-    </section>
+    ${saveState.status === "dirty" ? `<div class="summary-warning">Changes were made after the last save. Save the month again when the figures are confirmed.</div>` : ""} 
 
     ${guidancePanel(guidance)}
 
