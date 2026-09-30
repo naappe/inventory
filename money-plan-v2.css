@@ -52,3 +52,9 @@ main#app{max-width:none;margin:0;padding:0 32px 48px}
 @media(max-width:1180px){main#app{padding-left:24px;padding-right:24px}.standard-payments{width:100%}.standard-layout{grid-template-columns:minmax(0,1fr) 230px}}
 @media(max-width:980px){main#app{padding-left:18px;padding-right:18px}.standard-layout{grid-template-columns:1fr}.standard-side{grid-template-columns:1fr 1fr}}
 @media(max-width:760px){main#app{padding-left:12px;padding-right:12px}.loading-state{min-height:70vh}.standard-side{grid-template-columns:1fr}}
+
+/* v8 payment row actions */
+.payment-table th:last-child,.payment-table td:last-child{width:132px}
+.payment-table .row-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;white-space:nowrap}
+.payment-table .edit-row{font-size:11px;font-weight:750;color:#1769e0;padding:6px 2px}
+@media(max-width:760px){.payment-table th:last-child,.payment-table td:last-child{width:112px}.payment-table .row-actions{gap:5px}}
