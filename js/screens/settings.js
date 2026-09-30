@@ -1,4 +1,5 @@
 const money = (n) => `MVR ${Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const recurringLabel = (item) => item.is_recurring === false ? 'One-time' : 'Repeats monthly';
 const behaviorLabel = (b) => ({ liability: 'Loan / Credit', expense: 'Expense', receivable: 'Money Lent' }[b] || 'Expense');
 
 export function renderSettings({ user, categories = [], items = [], preferences = {} }) {
@@ -17,7 +18,7 @@ export function renderSettings({ user, categories = [], items = [], preferences 
 
       <article class="panel">
         <div class="panel-head"><div><h2>Recurring expense items</h2><p>Only ordinary expenses repeat into new months.</p></div><button class="button secondary compact" data-action="add-by-category">+ Add</button></div>
-        <div class="simple-list">${items.length ? items.map((item) => `<div class="simple-row"><div><b>${item.name}</b><span>${item.category?.name || 'Other'}${item.due_day ? ` · due day ${item.due_day}` : ''}</span></div><div class="row-end"><strong>${money(item.default_planned_amount)}</strong><button class="text-button" data-action="edit-item" data-id="${item.id}">Edit</button></div></div>`).join('') : '<div class="empty-state">No recurring expense items.</div>'}</div>
+        <div class="simple-list">${items.length ? items.map((item) => `<div class="simple-row"><div><b>${item.name}</b><span>${item.category?.name || 'Other'} · ${recurringLabel(item)}${item.due_day ? ` · due day ${item.due_day}` : ''}</span></div><div class="row-end"><span class="recurring-badge ${item.is_recurring === false ? 'one-time' : 'monthly'}">${recurringLabel(item)}</span><strong>${money(item.default_planned_amount)}</strong><button class="text-button" data-action="edit-item" data-id="${item.id}">Edit</button></div></div>`).join('') : '<div class="empty-state">No recurring expense items.</div>'}</div>
       </article>
 
       <article class="panel account-panel"><div><p class="eyebrow">ACCOUNT</p><h2>${user?.email || ''}</h2><p>Finance data is stored in Supabase and protected by account-level RLS.</p></div><button class="button secondary" data-action="sign-out">Sign out</button></article>
