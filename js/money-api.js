@@ -67,6 +67,26 @@ export async function markMonthDirty(monthId) {
   return Boolean(data);
 }
 
+
+export async function listAccounts() {
+  await requireUser();
+  const { data, error } = await supabase.from('money_accounts').select('*').eq('is_active', true).order('display_order').order('name');
+  if (error && (error.code === '42P01' || /money_accounts/i.test(error.message || ''))) return [];
+  if (error) throw error;
+  return data || [];
+}
+export async function createAccount({ name, accountType = 'bank', openingBalance = 0 }) {
+  const user = await requireUser(); const clean=String(name||'').trim(); if(!clean) throw new Error('Account name is required.');
+  return unwrap(await supabase.from('money_accounts').insert({user_id:user.id,name:clean,account_type:accountType==='cash'?'cash':'bank',opening_balance:nonNegative(openingBalance)}).select().single());
+}
+export async function updateAccount(id, changes) {
+  await requireUser(); const payload={};
+  if(changes.name!=null) payload.name=String(changes.name).trim();
+  if(changes.openingBalance!=null) payload.opening_balance=nonNegative(changes.openingBalance);
+  if(changes.active!==undefined) payload.is_active=Boolean(changes.active);
+  return unwrap(await supabase.from('money_accounts').update(payload).eq('id',id).select().single());
+}
+
 export async function getMoneyPreferences() {
   const user = await requireUser();
   const { data, error } = await supabase.from('money_preferences').select('*').eq('user_id', user.id).maybeSingle();
