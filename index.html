@@ -9,8 +9,8 @@
   <link rel="icon" href="./icons/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="./icons/icon-192.png">
   <link rel="preconnect" href="https://cdn.jsdelivr.net">
-  <link rel="stylesheet" href="./money-plan.css?v=20260930-pf-architecture-v13">
-  <link rel="stylesheet" href="./money-plan-v2.css?v=20260930-pf-architecture-v13">
+  <link rel="stylesheet" href="./money-plan.css?v=20260930-full-architecture-v14">
+  <link rel="stylesheet" href="./money-plan-v2.css?v=20260930-full-architecture-v14">
   <title>My Money Plan</title>
 </head>
 <body>
@@ -18,8 +18,9 @@
     <aside class="sidebar" id="sidebar" hidden>
       <div class="brand"><span class="brand-mark">◒</span><div><b>My Money Plan</b><small>Personal finance, clearly.</small></div></div>
       <nav class="side-nav" aria-label="Money Plan">
-        <button class="nav-button active" data-view="overview"><span class="nav-icon">⌂</span>Overview</button>
+        <button class="nav-button active" data-view="overview"><span class="nav-icon">⌂</span>Summary</button>
         <button class="nav-button" data-view="payments"><span class="nav-icon">▣</span>Payments</button>
+        <button class="nav-button" data-view="debts"><span class="nav-icon">◎</span>Debts</button>
         <button class="nav-button" data-view="receivables"><span class="nav-icon">⇄</span>Money Lent</button>
         <button class="nav-button" data-view="history"><span class="nav-icon">▥</span>History</button>
         <button class="nav-button" data-view="settings"><span class="nav-icon">⚙</span>Settings</button>
@@ -37,14 +38,14 @@
   </div>
   <div id="sheet-root"></div>
   <div id="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="./js/money-app.js?v=20260930-pf-architecture-v13"></script>
-  <script type="module" src="./js/debt-total-editor.js?v=20260930-pf-architecture-v13"></script>
-  <script type="module" src="./js/undo-payment-actions.js?v=20260930-pf-architecture-v13"></script>
-  <script type="module" src="./js/bank-opening-ui.js?v=20260930-pf-architecture-v13"></script>
-  <script type="module" src="./js/receivable-edit-actions.js?v=20260930-pf-architecture-v13"></script>
-  <script type="module" src="./js/debt-delete-actions.js?v=20260930-pf-architecture-v13"></script>
+  <script type="module" src="./js/money-app.js?v=20260930-full-architecture-v14"></script>
+  <script type="module" src="./js/debt-total-editor.js?v=20260930-full-architecture-v14"></script>
+  <script type="module" src="./js/undo-payment-actions.js?v=20260930-full-architecture-v14"></script>
+  <script type="module" src="./js/bank-opening-ui.js?v=20260930-full-architecture-v14"></script>
+  <script type="module" src="./js/receivable-edit-actions.js?v=20260930-full-architecture-v14"></script>
+  <script type="module" src="./js/debt-delete-actions.js?v=20260930-full-architecture-v14"></script>
   <script>
-    if ('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=20260930-pf-architecture-v13').catch(console.warn));
+    if ('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=20260930-full-architecture-v14').catch(console.warn));
   </script>
 </body>
 </html>
