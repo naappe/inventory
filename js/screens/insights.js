@@ -1,0 +1,15 @@
+import { itemPaymentTotal } from '../money-calculations.js';
+const money=n=>`MVR ${Number(n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`;
+const pct=n=>`${Number(n||0).toFixed(0)}%`;
+export function renderInsights(bundle){
+ const {monthItems=[],payments=[],month={},bankHistory=[]}=bundle;
+ const groups=new Map();
+ monthItems.forEach(i=>{const name=i.category_name_snapshot||'Other',spent=itemPaymentTotal(i.id,payments),planned=Number(i.planned_amount||0),g=groups.get(name)||{name,spent:0,planned:0};g.spent+=spent;g.planned+=planned;groups.set(name,g)});
+ const cats=[...groups.values()].sort((a,b)=>b.spent-a.spent),spent=cats.reduce((s,x)=>s+x.spent,0),planned=cats.reduce((s,x)=>s+x.planned,0),big=cats[0],over=cats.filter(x=>x.spent>x.planned&&x.planned>0);
+ const prior=bankHistory.filter(m=>m.month_key<month.month_key).sort((a,b)=>b.month_key.localeCompare(a.month_key))[0];
+ const priorSpend=Number(prior?.saved_snapshot?.spentThisMonth||0),change=priorSpend?((spent-priorSpend)/priorSpend)*100:null;
+ return `<section class="page-head"><div><p class="eyebrow">SPENDING INTELLIGENCE</p><h1>Insights</h1><p>Useful signals from your actual spending—not decorative charts.</p></div></section>
+ <section class="insight-hero"><article><span>SPENT THIS MONTH</span><strong>${money(spent)}</strong><small>Across ${cats.filter(x=>x.spent>0).length} spending categories</small></article><article><span>PLANNED</span><strong>${money(planned)}</strong><small>${spent<=planned?money(planned-spent)+' remaining in plan':money(spent-planned)+' above plan'}</small></article><article><span>BIGGEST SPENDING AREA</span><strong>${big?.name||'—'}</strong><small>${big?money(big.spent):'No spending yet'}</small></article><article><span>VS PREVIOUS SAVED MONTH</span><strong>${change==null?'—':`${change>0?'+':''}${pct(change)}`}</strong><small>${prior?prior.month_key:'Save another month to compare'}</small></article></section>
+ <section class="insight-layout"><article class="insight-panel"><div class="insight-title"><h2>Where your money went</h2><span>% of spending</span></div><div class="insight-bars">${cats.filter(x=>x.spent>0).length?cats.filter(x=>x.spent>0).map(x=>{const share=spent?x.spent/spent*100:0;return `<div class="insight-bar"><div><b>${x.name}</b><span>${money(x.spent)} · ${pct(share)}</span></div><i><em style="width:${share}%"></em></i></div>`}).join(''):'<div class="empty-state">Record payments to build spending insights.</div>'}</div></article>
+ <article class="insight-panel"><div class="insight-title"><h2>Budget attention</h2><span>${over.length} over plan</span></div><div class="insight-alerts">${over.length?over.map(x=>`<div><span><b>${x.name}</b><small>${money(x.planned)} planned</small></span><strong>+${money(x.spent-x.planned)}</strong></div>`).join(''):'<div class="insight-good"><b>Within plan</b><span>No category is currently above its planned amount.</span></div>'}</div></article></section>`;
+}
